@@ -2,5 +2,45 @@
 	<head>
 		<script src="proxy-bind.js"></script>
 	</head>
-	<body></body>
+	<body>
+		<script>
+			// this is genearlly the desired method of working with the object
+
+			// the goal is to use Object.defineProperty to set everything so we can modify the value or whatever and the data would still be bound
+			var component = proxyBind(`
+				<div>
+					<label>
+						Input Name
+						<input data-bind="this.data.name"/>
+					</label>
+					<p class="{{!this.data.name && 'hide'}}">Hello {{this.data.name}}</p>
+					<select data-bind="this.data.selected">
+						<array-map data-from="this.data.selection">
+							<option value="this.data.value">{{this.data.label}}</option>
+						</array-map>
+					</select>
+				</div>
+			`, /*optional*/ {
+				name: "Naruto",
+				selection: [
+					{
+						label: "item 1",
+						value: 1
+					},
+					{
+						label: "item 2",
+						value: 2
+					},
+					{
+						label: "item 3",
+						value: 3
+					},
+					{
+						label: "item 4",
+						value: 4
+					}
+				]
+			})
+		</script>
+	</body>
 </html>
