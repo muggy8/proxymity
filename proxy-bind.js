@@ -12,20 +12,6 @@ var proxyBind = (function(){
         var addDataQueue = [view], currentTarget
         while(currentTarget = addDataQueue.shift()){
 			createChildObject(currentTarget, "data", model, events, "=")
-            // Object.defineProperty(currentTarget, "data", createPropertyDefinition(true, true, {
-            //     get: function(){
-            //         return model
-            //     },
-            //     set: function(val){
-			// 		for(prop in val){
-			// 			if (typeof model[prop] !== "undefined"){
-			// 				model[prop] = val[prop]
-			// 			}
-			// 		}
-            //         events.emit("=", val)
-			// 		return model
-            //     }
-            // }))
 
             Array.prototype.push.apply(addDataQueue, currentTarget.childNodes)
 
@@ -46,22 +32,7 @@ var proxyBind = (function(){
     }
 
     // because it's fun we're going to have JS hoist all of these through the return wheeeee
-    // function createPropertyDefinitio(configurable, enumerable, getSetOrVal){
-    //     var config = {
-    //         configurable: configurable,
-    //         enumerable: enumerable
-    //     }
-    //     if (getSetOrVal.get){
-    //         config.get = getSetOrVal.get
-    //         getSetOrVal.set && (config.set = getSetOrVal.set)
-    //     }
-    //     else {
-    //         config.value = getSetOrVal
-    //     }
-    //     return config
-    // }
-
-	function arrayFrom(arrayLike){ // incase we are running in a not so new browser without the Array.from function (and to save on compression size hehe :P)
+    function arrayFrom(arrayLike){ // incase we are running in a not so new browser without the Array.from function (and to save on compression size hehe :P)
 		return Array.prototype.slice.call(arrayLike || [])
 	}
 
