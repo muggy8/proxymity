@@ -54,6 +54,12 @@ var proxyBind = (function(){
 										return this.value = val
 									}.bind(currentTarget)
 								})
+								;["change", "keyup"].forEach(function(listenTo){
+									currentTarget.addEventListener(listenTo, function(ev){
+										events.emit(bindTo, ev)
+										console.log(ev)
+									})
+								})
 							}
 							defineOnObject = defineOnObject[pathRenamed[i]]
 						}

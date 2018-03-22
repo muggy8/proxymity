@@ -8,7 +8,7 @@
 
 			// some termporary testing
 			var errComponent = proxyBind("some garbage")
-			var component = proxyBind("<div><input data-bind='user.name' type='text' placeholder='name'/><input data-bind='user.age' placeholder='age' type='number'/>echo {{input}}</div>")
+			var component = proxyBind("<div><input data-bind='user.name' type='text' placeholder='name'/><input data-bind='user.age' placeholder='age' type='number'/><br>echo {{user.name}}</div>")
 			console.log(component, [component])
 			document.body.appendChild(component)
 			/*
