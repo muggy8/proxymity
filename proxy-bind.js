@@ -29,20 +29,21 @@ var proxyBind = (function(){
 					}).replace(/\[[^\]]+\]|[^\.]+/g, function(matched){
 						pathRenamed.push(matched)
 					})
-					console.log(pathRenamed)
+					// console.log(pathRenamed)
 					for(var i = 0, defineOnObject = model; i < pathRenamed.length; i++){
+						// console.log(pathRenamed[i])
 						if (pathRenamed[i].match(/\[['"`][^\]]+['"`]\]/)){
 							// is array
 						}
 						else if (pathRenamed[i].match(/^[^\[\]\.]+$/)){
-							console.log("isProp")
+							// console.log("isProp", i+1, pathRenamed.length, i+1 !== pathRenamed.length, defineOnObject, pathRenamed[i], typeof defineOnObject[pathRenamed[i]])
 							// is Object or final property
-							if (i+1 != pathRenamed.length && typeof defineOnObject[pathRenamed[i]] !== 'undefined'){ // is a middle of the pack property that we haven't initialized yet
-								console.log("create blank object", pathRenamed[i])
-								createChildObject(defineOnObject, pathRenamed[i], {}, events, pathRenamed.slice[0, i+1].join("."))
+							if (i+1 !== pathRenamed.length && typeof defineOnObject[pathRenamed[i]] === 'undefined'){ // is a middle of the pack property that we haven't initialized yet
+								// console.log("create blank object", pathRenamed[i])
+								createChildObject(defineOnObject, pathRenamed[i], {}, events, pathRenamed.slice(0, i+1).join("."))
 							}
 							else if (i+1 === pathRenamed.length) {
-								console.log("create property", pathRenamed[i])
+								// console.log("create property", pathRenamed[i])
 								Object.defineProperty(defineOnObject, pathRenamed[i], {
 									enumerable: true,
 									configurable: true,
