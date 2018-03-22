@@ -1,11 +1,12 @@
 var proxyBind = (function(){
-	return function (template, model = {}){
+	return function (template, defaultData = {}){
         var viewDoc = new DOMParser().parseFromString(template, "application/xml")
 		if (viewDoc.querySelector("parsererror")){
 			return false
 		}
 		var view = viewDoc.firstChild
 		var events = new subscribable()
+		var model = {} // this is something we always build
 
         // dont ask why we aren't using recursion here
         var addDataQueue = [view], currentTarget
@@ -16,7 +17,9 @@ var proxyBind = (function(){
                 },
                 set: function(val){
 					for(prop in val){
-						model[prop] = val[prop]
+						if (typeof model[prop] !== "undefined"){
+							model[prop] = val[prop]
+						}
 					}
                     events.emit("=", val)
 					return model
