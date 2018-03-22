@@ -12,12 +12,15 @@ var proxyBind = (function(){
         while(currentTarget = addDataQueue.shift()){
             Object.defineProperty(currentTarget, "data", createPropertyDefinition(true, true, {
                 get: function(){
-                    console.log("work in progress")
                     return model
-                }.bind(currentTarget),
+                },
                 set: function(val){
-                    console.log("work in progress")
-                }.bind(currentTarget)
+					for(prop in val){
+						model[prop] = val[prop]
+					}
+                    events.emit("=", val)
+					return model
+                }
             }))
 
             Array.prototype.push.apply(addDataQueue, currentTarget.childNodes)
@@ -25,6 +28,13 @@ var proxyBind = (function(){
 			var attrList = arrayFrom(currentTarget.attributes)
 			attrList.forEach(function(attrName){
 				// not sure what to do here but ok xP
+				if (attrName === "data-bind"){ // our special directive we do something special
+					var bindTo = currentTarget.getAttribute(attrName) // this is the source of truth we dont need to bind this to anything
+
+				}
+				else { // any other value so we check if it has the {{}} directives in it
+
+				}
 			})
         }
 

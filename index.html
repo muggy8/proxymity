@@ -8,7 +8,7 @@
 
 			// some termporary testing
 			var errComponent = proxyBind("some garbage")
-			var component = proxyBind("<div><input data-bind='this.data.input' />echo {{this.data.input}}</div>")
+			var component = proxyBind("<div><input data-bind='input' />echo {{input}}</div>")
 			console.log(component, [component])
 			/*
 			// the goal is to use Object.defineProperty to set everything so we can modify the value or whatever and the data would still be bound
