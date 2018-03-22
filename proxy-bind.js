@@ -1,6 +1,6 @@
 var proxyBind = (function(){
 	return function (template, defaultData = {}){
-        var viewDoc = new DOMParser().parseFromString(template, "application/xml")
+        var viewDoc = new DOMParser().parseFromString(template, "text/html")
 		if (viewDoc.querySelector("parsererror")){
 			return false
 		}
