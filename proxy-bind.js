@@ -15,12 +15,51 @@ var proxyBind = (function(){
 
             Array.prototype.push.apply(addDataQueue, currentTarget.childNodes)
 
+			//console.log(currentTarget.attributes)
 			var attrList = arrayFrom(currentTarget.attributes)
-			attrList.forEach(function(attrName){
+			attrList.forEach(function(attr){
 				// not sure what to do here but ok xP
-				if (attrName === "data-bind"){ // our special directive we do something special
-					var bindTo = currentTarget.getAttribute(attrName) // this is the source of truth we dont need to bind this to anything
-
+				//console.log(attr)
+				if (attr.name === "data-bind"){ // our special directive we do something special
+					// console.log(attr.value)
+					var bindTo = attr.value // this is the source of truth we dont need to bind this to anything
+					var pathRenamed = []
+					bindTo.replace(/\[([^\]]+)\]/g, function(matched){
+						return "." + matched
+					}).replace(/\[[^\]]+\]|[^\.]+/g, function(matched){
+						pathRenamed.push(matched)
+					})
+					console.log(pathRenamed)
+					for(var i = 0, defineOnObject = model; i < pathRenamed.length; i++){
+						if (pathRenamed[i].match(/\[['"`][^\]]+['"`]\]/)){
+							// is array
+						}
+						else if (pathRenamed[i].match(/^[^\[\]\.]+$/)){
+							console.log("isProp")
+							// is Object or final property
+							if (i+1 != pathRenamed.length && typeof defineOnObject[pathRenamed[i]] !== 'undefined'){ // is a middle of the pack property that we haven't initialized yet
+								console.log("create blank object", pathRenamed[i])
+								createChildObject(defineOnObject, pathRenamed[i], {}, events, pathRenamed.slice[0, i+1].join("."))
+							}
+							else if (i+1 === pathRenamed.length) {
+								console.log("create property", pathRenamed[i])
+								Object.defineProperty(defineOnObject, pathRenamed[i], {
+									enumerable: true,
+									configurable: true,
+									get: function(){
+										return this.value
+									}.bind(currentTarget),
+									set: function(val){
+										return this.value = val
+									}.bind(currentTarget)
+								})
+							}
+							defineOnObject = defineOnObject[pathRenamed[i]]
+						}
+						else {
+							throw new Error("you cannot point models to arbiturary positions this time")
+						}
+					}
 				}
 				else { // any other value so we check if it has the {{}} directives in it
 
@@ -72,5 +111,6 @@ var proxyBind = (function(){
 				return dataSrc
 			}
 		})
+		return parent[propertyName]
 	}
 })()
