@@ -14,9 +14,18 @@
 					<input name='user.age' placeholder='age' type='number'/><br>
 					<input name='user.birthday' placeholder='yyyy-mm-dd' type='date'/><br>
 					<input name='user.trusted' type='checkbox'/><br>
-					<label><input name='user.class' type='radio' value="A"/> A</label>
-					<label><input name='user.class' type='radio' value="B"/> B</label>
-					<label><input name='user.class' type='radio' value="C"/> C</label>
+					<textarea name='user.bio'></textarea><br>
+					<select name='user.pronouns'>
+						<option value="">N/A</option>	
+						<option value="1">He/Him</option>	
+						<option value="2">She/Her</option>	
+						<option value="3">They/Them</option>	
+					</select><br>
+					<div class='todo'>
+						<label><input name='user.class' type='radio' value="A"/> A</label>
+						<label><input name='user.class' type='radio' value="B"/> B</label>
+						<label><input name='user.class' type='radio' value="C"/> C</label>
+					</div><br>
 					<br>
 					echo {{user.name}}
 				</div>`
