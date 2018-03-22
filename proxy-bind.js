@@ -32,39 +32,31 @@ var proxyBind = (function(){
 					// console.log(pathRenamed)
 					for(var i = 0, defineOnObject = model; i < pathRenamed.length; i++){
 						// console.log(pathRenamed[i])
-						if (pathRenamed[i].match(/\[['"`][^\]]+['"`]\]/)){
+                        var propType = pathRenamed[i].match(/\[['"`][^\]]+['"`]\]/)
+                            ? "a" // sort for array
+                            : (pathRenamed[i].match(/^[^\[\]\.]+$/)
+                                ? "p" // short for path
+                                : "e" // short for error
+                            )
+                        var isLastProp = i+1 === pathRenamed.length
+						if (propType == "a"){
 							// is array
 						}
-						else if (pathRenamed[i].match(/^[^\[\]\.]+$/)){
+						else if (propType == "p"){
 							// console.log("isProp", i+1, pathRenamed.length, i+1 !== pathRenamed.length, defineOnObject, pathRenamed[i], typeof defineOnObject[pathRenamed[i]])
 							// is Object or final property
-							if (i+1 !== pathRenamed.length && typeof defineOnObject[pathRenamed[i]] === 'undefined'){ // is a middle of the pack property that we haven't initialized yet
+							if (!isLastProp && typeof defineOnObject[pathRenamed[i]] === 'undefined'){ // is a middle of the pack property that we haven't initialized yet
 								// console.log("create blank object", pathRenamed[i])
 								createChildObject(defineOnObject, pathRenamed[i], {}, events, pathRenamed.slice(0, i+1).join("."))
 							}
-							else if (i+1 === pathRenamed.length) {
+							else if (isLastProp) {
 								// console.log("create property", pathRenamed[i])
-								Object.defineProperty(defineOnObject, pathRenamed[i], {
-									enumerable: true,
-									configurable: true,
-									get: function(){
-										return this.value
-									}.bind(currentTarget),
-									set: function(val){
-										return this.value = val
-									}.bind(currentTarget)
-								})
-								;["change", "keyup"].forEach(function(listenTo){
-									currentTarget.addEventListener(listenTo, function(ev){
-										events.emit(bindTo, ev)
-										console.log(ev)
-									})
-								})
+                                createPropertyInputBinding(defineOnObject, pathRenamed[i], currentTarget, events, bindTo)
 							}
 							defineOnObject = defineOnObject[pathRenamed[i]]
 						}
 						else {
-							throw new Error("you cannot point models to arbiturary positions this time")
+							throw new Error("you cannot point models to arbitrary positions this time")
 						}
 					}
 				}
@@ -120,4 +112,47 @@ var proxyBind = (function(){
 		})
 		return parent[propertyName]
 	}
+
+    function createPropertyInputBinding(parent, propertyName, elementToBind, eventInstance, eventToEmit){
+        var propertyDefinition = {
+            enumerable: true,
+            configurable: true,
+            get: function(){
+                return elementToBind.value
+            },
+            set: function(val){
+                return elementToBind.value = val
+            }
+        }
+        if (elementToBind.type.match(/number/)){
+            propertyDefinition.get = function(){
+                return elementToBind.valueAsNumber
+			}
+			propertyDefinition.set = function(val){
+                if (typeof val == "number"){
+                    elementToBind.valueAsNumber = val
+                }
+                return elementToBind.valueAsNumber
+            }
+        }
+        else if (elementToBind.type.match(/date/)){
+            propertyDefinition.get = function(){
+                return elementToBind.valueAsDate
+            }
+            propertyDefinition.set = function(val){
+                if (val instanceof Date){
+                    elementToBind.valueAsDate.setTime(val.getTime())
+                }
+                return elementToBind.valueAsDate
+            }
+        }
+
+        Object.defineProperty(parent, propertyName, propertyDefinition)
+        ;["change", "keyup"].forEach(function(listenTo){
+            elementToBind.addEventListener(listenTo, function(ev){
+                eventInstance.emit(eventToEmit, ev)
+                console.log(ev)
+            })
+        })
+    }
 })()
