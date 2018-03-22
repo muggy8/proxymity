@@ -21,7 +21,10 @@ var proxyBind = (function(){
 
             Array.prototype.push.apply(addDataQueue, currentTarget.childNodes)
 
-			//currentTarget.
+			var attrList = arrayFrom(currentTarget.attributes)
+			attrList.forEach(function(attrName){
+				// not sure what to do here but ok xP
+			})
         }
 
         return view
@@ -42,4 +45,8 @@ var proxyBind = (function(){
         }
         return config
     }
+
+	function arrayFrom(arrayLike){ // incase we are running in a not so new browser without the Array.from function (and to save on compression size hehe :P)
+		return Array.prototype.slice.call(arrayLike || [])
+	}
 })()
