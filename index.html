@@ -6,6 +6,10 @@
 		<script>
 			// this is genearlly the desired method of working with the object
 
+			// some termporary testing
+			var component = proxyBind("<div><input data-bind='this.data.input' />echo {{this.data.input}}</div>")
+			console.log(component, [component])
+			/*
 			// the goal is to use Object.defineProperty to set everything so we can modify the value or whatever and the data would still be bound
 			var component = proxyBind(`
 				<div>
@@ -20,7 +24,8 @@
 						</array-map>
 					</select>
 				</div>
-			`, /*optional*/ {
+			`,
+			{ // ideally optional
 				name: "Naruto",
 				selection: [
 					{
@@ -41,6 +46,7 @@
 					}
 				]
 			})
+			*/
 		</script>
 	</body>
 </html>
