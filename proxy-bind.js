@@ -20,7 +20,12 @@ var proxyBind = (function(){
 			attrList.forEach(function(attr){
 				// not sure what to do here but ok xP
 				//console.log(attr)
-				if (attr.name === "data-bind"){ // our special directive we do something special
+				if (attr.name === "name" && (
+						currentTarget.nodeName == "INPUT" ||
+						currentTarget.nodeName == "TEXTAREA" ||
+						currentTarget.nodeName == "SELECT" 
+					)
+				){ // our special directive we do something special
 					// console.log(attr.value)
 					var bindTo = attr.value // this is the source of truth we dont need to bind this to anything
 					var pathRenamed = []
@@ -141,9 +146,18 @@ var proxyBind = (function(){
             }
             propertyDefinition.set = function(val){
                 if (val instanceof Date){
-                    elementToBind.valueAsDate.setTime(val.getTime())
+                    elementToBind.valueAsDate = val
                 }
                 return elementToBind.valueAsDate
+            }
+        }
+        else if (elementToBind.type.match(/checkbox/)){
+            propertyDefinition.get = function(){
+                return elementToBind.checked
+            }
+            propertyDefinition.set = function(val){
+				elementToBind.checked = val ? true : false // reduce a truthy / falsy value down to a boolean to set
+                return elementToBind.checked
             }
         }
 
