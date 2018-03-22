@@ -11,20 +11,21 @@ var proxyBind = (function(){
         // dont ask why we aren't using recursion here
         var addDataQueue = [view], currentTarget
         while(currentTarget = addDataQueue.shift()){
-            Object.defineProperty(currentTarget, "data", createPropertyDefinition(true, true, {
-                get: function(){
-                    return model
-                },
-                set: function(val){
-					for(prop in val){
-						if (typeof model[prop] !== "undefined"){
-							model[prop] = val[prop]
-						}
-					}
-                    events.emit("=", val)
-					return model
-                }
-            }))
+			createChildObject(currentTarget, "data", model, events, "=")
+            // Object.defineProperty(currentTarget, "data", createPropertyDefinition(true, true, {
+            //     get: function(){
+            //         return model
+            //     },
+            //     set: function(val){
+			// 		for(prop in val){
+			// 			if (typeof model[prop] !== "undefined"){
+			// 				model[prop] = val[prop]
+			// 			}
+			// 		}
+            //         events.emit("=", val)
+			// 		return model
+            //     }
+            // }))
 
             Array.prototype.push.apply(addDataQueue, currentTarget.childNodes)
 
@@ -45,20 +46,20 @@ var proxyBind = (function(){
     }
 
     // because it's fun we're going to have JS hoist all of these through the return wheeeee
-    function createPropertyDefinition(configurable, enumerable, getSetOrVal){
-        var config = {
-            configurable: configurable,
-            enumerable: enumerable
-        }
-        if (getSetOrVal.get){
-            config.get = getSetOrVal.get
-            getSetOrVal.set && (config.set = getSetOrVal.set)
-        }
-        else {
-            config.value = getSetOrVal
-        }
-        return config
-    }
+    // function createPropertyDefinitio(configurable, enumerable, getSetOrVal){
+    //     var config = {
+    //         configurable: configurable,
+    //         enumerable: enumerable
+    //     }
+    //     if (getSetOrVal.get){
+    //         config.get = getSetOrVal.get
+    //         getSetOrVal.set && (config.set = getSetOrVal.set)
+    //     }
+    //     else {
+    //         config.value = getSetOrVal
+    //     }
+    //     return config
+    // }
 
 	function arrayFrom(arrayLike){ // incase we are running in a not so new browser without the Array.from function (and to save on compression size hehe :P)
 		return Array.prototype.slice.call(arrayLike || [])
@@ -81,5 +82,24 @@ var proxyBind = (function(){
 				callback(payload, name)
 			})
 		}
+	}
+
+	function createChildObject(parent, propertyName, dataSrc, eventInstance, eventToEmit){
+		Object.defineProperty(parent, propertyName, {
+			enumerable: true,
+			configurable: true,
+			get: function(){
+				return dataSrc
+			},
+			set: function(val){
+				for(prop in val){
+					if (typeof dataSrc[prop] !== "undefined"){
+						dataSrc[prop] = val[prop]
+					}
+				}
+				eventInstance.emit(eventToEmit, val)
+				return dataSrc
+			}
+		})
 	}
 })()
