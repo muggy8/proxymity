@@ -1,6 +1,10 @@
 var proxyBind = (function(){
 	return function (template, model = {}){
-        var view = new DOMParser().parseFromString(template, "application/xml")
+        var viewDoc = new DOMParser().parseFromString(template, "application/xml")
+		if (viewDoc.querySelector("parsererror")){
+			return false
+		}
+		var view = viewDoc.firstChild
 
         // dont ask why we aren't using recursion here
         var addDataQueue = [view], currentTarget
@@ -9,12 +13,15 @@ var proxyBind = (function(){
                 get: function(){
                     console.log("work in progress")
                     return model
-                },
-                set: function(){
+                }.bind(currentTarget),
+                set: function(val){
                     console.log("work in progress")
-                }
+                }.bind(currentTarget)
             }))
+
             Array.prototype.push.apply(addDataQueue, currentTarget.childNodes)
+
+			//currentTarget.
         }
 
         return view
