@@ -1,5 +1,7 @@
 <html>
 	<head>
+		<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0;"/>
+		<script src="https://unpkg.com/mobile-inspector"></script>
 		<script src="proxy-bind.js"></script>
 	</head>
 	<body>
@@ -20,7 +22,7 @@
 						<option value="2">She/Her</option>
 						<option value="3">They/Them</option>
 					</select><br>
-					<div class='todo'>
+					<div class='{{this.data.user.name && "test-1"}} {{this.data.user.age && "test-2"}}'>
 						<label><input name='user.class' type='radio' value="A"/> A</label>
 						<label><input name='user.class' type='radio' value="B"/> B</label>
 						<label><input name='user.class' type='radio' value="C"/> C</label>
@@ -72,5 +74,13 @@
 			})
 			*/
 		</script>
+		<style>
+			.test-1 {
+				border: solid 1px red;
+			}
+			.test-2 {
+				background-color: blue;
+			}
+		</style>
 	</body>
 </html>

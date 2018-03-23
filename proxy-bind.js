@@ -18,7 +18,6 @@ var proxyBind = (function(){
 			// console.log(currentTarget, currentTarget.attributes)
 			var attrList = arrayFrom(currentTarget.attributes)
 			attrList.forEach(function(attr){
-				// not sure what to do here but ok xP
 				//console.log(attr)
 				if (attr.name === "name" && (
 						currentTarget.nodeName == "INPUT" ||
@@ -65,8 +64,9 @@ var proxyBind = (function(){
 						}
 					}
 				}
-				else { // any other value so we check if it has the {{}} directives in it
-
+				else { // any other value or not an inputable element so we check if it has the {{}} directives in it
+					var attrVal = attr.value
+					console.log(attrVal.match(/\{\{([\s\S]*?)\}\}/g))
 				}
 			})
         }
