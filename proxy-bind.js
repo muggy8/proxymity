@@ -203,15 +203,17 @@ var proxyBind = (function(){
 			})
         }
 		else { // final case where we have just text changes whee
-			if (payload.method === "get" && !payload.hasOwnProperty("value")){
-				payload.value = elementToBind.checked
-			}
-			else if (
-				payload.method === "set" ||
-				(payload.method === "sync" && payload.value !== elementToBind.value)
-			){
-				elementToBind.value = payload.value
-			}
+			eventInstance.watch(eventToEmit, function(payload){
+				if (payload.method === "get" && !payload.hasOwnProperty("value")){
+					payload.value = elementToBind.checked
+				}
+				else if (
+					payload.method === "set" ||
+					(payload.method === "sync" && payload.value !== elementToBind.value)
+				){
+					elementToBind.value = payload.value
+				}
+			})
 		}
 
         ["change", "keyup", "propertychange", "valuechange", "input"].forEach(function(listenTo){
