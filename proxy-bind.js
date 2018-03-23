@@ -142,7 +142,9 @@ var proxyBind = (function(){
 		}
 
 		// define how should this element respond to the data
+		var syncSource = "value" // this is what the sub property will be called when we emit sync events but we default it to value
         if (elementToBind.type.match(/number/i)){
+			syncSource = "valueAsNumber"
 			eventInstance.watch(eventToEmit, function(payload){
 				if (payload.method === "get" && !payload.hasOwnProperty("value")){
 					payload.value = elementToBind.valueAsNumber
@@ -159,9 +161,10 @@ var proxyBind = (function(){
 			})
         }
         else if (elementToBind.type.match(/date/i)){
+			syncSource = "valueAsDate"
 			eventInstance.watch(eventToEmit, function(payload){
 				if (payload.method === "get" && !payload.hasOwnProperty("value")){
-					payload.value = elementToBind.valueAsNumber
+					payload.value = elementToBind.valueAsDate
 				}
 				else if (
 					payload.value instanceof Date &&
@@ -175,6 +178,7 @@ var proxyBind = (function(){
 			})
         }
         else if (elementToBind.type.match(/checkbox/i)){
+			syncSource = "checked"
 			eventInstance.watch(eventToEmit, function(payload){
 				if (payload.method === "get" && !payload.hasOwnProperty("value")){
 					payload.value = elementToBind.checked
@@ -217,9 +221,13 @@ var proxyBind = (function(){
 		}
 
         ["change", "keyup", "propertychange", "valuechange", "input"].forEach(function(listenTo){
-            elementToBind.addEventListener(listenTo, function(ev){
-                //eventInstance.emit(eventToEmit, ev)
-                console.log(ev)
+            elementToBind.addEventListener(listenTo, function(ev){ // keeps everything up to date includeing outside listeners
+                eventInstance.emit(eventToEmit, {
+					method: "sync",
+					value: elementToBind[syncSource],
+					emitter: elementToBind,
+					event: ev
+				})
             })
         })
     }
