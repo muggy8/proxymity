@@ -119,7 +119,28 @@ var proxyBind = (function(){
 	}
 
     function createPropertyInputBinding(parent, propertyName, elementToBind, eventInstance, eventToEmit){
-        var propertyDefinition = {
+		if (!parent.hasOwnProperty(propertyName)){
+			Object.defineProperty(parent, propertyName, {
+            	enumerable: true,
+            	configurable: true,
+            	get: function(){
+            		var payload = {
+                		method: "get"
+                	}
+                	eventInstance.emit(eventToEmit, payload)
+					return payload.value
+            	},
+            	set: function(val){
+            		eventInstance.emit(eventToEmit, {
+            			method: "get",
+            			value: val
+            		})
+                	return elementToBind.value = val
+            	}
+        	})
+		}
+		// else
+		var propertyDefinition = {
             enumerable: true,
             configurable: true,
             get: function(){
