@@ -190,6 +190,29 @@ var proxyBind = (function(){
 				}
 			})
         }
+        else if (elementToBind.type.match(/radio/i)){
+			eventInstance.watch(eventToEmit, function(payload){
+				if (payload.method === "get" && !payload.hasOwnProperty("value")){
+					if (elementToBind.checked){
+						payload.value = elementToBind.value
+					}
+				}
+				else if (payload.method === "set"){ // we dont have to listen to sync for this one because this is what the HTML handles so we just have to handle the update
+					(elementToBind.value === payload.value) && (elementToBind.checked = true)
+				}
+			})
+        }
+		else { // final case where we have just text changes whee
+			if (payload.method === "get" && !payload.hasOwnProperty("value")){
+				payload.value = elementToBind.checked
+			}
+			else if (
+				payload.method === "set" ||
+				(payload.method === "sync" && payload.value !== elementToBind.value)
+			){
+				elementToBind.value = payload.value
+			}
+		}
 
         ["change", "keyup", "propertychange", "valuechange", "input"].forEach(function(listenTo){
             elementToBind.addEventListener(listenTo, function(ev){
