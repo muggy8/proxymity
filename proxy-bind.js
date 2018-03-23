@@ -15,7 +15,7 @@ var proxyBind = (function(){
 
             Array.prototype.push.apply(addDataQueue, currentTarget.childNodes)
 
-			//console.log(currentTarget.attributes)
+			// console.log(currentTarget, currentTarget.attributes)
 			var attrList = arrayFrom(currentTarget.attributes)
 			attrList.forEach(function(attr){
 				// not sure what to do here but ok xP
