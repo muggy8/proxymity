@@ -23,7 +23,7 @@ var proxyBind = (function(){
 				if (attr.name === "name" && (
 						currentTarget.nodeName == "INPUT" ||
 						currentTarget.nodeName == "TEXTAREA" ||
-						currentTarget.nodeName == "SELECT" 
+						currentTarget.nodeName == "SELECT"
 					)
 				){ // our special directive we do something special
 					// console.log(attr.value)
@@ -119,6 +119,7 @@ var proxyBind = (function(){
 	}
 
     function createPropertyInputBinding(parent, propertyName, elementToBind, eventInstance, eventToEmit){
+		// if not already declared bind an event to this thing
 		if (!parent.hasOwnProperty(propertyName)){
 			Object.defineProperty(parent, propertyName, {
             	enumerable: true,
@@ -132,60 +133,67 @@ var proxyBind = (function(){
             	},
             	set: function(val){
             		eventInstance.emit(eventToEmit, {
-            			method: "get",
+            			method: "set",
             			value: val
             		})
-                	return elementToBind.value = val
+                	return parent[propertyName]
             	}
         	})
 		}
-		// else
-		var propertyDefinition = {
-            enumerable: true,
-            configurable: true,
-            get: function(){
-                return elementToBind.value
-            },
-            set: function(val){
-                return elementToBind.value = val
-            }
+
+		// define how should this element respond to the data
+        if (elementToBind.type.match(/number/i)){
+			eventInstance.watch(eventToEmit, function(payload){
+				if (payload.method === "get" && !payload.hasOwnProperty("value")){
+					payload.value = elementToBind.valueAsNumber
+				}
+				else if (
+					typeof payload.value === "number" &&
+					(
+					    payload.method === "set" ||
+						(payload.method === "sync" && payload.value !== elementToBind.valueAsNumber)
+					)
+				){
+					elementToBind.valueAsNumber = payload.value
+				}
+			})
         }
-        if (elementToBind.type.match(/number/)){
-            propertyDefinition.get = function(){
-                return elementToBind.valueAsNumber
-			}
-			propertyDefinition.set = function(val){
-                if (typeof val == "number"){
-                    elementToBind.valueAsNumber = val
-                }
-                return elementToBind.valueAsNumber
-            }
+        else if (elementToBind.type.match(/date/i)){
+			eventInstance.watch(eventToEmit, function(payload){
+				if (payload.method === "get" && !payload.hasOwnProperty("value")){
+					payload.value = elementToBind.valueAsNumber
+				}
+				else if (
+					payload.value instanceof Date &&
+					(
+						payload.method === "set" ||
+						(payload.method === "sync" && payload.value.getTime() !== elementToBind.valueAsDate.getTime())
+					)
+				){
+					elementToBind.valueAsDate = payload.value
+				}
+			})
         }
-        else if (elementToBind.type.match(/date/)){
-            propertyDefinition.get = function(){
-                return elementToBind.valueAsDate
-            }
-            propertyDefinition.set = function(val){
-                if (val instanceof Date){
-                    elementToBind.valueAsDate = val
-                }
-                return elementToBind.valueAsDate
-            }
-        }
-        else if (elementToBind.type.match(/checkbox/)){
-            propertyDefinition.get = function(){
-                return elementToBind.checked
-            }
-            propertyDefinition.set = function(val){
-				elementToBind.checked = val ? true : false // reduce a truthy / falsy value down to a boolean to set
-                return elementToBind.checked
-            }
+        else if (elementToBind.type.match(/checkbox/i)){
+			eventInstance.watch(eventToEmit, function(payload){
+				if (payload.method === "get" && !payload.hasOwnProperty("value")){
+					payload.value = elementToBind.checked
+				}
+				else if (
+					typeof payload.value == "boolean" &&
+					(
+						payload.method === "set" ||
+						(payload.method === "sync" && payload.value !== elementToBind.checked)
+					)
+				){
+					elementToBind.checked = payload.value
+				}
+			})
         }
 
-        Object.defineProperty(parent, propertyName, propertyDefinition)
-        ;["change", "keyup"].forEach(function(listenTo){
+        ["change", "keyup", "propertychange", "valuechange", "input"].forEach(function(listenTo){
             elementToBind.addEventListener(listenTo, function(ev){
-                eventInstance.emit(eventToEmit, ev)
+                //eventInstance.emit(eventToEmit, ev)
                 console.log(ev)
             })
         })
