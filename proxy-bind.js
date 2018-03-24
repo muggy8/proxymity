@@ -1,4 +1,4 @@
-var proxyBind = (function(){
+var proxyBind = (function(safeEval){
 	return function (template, defaultData = {}){
         var viewDoc = new DOMParser().parseFromString(template, "text/html")
 		if (viewDoc.querySelector("parsererror")){
@@ -240,9 +240,18 @@ var proxyBind = (function(){
         })
     }
 
-    function reRenderAttribute(attr, originalString, event){
-        if (event.method === "render"){
-
+    function reRenderAttribute(attr, originalString, payload){
+        if (payload.method == "render"){
+            console.log(payload, this, attr)
+            var sourceEle = this
+            var workingOutput = originalString
+            originalString.match(/\{\{([\s\S]*?)\}\}/g).forEach(function(expression){
+                console.log(expression)
+                workingOutput = workingOutput.replace(expression, safeEval.call(sourceEle, expression.replace(/^\{\{|\}\}$/g, "")))
+            })
+            attr.value = workingOutput
         }
     }
-})()
+})(function(script){
+    return eval(script)
+})
