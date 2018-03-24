@@ -83,7 +83,7 @@ var proxyBind = (function(safeEval){
 			})
         }
 
-		events.emit("*", {method: "render"})
+		events.emit("_", {method: "render"})
         return view
     }
 
