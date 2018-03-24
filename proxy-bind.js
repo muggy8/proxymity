@@ -23,7 +23,7 @@ var proxyBind = (function(safeEval){
 				}
 				continue
 			}
-			
+
 			// currentTarget is not text node
 			// console.log(currentTarget, currentTarget.attributes)
 			var attrList = arrayFrom(currentTarget.attributes)
@@ -84,6 +84,11 @@ var proxyBind = (function(safeEval){
         }
 
 		events.emit("*", {method: "render"})
+		events.watch("*", function(ev){
+			if (ev.method === "render"){
+				console.log(ev, "rendered")
+			}
+		})
         return view
     }
 
@@ -169,11 +174,12 @@ var proxyBind = (function(safeEval){
 				else if (
 					typeof payload.value === "number" &&
 					(
-					    payload.method === "set" ||
-						(payload.method === "sync" && payload.value !== elementToBind.valueAsNumber)
+					    (payload.method === "set" || payload.method === "sync") &&
+						payload.value !== elementToBind.valueAsNumber
 					)
 				){
 					elementToBind.valueAsNumber = payload.value
+					payload.changed = true
 				}
 			})
         }
@@ -186,11 +192,12 @@ var proxyBind = (function(safeEval){
 				else if (
 					payload.value instanceof Date &&
 					(
-						payload.method === "set" ||
-						(payload.method === "sync" && payload.value.getTime() !== elementToBind.valueAsDate.getTime())
+						(payload.method === "set" || payload.method === "sync") &&
+						payload.value.getTime() !== elementToBind.valueAsDate.getTime()
 					)
 				){
 					elementToBind.valueAsDate = payload.value
+					payload.changed = true
 				}
 			})
         }
@@ -203,11 +210,12 @@ var proxyBind = (function(safeEval){
 				else if (
 					typeof payload.value == "boolean" &&
 					(
-						payload.method === "set" ||
-						(payload.method === "sync" && payload.value !== elementToBind.checked)
+						(payload.method === "set" || payload.method === "sync") &&
+						payload.value !== elementToBind.checked
 					)
 				){
 					elementToBind.checked = payload.value
+					payload.changed = true
 				}
 			})
         }
@@ -218,8 +226,15 @@ var proxyBind = (function(safeEval){
 						payload.value = elementToBind.value
 					}
 				}
-				else if (payload.method === "set"){ // we dont have to listen to sync for this one because this is what the HTML handles so we just have to handle the update
-					(elementToBind.value === payload.value) && (elementToBind.checked = true)
+				else if (payload.method === "set"){
+					if (elementToBind.value === payload.value && elementToBind.checked !== true) {
+						elementToBind.checked = true
+						payload.changed = true
+					}
+					else if (elementToBind.value !== payload.value && elementToBind.checked === true){
+						elementToBind.checked = false
+						payload.changed = true
+					}
 				}
 			})
         }
@@ -229,10 +244,11 @@ var proxyBind = (function(safeEval){
 					payload.value = elementToBind.value
 				}
 				else if (
-					payload.method === "set" ||
-					(payload.method === "sync" && payload.value !== elementToBind.value)
+					(payload.method === "set" || payload.method === "sync") &&
+					payload.value !== elementToBind.value
 				){
 					elementToBind.value = payload.value
+					payload.changed = true
 				}
 			})
 		}
@@ -265,7 +281,7 @@ var proxyBind = (function(safeEval){
             attr.value = workingOutput
         }
     }
-    
+
     function reRenderText(originalText, payload){
     	// console.log(payload)
 		if (payload.method == "render"){
