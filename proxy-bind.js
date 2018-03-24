@@ -214,7 +214,7 @@ var proxyBind = (function(safeEval){
 		else { // final case where we have just text changes whee
 			eventInstance.watch(eventToEmit, function(payload){
 				if (payload.method === "get" && !payload.hasOwnProperty("value")){
-					payload.value = elementToBind.checked
+					payload.value = elementToBind.value
 				}
 				else if (
 					payload.method === "set" ||
