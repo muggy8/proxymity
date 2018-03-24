@@ -66,7 +66,9 @@ var proxyBind = (function(){
 				}
 				else { // any other value or not an inputable element so we check if it has the {{}} directives in it
 					var attrVal = attr.value
-					console.log(attrVal.match(/\{\{([\s\S]*?)\}\}/g))
+					if (attrVal.match(/\{\{([\s\S]*?)\}\}/g)){
+                        events.watch("*", reRenderAttribute.bind(currentTarget, attr, attrVal))
+                    }
 				}
 			})
         }
@@ -136,6 +138,9 @@ var proxyBind = (function(){
             			method: "set",
             			value: val
             		})
+                    eventInstance.emit(eventToEmit, {
+                        method: "render"
+                    })
                 	return parent[propertyName]
             	}
         	})
@@ -228,7 +233,16 @@ var proxyBind = (function(){
 					emitter: elementToBind,
 					event: ev
 				})
+                eventInstance.emit(eventToEmit, {
+                    method: "render"
+                })
             })
         })
+    }
+
+    function reRenderAttribute(attr, originalString, event){
+        if (event.method === "render"){
+
+        }
     }
 })()
