@@ -30,7 +30,9 @@
 					<br>
 
 					<input name='user.name' type='text' placeholder='experimenting'/><br>
-					echo {{user.name}}
+					echo {{this.data.user.name}}
+					
+					<pre>{{JSON.stringify(this.data.user, null, "    ")}}</pre>
 				</div>`
 			)
 			console.log(component, [component])

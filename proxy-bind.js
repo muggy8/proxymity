@@ -16,7 +16,7 @@ var proxyBind = (function(safeEval){
             Array.prototype.push.apply(addDataQueue, currentTarget.childNodes)
 
 			if (currentTarget instanceof Text){
-				console.log(currentTarget.textContent)
+				// console.log(currentTarget.textContent)
 				var textVal = currentTarget.textContent
 				if (textVal.match(/\{\{([\s\S]*?)\}\}/g)){
 					events.watch("*", reRenderText.bind(currentTarget, currentTarget.textContent))
@@ -83,6 +83,7 @@ var proxyBind = (function(safeEval){
 			})
         }
 
+		events.emit("*", {method: "render"})
         return view
     }
 
@@ -144,11 +145,12 @@ var proxyBind = (function(safeEval){
 					return payload.value
             	},
             	set: function(val){
-            		eventInstance.emit(eventToEmit, {
+            		var payload = {
             			method: "set",
             			value: val
-            		})
-                    eventInstance.emit(eventToEmit, {
+            		}
+            		eventInstance.emit(eventToEmit, payload)
+                    payload.changed && eventInstance.emit(eventToEmit, {
                         method: "render"
                     })
                 	return parent[propertyName]
@@ -237,12 +239,13 @@ var proxyBind = (function(safeEval){
 
         ["change", "keyup", "propertychange", "valuechange", "input"].forEach(function(listenTo){
             elementToBind.addEventListener(listenTo, function(ev){ // keeps everything up to date includeing outside listeners
-                eventInstance.emit(eventToEmit, {
+            	var payload =  {
 					method: "sync",
 					value: elementToBind[syncSource],
 					emitter: elementToBind,
 					event: ev
-				})
+				}
+                eventInstance.emit(eventToEmit, payload)
                 eventInstance.emit(eventToEmit, {
                     method: "render"
                 })
@@ -264,8 +267,9 @@ var proxyBind = (function(safeEval){
     }
     
     function reRenderText(originalText, payload){
-    	console.log(payload)
+    	// console.log(payload)
 		if (payload.method == "render"){
+			// console.log(originalText, payload.event)
 			var sourceEle = this
 			var workingOutput = originalText
 			originalText.match(/\{\{([\s\S]*?)\}\}/g).forEach(function(expression){
