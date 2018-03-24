@@ -4,7 +4,7 @@ var proxyBind = (function(safeEval){
 		if (viewDoc.querySelector("parsererror")){
 			return false
 		}
-		var view = viewDoc.firstChild
+		var view = viewDoc.body.firstChild
 		var events = new subscribable()
 		var model = {} // this is something we always build
 
@@ -15,6 +15,16 @@ var proxyBind = (function(safeEval){
 
             Array.prototype.push.apply(addDataQueue, currentTarget.childNodes)
 
+			if (currentTarget instanceof Text){
+				console.log(currentTarget.textContent)
+				var textVal = currentTarget.textContent
+				if (textVal.match(/\{\{([\s\S]*?)\}\}/g)){
+					events.watch("*", reRenderText.bind(currentTarget, currentTarget.textContent))
+				}
+				continue
+			}
+			
+			// currentTarget is not text node
 			// console.log(currentTarget, currentTarget.attributes)
 			var attrList = arrayFrom(currentTarget.attributes)
 			attrList.forEach(function(attr){
@@ -242,16 +252,29 @@ var proxyBind = (function(safeEval){
 
     function reRenderAttribute(attr, originalString, payload){
         if (payload.method == "render"){
-            console.log(payload, this, attr)
+            // console.log(payload, this, attr)
             var sourceEle = this
             var workingOutput = originalString
             originalString.match(/\{\{([\s\S]*?)\}\}/g).forEach(function(expression){
-                console.log(expression)
+                // console.log(expression)
                 workingOutput = workingOutput.replace(expression, safeEval.call(sourceEle, expression.replace(/^\{\{|\}\}$/g, "")))
             })
             attr.value = workingOutput
         }
     }
+    
+    function reRenderText(originalText, payload){
+    	console.log(payload)
+		if (payload.method == "render"){
+			var sourceEle = this
+			var workingOutput = originalText
+			originalText.match(/\{\{([\s\S]*?)\}\}/g).forEach(function(expression){
+				// console.log(expression)
+				workingOutput = workingOutput.replace(expression, safeEval.call(sourceEle, expression.replace(/^\{\{|\}\}$/g, "")))
+			})
+			sourceEle.textContent = workingOutput
+		}
+	}
 })(function(script){
     return eval(script)
 })
