@@ -77,7 +77,6 @@ var proxymity = (function(saveEval){
 				deleteProperty: function(target, property){
 					if (property in target) {
 						eventInstance.emit("del:" +  eventNamespace + property)
-						console.log(target)
 					    return delete target[property]
 				    }
 					return false
@@ -120,6 +119,7 @@ var proxymity = (function(saveEval){
 						delete model[key]
 					}
 				})
+				return model
 			}
 		})
 
