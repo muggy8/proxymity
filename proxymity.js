@@ -24,31 +24,6 @@ var proxymity = (function(saveEval){
 			return this.stringify()
 		}
 	}
-	return function(template, dataModel = {}){
-		var events = new subscribable();
-		var proxyModel = proxyObj({}, events, "")
-
-		if (typeof template === "string"){
-			var viewDoc = new DOMParser().parseFromString(template, "text/html")
-			if (viewDoc.querySelector("parsererror")){
-				return false
-			}
-			var view = viewDoc.body.firstChild
-		}
-		else if (template instanceof Element){
-			var view = template
-		}
-		if (!view){
-			throw new Error("Template is not an HTML string or a HTML element");
-		}
-
-		linkProxyModel(events, proxyModel, view)
-
-		for(var key in dataModel){
-			proxyModel[key] = dataModel[key]
-		}
-		return view
-	}
 
 	function proxyObj(obj, eventInstance, eventNamespace){
 		if (eventNamespace){
@@ -160,6 +135,33 @@ var proxymity = (function(saveEval){
 			}
 			return payload
 		}
+	}
+
+
+	return function(template, dataModel = {}){
+		var events = new subscribable();
+		var proxyModel = proxyObj({}, events, "")
+
+		if (typeof template === "string"){
+			var viewDoc = new DOMParser().parseFromString(template, "text/html")
+			if (viewDoc.querySelector("parsererror")){
+				return false
+			}
+			var view = viewDoc.body.firstChild
+		}
+		else if (template instanceof Element){
+			var view = template
+		}
+		if (!view){
+			throw new Error("Template is not an HTML string or a HTML element");
+		}
+
+		linkProxyModel(events, proxyModel, view)
+
+		for(var key in dataModel){
+			proxyModel[key] = dataModel[key]
+		}
+		return view
 	}
 })(function(script){
     return eval(script)
