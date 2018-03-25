@@ -1,4 +1,19 @@
 proxymity = (function(saveEval){
+	var proxyProto = {
+		objectify: function(){
+			var raw = {}
+			var keys = Object.getOwnPropertyNames(this)
+			for(key in keys){
+				if (typeof this[key] === "object" && this[key].objectify){
+					raw[key] = this[key].objectify()
+				}
+				else {
+					raw[key] = this[key]
+				}
+			}
+			return raw
+		}
+	}
 	return function(template, dataModel = {}){
 		var events = new subscribable();
 		var proxyModel = proxyObj({}, events, "data")
