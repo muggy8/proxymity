@@ -1,7 +1,14 @@
 proxymity = (function(saveEval){
 	return function(template, html){}
 
-	function proxyData(data, eventInstance){
+	function proxyObj(obj, eventInstance, eventNamespace){
+		if (Array.isArray(obj)){
+			return proxyArray(obj, eventInstance, eventNamespace)
+		}
+		return new Proxy(obj, )
+	}
+
+	function proxyArray(arr, eventInstance, eventNamespace){
 
 	}
 

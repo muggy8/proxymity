@@ -3,13 +3,14 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 		<script src="https://unpkg.com/mobile-inspector"></script>
 		<script src="proxy-bind.js"></script>
+		<script src="proxymity.js"></script>
 	</head>
 	<body>
 		<script>
 			// this is genearlly the desired method of working with the object
 
-			// some termporary testing
-			var component = proxyBind(`
+			// testing Proxymity now
+			var component = proxymity(`
 				<div>
 					<input name='user.name' type='text' placeholder='name'/><br>
 					<input name='user.age' placeholder='age' type='number'/><br>
@@ -33,10 +34,43 @@
 					echo {{this.data.user.name}}
 
 					<pre>{{JSON.stringify(this.data.user, null, "    ")}}</pre>
-				</div>`
+				</div>`, {
+					user: {
+						name: "Muggy8"
+					}
+				}
 			)
 			console.log(component, [component])
-			document.body.appendChild(component)
+
+			// some termporary testing for proxy-bind
+			// var component = proxyBind(`
+			// 	<div>
+			// 		<input name='user.name' type='text' placeholder='name'/><br>
+			// 		<input name='user.age' placeholder='age' type='number'/><br>
+			// 		<input name='user.birthday' placeholder='yyyy-mm-dd' type='date'/><br>
+			// 		<input name='user.trusted' type='checkbox'/><br>
+			// 		<textarea name='user.bio'></textarea><br>
+			// 		<select name='user.pronouns'>
+			// 			<option value="0">N/A</option>
+			// 			<option value="1">He/Him</option>
+			// 			<option value="2">She/Her</option>
+			// 			<option value="3">They/Them</option>
+			// 		</select><br>
+			// 		<div class='{{this.data.user.name && "test-1"}} {{this.data.user.age && "test-2"}}'>
+			// 			<label><input name='user.class' type='radio' value="A"/> A</label>
+			// 			<label><input name='user.class' type='radio' value="B"/> B</label>
+			// 			<label><input name='user.class' type='radio' value="C"/> C</label>
+			// 		</div><br>
+			// 		<br>
+			//
+			// 		<input name='user.name' type='text' placeholder='experimenting'/><br>
+			// 		echo {{this.data.user.name}}
+			//
+			// 		<pre>{{JSON.stringify(this.data.user, null, "    ")}}</pre>
+			// 	</div>`
+			// )
+			// console.log(component, [component])
+			// document.body.appendChild(component)
 			/*
 			// the goal is to use Object.defineProperty to set everything so we can modify the value or whatever and the data would still be bound
 			var component = proxyBind(`
