@@ -84,7 +84,19 @@ var proxymity = (function(saveEval){
 		Object.defineProperty(node, "data", {
 			enumerable: false,
 			configurable: true,
-			value: model
+			get: function(){
+				return model
+			},
+			set: function(obj){
+				for(var key in obj){
+					if (!obj[key].objectify){
+						model[key] = proxyObj(obj[key], eventInstance, key)
+					}
+					else {
+						model[key] = obj[key]
+					}
+				}
+			}
 		})
 
 		// now do the logic for updating and what not
@@ -136,7 +148,6 @@ var proxymity = (function(saveEval){
 			return payload
 		}
 	}
-
 
 	return function(template, dataModel = {}){
 		var events = new subscribable();
