@@ -31,9 +31,8 @@
 					<br>
 
 					<input name='user.name' type='text' placeholder='experimenting'/><br>
-					echo {{this.data.user.name}}
 
-					<pre>{{JSON.stringify(this.data.user, null, "    ")}}</pre>
+					<pre>{{this.data.user.stringify(null, "    ")}}</pre>
 				</div>`, {
 					user: {
 						name: "Muggy8"
@@ -41,6 +40,7 @@
 				}
 			)
 			console.log(component, [component])
+			document.body.appendChild(component)
 
 			// some termporary testing for proxy-bind
 			// var component = proxyBind(`
