@@ -24,6 +24,16 @@ var proxymity = (function(safeEval){
 			return this.stringify()
 		}
 	}
+	Object.defineProperty(proxyProto, "truthy", {
+		get: function(){
+			return !!Object.getOwnPropertyNames(this).length
+		}
+	})
+	Object.defineProperty(proxyProto, "falsy", {
+		get: function(){
+			return !Object.getOwnPropertyNames(this).length
+		}
+	})
 
 	function proxyObj(obj, eventInstance, eventNamespace){
 		if (eventNamespace){
@@ -51,6 +61,7 @@ var proxymity = (function(safeEval){
 						// final case, the property isn't in the dom or the cache so we create it
 						target[property] = proxyObj({}, eventInstance, eventNamespace + property)
 					}
+					
 					return target[property]
 				},
 				set: function(target, property, val){
