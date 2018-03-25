@@ -137,6 +137,8 @@ var proxymity = (function(safeEval){
 			}
 		})
 		
+		node.childNodes.forEach(linkProxyModel.bind(this, eventInstance, model))
+		
 		if (node instanceof Text){
 			var textVal = node.textContent
 			if (textVal.match(/\{\{([\s\S]*?)\}\}/g)){
@@ -145,6 +147,7 @@ var proxymity = (function(safeEval){
 					// console.log(renderedText)
 				})
 			}
+			return
 		}
 
 		// now do the logic for updating and what not
@@ -165,8 +168,6 @@ var proxymity = (function(safeEval){
 				// todo: check if the prop has a {{...}} in it. and If so, it should be watching the model for render events
 			}
 		})
-
-		node.childNodes.forEach(linkProxyModel.bind(this, eventInstance, model))
 	}
 	
 	function renderText(originalText, sourceEle){
