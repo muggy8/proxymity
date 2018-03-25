@@ -94,12 +94,7 @@ var proxymity = (function(saveEval){
 			},
 			set: function(obj){
 				for(var key in obj){
-					if (!obj[key].objectify){
-						model[key] = proxyObj(obj[key], eventInstance, key)
-					}
-					else {
-						model[key] = obj[key]
-					}
+					model[key] = obj[key]
 				}
 			}
 		})
