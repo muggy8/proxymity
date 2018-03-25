@@ -35,7 +35,7 @@ var proxymity = (function(saveEval){
 		}
 		else if (typeof obj === "object" && Object.getPrototypeOf(obj) === Object.prototype){
 			Object.setPrototypeOf(obj, proxyProto)
-			return new Proxy(obj, {
+			var proxied = new Proxy(Object.create(proxyProto), {
 				get: function(target, property){
 					// when we get a property there's 1 of 3 cases,
 					// 1: it's a property that doesn't exist, in that case, we create it as an object
@@ -73,6 +73,11 @@ var proxymity = (function(saveEval){
 					return target[property]
 				}
 			})
+			// because we are converting an object into a proxy, we want to make sure that the object
+			Object.getOwnPropertyNames(obj).forEach(function(prop){
+				proxied[prop] = obj[prop]
+			})
+			return proxied
 		}
 	}
 
@@ -168,10 +173,7 @@ var proxymity = (function(saveEval){
 		}
 
 		linkProxyModel(events, proxyModel, view)
-
-		for(var key in dataModel){
-			proxyModel[key] = dataModel[key]
-		}
+		view.data = dataModel
 		return view
 	}
 })(function(script){
