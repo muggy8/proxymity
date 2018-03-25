@@ -30,7 +30,6 @@ var proxymity = (function(saveEval){
 		for(var key in dataModel){
 			proxyModel[key] = dataModel[key]
 		}
-		events.watch("*:user.name")
 		return proxyModel
 	}
 
@@ -106,24 +105,30 @@ var proxymity = (function(saveEval){
 				callback = nameOrCallback
 			}
 			var regexName = name
-				.replace(/(.)/g, "\$1")
+				.replace(/([!@#$%^&*(){}[\]\<\>:'"`\-_,./\\+-])/g, "\\$1")
 				.replace(/\\\*\\\*/g, ".*")
 				.replace(/\\\*/, "[^\:\.]+")
 
-			console.log(regexName)
-
-			var listeners = listenerLibrary[name] = listenerLibrary[name] || []
-			listeners.push(callback)
+			var listeners = listenerLibrary[name] = listenerLibrary[name] || {
+				regex: new RegExp(regexName),
+				listeners: []
+			}
+			listeners.listeners.push(callback)
 			return function(){
-				listeners.splice(listeners.indexOf(callback), 1)
+				listeners.listeners.splice(listeners.listeners.indexOf(callback), 1)
 			}
 		}
 
 		this.emit = function(name, payload = {}){
 			// join the callback name and the wiledcard listeners (if they exist) and call the callbacks of both listeners
-			(listenerLibrary[name] || []).concat(listenerLibrary["*"] || []).forEach(function(callback){
-				callback(payload, name)
-			})
+			for (var key in listenerLibrary){
+				var set = listenerLibrary[key]
+				if (name.match(set.regex)){
+					set.listeners.forEach(function(callback){
+						callback(payload, name)
+					})
+				}
+			}
 			return payload
 		}
 	}
