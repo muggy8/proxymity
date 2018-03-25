@@ -51,7 +51,7 @@ var proxymity = (function(saveEval){
 						// always trust the DOM first cuz that could potentially update without us knowing and our cached value is bad
 						target[property] = payload.value
 					}
-					else if (!property in target) {
+					else if (!(property in target)) {
 						// final case, the property isn't in the dom or the cache so we create it
 						target[property] = proxyObj({}, eventInstance, eventNamespace + "." + property)
 					}
