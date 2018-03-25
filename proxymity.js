@@ -1,5 +1,5 @@
 "use strict"
-var proxymity = (function(saveEval){
+var proxymity = (function(safeEval){
 	var proxyProto = {
 		objectify: function(){
 			var raw = {}
@@ -68,9 +68,12 @@ var proxymity = (function(saveEval){
 						target[property] = val
 					}
 					// before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update
-					eventInstance.emit("set:" +  eventNamespace + property, {
+					var payload = eventInstance.emit("set:" +  eventNamespace + property, {
 						value: target[property]
 					})
+					if (payload.changed){
+						eventInstance.emit("render:" +  eventNamespace + property)
+					}
 					// console.log("2", target, property, target[property])
 					return target[property]
 				},
@@ -122,6 +125,16 @@ var proxymity = (function(saveEval){
 				return model
 			}
 		})
+		
+		if (node instanceof Text){
+			var textVal = node.textContent
+			if (textVal.match(/\{\{([\s\S]*?)\}\}/g)){
+				eventInstance.watch("render:**", function(){
+					node.textContent= renderText(textVal, node)
+					// console.log(renderedText)
+				})
+			}
+		}
 
 		// now do the logic for updating and what not
 		arrayFrom(node.attributes).forEach(function(attr){
@@ -143,6 +156,15 @@ var proxymity = (function(saveEval){
 		})
 
 		node.childNodes.forEach(linkProxyModel.bind(this, eventInstance, model))
+	}
+	
+	function renderText(originalText, sourceEle){
+		// var workingOutput = originalText
+		return originalText.replace(/\{\{([\s\S]*?)\}\}/g, function(matched, expression){
+			// console.log(expression)
+			return safeEval.call(sourceEle, expression)
+			//workingOutput = workingOutput.replace(expression, safeEval.call(sourceEle, expression.replace(/^\{\{|\}\}$/g, "")))
+		})
 	}
 
     function arrayFrom(arrayLike){ // incase we are running in a not so new browser without the Array.from function (and to save on compression size hehe :P)
@@ -207,10 +229,9 @@ var proxymity = (function(saveEval){
 			throw new Error("Template is not an HTML string or a HTML element");
 		}
 		
-		
-		
 		// view.data = dataModel
 		linkProxyModel(events, proxyModel, view)
+		events.emit("render:")
 		return view
 	}
 })(function(script){
