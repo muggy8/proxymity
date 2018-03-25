@@ -61,7 +61,7 @@ var proxymity = (function(safeEval){
 						// final case, the property isn't in the dom or the cache so we create it
 						target[property] = proxyObj({}, eventInstance, eventNamespace + property)
 					}
-					
+
 					return target[property]
 				},
 				set: function(target, property, val){
@@ -136,9 +136,9 @@ var proxymity = (function(safeEval){
 				return model
 			}
 		})
-		
+
 		node.childNodes.forEach(linkProxyModel.bind(this, eventInstance, model))
-		
+
 		if (node instanceof Text){
 			var textVal = node.textContent
 			if (textVal.match(/\{\{([\s\S]*?)\}\}/g)){
@@ -162,18 +162,18 @@ var proxymity = (function(safeEval){
 				// todo: listen for events and emit sync events
 				//...
 				var syncSource = "value" // this is what the sub property will be called when we emit sync events but we default it to value
-				var getListener, setListener, syncListener
+				var getListener = function(){}, setListener = function(){},
 				delListener = function(payload, eventName){
 					eventName = eventName.replace("del:", "")
 					if (attr.value.indexOf(eventName) > -1){
 						node.value = null
 					}
 				}
-				if (elementToBind.type.match(/number/i)){
+				if (node.type.match(/number/i)){
 					syncSource = "valueAsNumber"
 					getListener = function(payload){
 						if (!payload.hasOwnProperty("value")){
-							payload.value = elementToBind.valueAsNumber
+							payload.value = node.valueAsNumber
 						}
 					}
 					setListener = function(payload){
@@ -183,18 +183,18 @@ var proxymity = (function(safeEval){
 						}
 					}
 				}
-				
+
 				eventInstance.watch("get:" + attr.name, getListener)
 				eventInstance.watch("set:" + attr.name, setListener)
-				eventInstance.watch("sync:" + attr.name, syncListener)
 				eventInstance.watch("del:**", delListener)
-				
-				["change", "keyup", "propertychange", "valuechange", "input"].forEach(function(listenTo){
-            		elementToBind.addEventListener(listenTo, function(ev){ // keeps everything up to date includeing outside listeners
+
+				;["change", "keyup", "propertychange", "valuechange", "input"].forEach(function(listenTo){
+            		node.addEventListener(listenTo, function(ev){ // keeps everything up to date includeing outside listeners
             			// set the property in the proxy model
           		      safeEval.call({
-							value: node[syncSource]
-						}, "model." + attr.name + " = this.value")
+							value: node[syncSource],
+							model: model
+						}, "this.model." + attr.name + " = this.value")
           		      eventInstance.emit("render:" )
     		        })
    		     })
@@ -204,7 +204,7 @@ var proxymity = (function(safeEval){
 			}
 		})
 	}
-	
+
 	function renderText(originalText, sourceEle){
 		// var workingOutput = originalText
 		return originalText.replace(/\{\{([\s\S]*?)\}\}/g, function(matched, expression){
@@ -228,6 +228,7 @@ var proxymity = (function(safeEval){
 			else {
 				name = "**"
 				callback = nameOrCallback
+				console.warn(nameOrCallback, callback)
 			}
 			var regexName = name
 				.replace(/([!@#$%^&*(){}[\]\<\>:'"`\-_,./\\+-])/g, "\\$1")
@@ -275,7 +276,7 @@ var proxymity = (function(safeEval){
 		if (!view){
 			throw new Error("Template is not an HTML string or a HTML element");
 		}
-		
+
 		// view.data = dataModel
 		linkProxyModel(events, proxyModel, view)
 		events.emit("render:")
