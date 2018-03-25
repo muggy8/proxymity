@@ -46,20 +46,16 @@ var proxymity = (function(saveEval){
 					// 2: it's a property that does but doesn't have an in dom model then we just return whatever is in our storage
 					// 3: it is a property that is in the dom model and we update our storage to keep things in sync and then return the value in the dom
 
-					// this keeps everything in sync all the time
-
-					if (property in target){
-						var payload = eventInstance.emit("get:" +  eventNamespace + "." + property)
-						if (payload.hasOwnProperty("value")){
-							// we dont have to deal with synching since this will always trigger the sync when we get the data anyways
-							return target[property] = payload.value
-						}
-						return target[property] // the fallback incase the event we emited eralier didn't produce a real value
+					var payload = eventInstance.emit("get:" +  eventNamespace + "." + property)
+					if (payload.hasOwnProperty("value")){
+						// always trust the DOM first cuz that could potentially update without us knowing and our cached value is bad
+						target[property] = payload.value
 					}
-					else {
+					else if (!property in target) {
+						// final case, the property isn't in the dom or the cache so we create it
 						target[property] = proxyObj({}, eventInstance, eventNamespace + "." + property)
-						return target[property]
 					}
+					return target[property]
 				},
 				set: function(target, property, val){
 					// set will let us set any object. the Get method above created a blank proxy object for any property and as a result, we will have to overwrite that property with a regular data here we have to. If the data value to set is an object we need to proxy that too just to be safe
@@ -94,7 +90,6 @@ var proxymity = (function(saveEval){
 	}
 
 	function subscribable(){
-		// todo this needs to be beefed up xP
 		var listenerLibrary = {}
 
 		this.watch = function(nameOrCallback, callback){
@@ -102,9 +97,16 @@ var proxymity = (function(saveEval){
 				var name = nameOrCallback
 			}
 			else {
-				name = "*"
+				name = "**"
 				callback = nameOrCallback
 			}
+			var regexName = name
+				.replace(/(.)/g, "\$1")
+				.replace(/\\\*\\\*/g, ".*")
+				.replace(/\\\*/, "[^\:\.]+")
+
+			console.log(regexName)
+
 			var listeners = listenerLibrary[name] = listenerLibrary[name] || []
 			listeners.push(callback)
 			return function(){
