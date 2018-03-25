@@ -27,10 +27,27 @@ var proxymity = (function(saveEval){
 	return function(template, dataModel = {}){
 		var events = new subscribable();
 		var proxyModel = proxyObj({}, events, "")
+
+		if (typeof template === "string"){
+			var viewDoc = new DOMParser().parseFromString(template, "text/html")
+			if (viewDoc.querySelector("parsererror")){
+				return false
+			}
+			var view = viewDoc.body.firstChild
+		}
+		else if (template instanceof Element){
+			var view = template
+		}
+		if (!view){
+			throw new Error("Template is not an HTML string or a HTML element");
+		}
+
+		linkProxyModel(events, proxyModel, view)
+
 		for(var key in dataModel){
 			proxyModel[key] = dataModel[key]
 		}
-		return proxyModel
+		return view
 	}
 
 	function proxyObj(obj, eventInstance, eventNamespace){
@@ -86,6 +103,18 @@ var proxymity = (function(saveEval){
 
 	function proxyArray(arr, eventInstance, eventNamespace){
 
+	}
+
+	function linkProxyModel(eventInstance, model, node){
+		Object.defineProperty(node, "data", {
+			enumerable: false,
+			configurable: true,
+			value: model
+		})
+
+		// now do the logic for updating and what not
+
+		node.childNodes.forEach(linkProxyModel.bind(this, eventInstance, model))
 	}
 
 	// because it's fun we're going to have JS hoist all of these through the return wheeeee
