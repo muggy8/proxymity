@@ -34,7 +34,7 @@ var proxymity = (function(saveEval){
 			return proxyArray(obj, eventInstance, eventNamespace)
 		}
 		else if (typeof obj === "object" && Object.getPrototypeOf(obj) === Object.prototype){
-			Object.setPrototypeOf(obj, proxyProto)
+			// Object.setPrototypeOf(obj, proxyProto)
 			var proxied = new Proxy(Object.create(proxyProto), {
 				get: function(target, property){
 					// when we get a property there's 1 of 3 cases,
@@ -60,6 +60,7 @@ var proxymity = (function(saveEval){
 					}
 					// we only overwrite and make a proxy of an object if it's a basic object. this is beause if they are storing instance of nonbasic objects (eg: date) it will have a prototype that's not the default object and as a result we dont want to proxyfy something that they probably will use in other menes and mess with it's internal functions
 					else if (typeof val === "object" && Object.getPrototypeOf(val) === Object.prototype){
+						//console.log("1", target[property])
 						target[property] = proxyObj(val, eventInstance, eventNamespace + property)
 					}
 					// this is our degenerate case where we just set the value on the data
@@ -70,12 +71,28 @@ var proxymity = (function(saveEval){
 					eventInstance.emit("set:" +  eventNamespace + property, {
 						value: target[property]
 					})
+					console.log("2", target, property, target[property])
 					return target[property]
+				},
+				deleteProperty: function(target, property){
+					if (property in target) {
+						eventInstance.emit("del:" +  eventNamespace + property)
+						console.log(target)
+					    return delete target[property]
+				    }
+					return false
 				}
 			})
 			// because we are converting an object into a proxy, we want to make sure that the object
-			Object.getOwnPropertyNames(obj).forEach(function(prop){
+			var oldProps = Object.getOwnPropertyNames(proxied)
+			var newProps = Object.getOwnPropertyNames(obj)
+			newProps.forEach(function(prop){
 				proxied[prop] = obj[prop]
+			})
+			oldProps.forEach(function(prop){
+				if (newProps.indexOf(prop) === -1){
+					delete proxied[prop]
+				}
 			})
 			return proxied
 		}
@@ -93,9 +110,16 @@ var proxymity = (function(saveEval){
 				return model
 			},
 			set: function(obj){
-				for(var key in obj){
+				var oldProps = Object.getOwnPropertyNames(model)
+				var newProps = Object.getOwnPropertyNames(obj)
+				newProps.forEach(function(key){
 					model[key] = obj[key]
-				}
+				})
+				oldProps.forEach(function(key){
+					if (newProps.indexOf(key) === -1){
+						delete model[key]
+					}
+				})
 			}
 		})
 
