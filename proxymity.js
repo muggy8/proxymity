@@ -159,10 +159,45 @@ var proxymity = (function(safeEval){
 					node.nodeName == "SELECT"
 				)
 			){
-				var syncSource = "value" // this is what the sub property will be called when we emit sync events but we default it to value
-		
 				// todo: listen for events and emit sync events
 				//...
+				var syncSource = "value" // this is what the sub property will be called when we emit sync events but we default it to value
+				var getListener, setListener, syncListener
+				delListener = function(payload, eventName){
+					eventName = eventName.replace("del:", "")
+					if (attr.value.indexOf(eventName) > -1){
+						node.value = null
+					}
+				}
+				if (elementToBind.type.match(/number/i)){
+					syncSource = "valueAsNumber"
+					getListener = function(payload){
+						if (!payload.hasOwnProperty("value")){
+							payload.value = elementToBind.valueAsNumber
+						}
+					}
+					setListener = function(payload){
+						if (payload.value !== node.valueAsNumber){
+							node.valueAsNumber = payload.value
+							payload.changed = true
+						}
+					}
+				}
+				
+				eventInstance.watch("get:" + attr.name, getListener)
+				eventInstance.watch("set:" + attr.name, setListener)
+				eventInstance.watch("sync:" + attr.name, syncListener)
+				eventInstance.watch("del:**", delListener)
+				
+				["change", "keyup", "propertychange", "valuechange", "input"].forEach(function(listenTo){
+            		elementToBind.addEventListener(listenTo, function(ev){ // keeps everything up to date includeing outside listeners
+            			// set the property in the proxy model
+          		      safeEval.call({
+							value: node[syncSource]
+						}, "model." + attr.name + " = this.value")
+          		      eventInstance.emit("render:" )
+    		        })
+   		     })
 			}
 			else{
 				// todo: check if the prop has a {{...}} in it. and If so, it should be watching the model for render events
