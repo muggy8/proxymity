@@ -71,7 +71,7 @@ var proxymity = (function(saveEval){
 					eventInstance.emit("set:" +  eventNamespace + property, {
 						value: target[property]
 					})
-					console.log("2", target, property, target[property])
+					// console.log("2", target, property, target[property])
 					return target[property]
 				},
 				deleteProperty: function(target, property){
@@ -124,11 +124,27 @@ var proxymity = (function(saveEval){
 		})
 
 		// now do the logic for updating and what not
+		arrayFrom(node.attributes).forEach(function(attr){
+			if (
+				attr.name === "name" && (
+					node.nodeName == "INPUT" ||
+					node.nodeName == "TEXTAREA" ||
+					node.nodeName == "SELECT"
+				)
+			){
+				var syncSource = "value" // this is what the sub property will be called when we emit sync events but we default it to value
+		
+				// todo: listen for events and emit sync events
+				//...
+			}
+			else{
+				// todo: check if the prop has a {{...}} in it. and If so, it should be watching the model for render events
+			}
+		})
 
 		node.childNodes.forEach(linkProxyModel.bind(this, eventInstance, model))
 	}
 
-	// because it's fun we're going to have JS hoist all of these through the return wheeeee
     function arrayFrom(arrayLike){ // incase we are running in a not so new browser without the Array.from function (and to save on compression size hehe :P)
 		return Array.prototype.slice.call(arrayLike || [])
 	}
@@ -175,7 +191,7 @@ var proxymity = (function(saveEval){
 
 	return function(template, dataModel = {}){
 		var events = new subscribable();
-		var proxyModel = proxyObj({}, events, "")
+		var proxyModel = proxyObj(dataModel, events, "")
 
 		if (typeof template === "string"){
 			var viewDoc = new DOMParser().parseFromString(template, "text/html")
@@ -190,9 +206,11 @@ var proxymity = (function(saveEval){
 		if (!view){
 			throw new Error("Template is not an HTML string or a HTML element");
 		}
-
+		
+		
+		
+		// view.data = dataModel
 		linkProxyModel(events, proxyModel, view)
-		view.data = dataModel
 		return view
 	}
 })(function(script){
