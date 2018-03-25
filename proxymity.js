@@ -4,7 +4,7 @@ var proxymity = (function(saveEval){
 		objectify: function(){
 			var raw = {}
 			var keys = Object.getOwnPropertyNames(this)
-			for(index in keys){ // we dont use foreach here cuz we want to perserve the "this" variable
+			for(var index in keys){ // we dont use foreach here cuz we want to perserve the "this" variable
 				var key = keys[index]
 				if (typeof this[key] === "object" && this[key].objectify){
 					raw[key] = this[key].objectify()
