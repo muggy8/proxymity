@@ -1,9 +1,11 @@
-proxymity = (function(saveEval){
+"use strict"
+var proxymity = (function(saveEval){
 	var proxyProto = {
 		objectify: function(){
 			var raw = {}
 			var keys = Object.getOwnPropertyNames(this)
-			for(key in keys){
+			for(index in keys){ // we dont use foreach here cuz we want to perserve the "this" variable
+				var key = keys[index]
 				if (typeof this[key] === "object" && this[key].objectify){
 					raw[key] = this[key].objectify()
 				}
@@ -12,6 +14,14 @@ proxymity = (function(saveEval){
 				}
 			}
 			return raw
+		},
+		stringify: function(){
+			var args = arrayFrom(arguments)
+			args.unshift(this.objectify())
+			return JSON.stringify.apply(JSON, args)
+		},
+		toString: function(){
+			return this.stringify()
 		}
 	}
 	return function(template, dataModel = {}){
@@ -28,6 +38,7 @@ proxymity = (function(saveEval){
 			return proxyArray(obj, eventInstance, eventNamespace)
 		}
 		else if (typeof obj === "object" && Object.getPrototypeOf(obj) === Object.prototype){
+			Object.setPrototypeOf(obj, proxyProto)
 			return new Proxy(obj, {
 				get: function(target, property){
 					// when we get a property there's 1 of 3 cases,
@@ -75,6 +86,11 @@ proxymity = (function(saveEval){
 
 	function proxyArray(arr, eventInstance, eventNamespace){
 
+	}
+
+	// because it's fun we're going to have JS hoist all of these through the return wheeeee
+    function arrayFrom(arrayLike){ // incase we are running in a not so new browser without the Array.from function (and to save on compression size hehe :P)
+		return Array.prototype.slice.call(arrayLike || [])
 	}
 
 	function subscribable(){
