@@ -26,14 +26,19 @@ var proxymity = (function(saveEval){
 	}
 	return function(template, dataModel = {}){
 		var events = new subscribable();
-		var proxyModel = proxyObj({}, events, "data")
+		var proxyModel = proxyObj({}, events, "")
 		for(var key in dataModel){
 			proxyModel[key] = dataModel[key]
 		}
+		events.watch("*:user.name")
 		return proxyModel
 	}
 
 	function proxyObj(obj, eventInstance, eventNamespace){
+		if (eventNamespace){
+			eventNamespace += "."
+		}
+
 		if (Array.isArray(obj)){
 			return proxyArray(obj, eventInstance, eventNamespace)
 		}
@@ -46,32 +51,32 @@ var proxymity = (function(saveEval){
 					// 2: it's a property that does but doesn't have an in dom model then we just return whatever is in our storage
 					// 3: it is a property that is in the dom model and we update our storage to keep things in sync and then return the value in the dom
 
-					var payload = eventInstance.emit("get:" +  eventNamespace + "." + property)
+					var payload = eventInstance.emit("get:" +  eventNamespace + property)
 					if (payload.hasOwnProperty("value")){
 						// always trust the DOM first cuz that could potentially update without us knowing and our cached value is bad
 						target[property] = payload.value
 					}
 					else if (!(property in target)) {
 						// final case, the property isn't in the dom or the cache so we create it
-						target[property] = proxyObj({}, eventInstance, eventNamespace + "." + property)
+						target[property] = proxyObj({}, eventInstance, eventNamespace + property)
 					}
 					return target[property]
 				},
 				set: function(target, property, val){
 					// set will let us set any object. the Get method above created a blank proxy object for any property and as a result, we will have to overwrite that property with a regular data here we have to. If the data value to set is an object we need to proxy that too just to be safe
 					if (Array.isArray(val)) {
-						target[property] = proxyArray(val, eventInstance, eventNamespace + "." + property)
+						target[property] = proxyArray(val, eventInstance, eventNamespace + property)
 					}
 					// we only overwrite and make a proxy of an object if it's a basic object. this is beause if they are storing instance of nonbasic objects (eg: date) it will have a prototype that's not the default object and as a result we dont want to proxyfy something that they probably will use in other menes and mess with it's internal functions
 					else if (typeof val === "object" && Object.getPrototypeOf(val) === Object.prototype){
-						target[property] = proxyObj(val, eventInstance, eventNamespace + "." + property)
+						target[property] = proxyObj(val, eventInstance, eventNamespace + property)
 					}
 					// this is our degenerate case where we just set the value on the data
 					else {
 						target[property] = val
 					}
 					// before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update
-					eventInstance.emit("set:" +  eventNamespace + "." + property, {
+					eventInstance.emit("set:" +  eventNamespace + property, {
 						value: target[property]
 					})
 					return target[property]
