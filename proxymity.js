@@ -61,7 +61,10 @@ var proxymity = (function(safeEval){
 						// final case, the property isn't in the dom or the cache so we create it
 						target[property] = proxyObj({}, eventInstance, eventNamespace + property)
 					}
-
+					if (typeof target[property] === 'undefined' || target[property] === null){
+						// do not ever return null or undefined. the only fulsy val we return is an empty string cuz asking for the truthy property of an empty string will not result in undefined (same with ints, floats and bools)
+						return ""
+					}
 					return target[property]
 				},
 				set: function(target, property, val){
@@ -70,7 +73,7 @@ var proxymity = (function(safeEval){
 						target[property] = proxyArray(val, eventInstance, eventNamespace + property)
 					}
 					// we only overwrite and make a proxy of an object if it's a basic object. this is beause if they are storing instance of nonbasic objects (eg: date) it will have a prototype that's not the default object and as a result we dont want to proxyfy something that they probably will use in other menes and mess with it's internal functions
-					else if (typeof val === "object" && Object.getPrototypeOf(val) === Object.prototype){
+					else if (val && typeof val === "object" && Object.getPrototypeOf(val) === Object.prototype){
 						//console.log("1", target[property])
 						target[property] = proxyObj(val, eventInstance, eventNamespace + property)
 					}
@@ -162,17 +165,28 @@ var proxymity = (function(safeEval){
 				// todo: listen for events and emit sync events
 				//...
 				var syncSource = "value" // this is what the sub property will be called when we emit sync events but we default it to value
-				var getListener = function(){}, setListener = function(){},
-				delListener = function(payload, eventName){
-					eventName = eventName.replace("del:", "")
-					if (attr.value.indexOf(eventName) > -1){
-						node.value = null
+				var
+					getListener = function(payload){
+						if (!payload.hasOwnProperty("value")){
+							payload.value = node.value
+						}
+					},
+					setListener = function(payload){
+						if (payload.value !== node.value){
+							node.value = payload.value
+							payload.changed = true
+						}
+					},
+					delListener = function(payload, eventName){
+						eventName = eventName.replace("del:", "")
+						if (attr.value.indexOf(eventName) > -1){
+							node.value = null
+						}
 					}
-				}
 				if (node.type.match(/number/i)){
 					syncSource = "valueAsNumber"
 					getListener = function(payload){
-						if (!payload.hasOwnProperty("value")){
+						if (typeof payload.value == "number" && !payload.hasOwnProperty("value")){
 							payload.value = node.valueAsNumber
 						}
 					}
@@ -183,21 +197,66 @@ var proxymity = (function(safeEval){
 						}
 					}
 				}
+				else if (node.type.match(/checkbox/i)){
+					syncSource = "checked"
+					getListener = function(payload){
+						if (!payload.hasOwnProperty("value")){
+							payload.value = node.checked
+						}
+					}
+					setListener = function(payload){
+						if (typeof payload.value == "boolean" && payload.value !== node.checked){
+							node.checked = payload.value
+							payload.changed = true
+						}
+					}
+				}
+				else if (node.type.match(/radio/i)){
+					getListener = function(payload){
+						if (!payload.hasOwnProperty("value") && node.checked){
+							payload.value = node.value
+						}
+					}
+					setListener = function(payload){
+						if (node.value === payload.value && node.checked !== true) {
+							node.checked = true
+							payload.changed = true
+						}
+						else if (node.value !== payload.value && node.checked === true){
+							node.checked = false
+							payload.changed = true
+						}
+					}
+				}
+				else if (node.type.match(/date/i)){
+					syncSource = "valueAsDate"
+					getListener = function(payload){
+						if (!payload.hasOwnProperty("value") && node.checked){
+							payload.value = node.valueAsDate
+						}
+					}
+					setListener = function(payload){
+						if (payload.value instanceof Date && payload.value.getTime() !== node.valueAsDate.getTime()) {
+							node.valueAsDate = payload.value
+							payload.changed = true
+						}
+					}
+				}
 
-				eventInstance.watch("get:" + attr.name, getListener)
-				eventInstance.watch("set:" + attr.name, setListener)
+				eventInstance.watch("get:" + attr.value, getListener)
+				eventInstance.watch("set:" + attr.value, setListener)
 				eventInstance.watch("del:**", delListener)
 
 				;["change", "keyup", "propertychange", "valuechange", "input"].forEach(function(listenTo){
             		node.addEventListener(listenTo, function(ev){ // keeps everything up to date includeing outside listeners
-            			// set the property in the proxy model
-          		      safeEval.call({
+            			// set the property in the proxy model using eval. this is because we dont want to re-implment a bunch of javascript functionalities to fake something if eval will do just as well
+          		    	safeEval.call({
 							value: node[syncSource],
 							model: model
-						}, "this.model." + attr.name + " = this.value")
-          		      eventInstance.emit("render:" )
+						}, "this.model." + attr.value + " = this.value")
+          		    	eventInstance.emit("render:" )
     		        })
-   		     })
+   		    	})
 			}
 			else{
 				// todo: check if the prop has a {{...}} in it. and If so, it should be watching the model for render events
