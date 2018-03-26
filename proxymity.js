@@ -143,6 +143,7 @@ var proxymity = (function(safeEval){
 						delete model[key]
 					}
 				})
+				eventInstance.emit("render:") // this is a bandaid fix
 				return model
 			}
 		})
