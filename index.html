@@ -28,11 +28,18 @@
 						<label><input name='user.class' type='radio' value="B"/> B</label>
 						<label><input name='user.class' type='radio' value="C"/> C</label>
 					</div><br>
-					<br>
-
 					<input name='user.name' type='text' placeholder='experimenting'/><br>
 
 					<pre>{{this.data.user.stringify(null, "    ")}}</pre>
+				
+					<!--repeat(this.data.options, function(item, index, whole){ 
+						// item returned is the new data obj
+						item.index = index
+						return item
+						// the item needs to re-inherit from the parent obj
+					})-->
+						<pre>{{this.data.stringify(null, "    ")}}</pre>
+					<!--endRepeat-->
 				</div>`, {
 					user: {
 						name: "Muggy8"
