@@ -53,7 +53,7 @@ var proxymity = (function(safeEval){
 					// 3: it is a property that is in the dom model and we update our storage to keep things in sync and then return the value in the dom
 
 					var payload = eventInstance.emit("get:" +  eventNamespace + property)
-					console.log("get:" + eventNamespace + property, payload)
+					// console.log("get:" + eventNamespace + property, payload)
 					if (payload.hasOwnProperty("value")){
 						// always trust the DOM first cuz that could potentially update without us knowing and our cached value is bad
 						target[property] = payload.value
@@ -212,7 +212,6 @@ var proxymity = (function(safeEval){
 						}
 					}
 					setListener = function(payload){
-						console.log(payload, node.checked, typeof payload.value == "boolean",  payload.value !== node.checked)
 						if (typeof payload.value == "boolean" && payload.value !== node.checked){
 							node.checked = payload.value
 							payload.changed = true
@@ -239,7 +238,7 @@ var proxymity = (function(safeEval){
 				else if (node.type.match(/date/i)){
 					syncSource = "valueAsDate"
 					getListener = function(payload){
-						console.log("getting a date value")
+						// console.log("getting a date value")
 						if (!payload.hasOwnProperty("value")){
 							payload.value = node.valueAsDate
 						}
@@ -295,7 +294,6 @@ var proxymity = (function(safeEval){
 			else {
 				name = "**"
 				callback = nameOrCallback
-				console.warn(nameOrCallback, callback)
 			}
 			var regexName = name
 				.replace(/([!@#$%^&*(){}[\]\<\>:'"`\-_,./\\+-])/g, "\\$1")
