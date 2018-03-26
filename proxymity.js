@@ -326,7 +326,7 @@ var proxymity = (function(safeEval){
 
 	return function(template, dataModel = {}){
 		var events = new subscribable();
-		var proxyModel = proxyObj(dataModel, events, "")
+		var proxyModel = proxyObj({}, events, "")
 
 		if (typeof template === "string"){
 			var viewDoc = new DOMParser().parseFromString(template, "text/html")
@@ -342,9 +342,9 @@ var proxymity = (function(safeEval){
 			throw new Error("Template is not an HTML string or a HTML element");
 		}
 
-		// view.data = dataModel
 		linkProxyModel(events, proxyModel, view)
-		events.emit("render:")
+		view.data = dataModel
+		// events.emit("render:")
 		return view
 	}
 })(function(script){
