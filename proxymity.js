@@ -85,10 +85,16 @@ var proxymity = (function(safeEval){
 					var payload = eventInstance.emit("set:" +  eventNamespace + property, {
 						value: target[property]
 					})
+					console.log(eventNamespace + property)
+					console.log(payload)
 					if (payload.changed){
 						eventInstance.emit("render:" +  eventNamespace + property)
 					}
 					// console.log("2", target, property, target[property])
+					if (typeof target[property] === 'undefined' || target[property] === null){
+						// we do the same thing as above here
+						return ""
+					}
 					return target[property]
 				},
 				deleteProperty: function(target, property){
@@ -205,6 +211,7 @@ var proxymity = (function(safeEval){
 						}
 					}
 					setListener = function(payload){
+						console.log(payload, node.checked, typeof payload.value == "boolean",  payload.value !== node.checked)
 						if (typeof payload.value == "boolean" && payload.value !== node.checked){
 							node.checked = payload.value
 							payload.changed = true
@@ -251,10 +258,9 @@ var proxymity = (function(safeEval){
             		node.addEventListener(listenTo, function(ev){ // keeps everything up to date includeing outside listeners
             			// set the property in the proxy model using eval. this is because we dont want to re-implment a bunch of javascript functionalities to fake something if eval will do just as well
           		    	safeEval.call({
-							value: node[syncSource],
-							model: model
-						}, "this.model." + attr.value + " = this.value")
-          		    	eventInstance.emit("render:" )
+							data: model
+						}, "this.data." + attr.value) // this will just initialize the variable and when we runt he get cycle, it'll update the model accordingly
+          		    	eventInstance.emit("render:" ) // this is needed cuz when setting the value the changed value isn't triggered because it's already changed in the dom before the data actually cahnges
     		        })
    		    	})
 			}
