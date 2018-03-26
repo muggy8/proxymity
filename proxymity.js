@@ -348,6 +348,10 @@ var proxymity = (function(safeEval){
 		// events.emit("render:")
 		return view
 	}
-})(function(script){
+})(function(script, contextVars = {}){
+	for(var key in contextVars){
+		eval("var " + key + " = contextVars['" + key + "']")
+	}
+	// delete arguments[1]
     return eval(script)
 })
