@@ -53,6 +53,7 @@ var proxymity = (function(safeEval){
 					// 3: it is a property that is in the dom model and we update our storage to keep things in sync and then return the value in the dom
 
 					var payload = eventInstance.emit("get:" +  eventNamespace + property)
+					console.log("get:" + eventNamespace + property, payload)
 					if (payload.hasOwnProperty("value")){
 						// always trust the DOM first cuz that could potentially update without us knowing and our cached value is bad
 						target[property] = payload.value
@@ -85,8 +86,8 @@ var proxymity = (function(safeEval){
 					var payload = eventInstance.emit("set:" +  eventNamespace + property, {
 						value: target[property]
 					})
-					console.log(eventNamespace + property)
-					console.log(payload)
+					// console.log(eventNamespace + property)
+					// console.log(payload)
 					if (payload.changed){
 						eventInstance.emit("render:" +  eventNamespace + property)
 					}
@@ -192,12 +193,12 @@ var proxymity = (function(safeEval){
 				if (node.type.match(/number/i)){
 					syncSource = "valueAsNumber"
 					getListener = function(payload){
-						if (typeof payload.value == "number" && !payload.hasOwnProperty("value")){
+						if (!payload.hasOwnProperty("value")){
 							payload.value = node.valueAsNumber
 						}
 					}
 					setListener = function(payload){
-						if (payload.value !== node.valueAsNumber){
+						if (typeof payload.value == "number" && payload.value !== node.valueAsNumber){
 							node.valueAsNumber = payload.value
 							payload.changed = true
 						}
@@ -220,7 +221,7 @@ var proxymity = (function(safeEval){
 				}
 				else if (node.type.match(/radio/i)){
 					getListener = function(payload){
-						if (!payload.hasOwnProperty("value") && node.checked){
+						if (!payload.hasOwnProperty("value")){
 							payload.value = node.value
 						}
 					}
@@ -238,7 +239,8 @@ var proxymity = (function(safeEval){
 				else if (node.type.match(/date/i)){
 					syncSource = "valueAsDate"
 					getListener = function(payload){
-						if (!payload.hasOwnProperty("value") && node.checked){
+						console.log("getting a date value")
+						if (!payload.hasOwnProperty("value")){
 							payload.value = node.valueAsDate
 						}
 					}
