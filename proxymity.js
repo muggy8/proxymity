@@ -17,11 +17,11 @@ var proxymity = (function(safeEval){
 		},
 		stringify: function(){
 			var args = arrayFrom(arguments)
-			args.unshift(this.objectify())
+			args.unshift(proxyProto.objectify())
 			return JSON.stringify.apply(JSON, args)
 		},
 		toString: function(){
-			return this.stringify()
+			return proxyProto.stringify()
 		}
 	}
 	Object.defineProperty(proxyProto, "truthy", {
@@ -31,7 +31,7 @@ var proxymity = (function(safeEval){
 	})
 	Object.defineProperty(proxyProto, "falsy", {
 		get: function(){
-			return !Object.getOwnPropertyNames(this).length
+			return !Object.getOwnPropertyNames(proxyProto).length
 		}
 	})
 
