@@ -88,9 +88,7 @@ var proxymity = (function(safeEval){
 					})
 					// console.log(eventNamespace + property)
 					// console.log(payload)
-					if (payload.changed){
-						eventInstance.emit("render:" +  eventNamespace + property)
-					}
+					eventInstance.emit("render:" +  eventNamespace + property)
 					// console.log("2", target, property, target[property])
 					if (typeof target[property] === 'undefined' || target[property] === null){
 						// we do the same thing as above here
