@@ -274,7 +274,12 @@ var proxymity = (function(safeEval){
 		// var workingOutput = originalText
 		return originalText.replace(/\{\{([\s\S]*?)\}\}/g, function(matched, expression){
 			// console.log(expression)
-			return safeEval.call(sourceEle, expression)
+			try {
+				return safeEval.call(sourceEle, expression)
+			}
+			catch(o3o){
+				console.warn("failed to render expression [" + expression + "]", o3o)
+			}
 			//workingOutput = workingOutput.replace(expression, safeEval.call(sourceEle, expression.replace(/^\{\{|\}\}$/g, "")))
 		})
 	}

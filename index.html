@@ -42,27 +42,37 @@
 					<!--endRepeat-->
 
 					<div>
-						<label>
+						<label class="block">
 							color: <input name="color" />
 						</label> 
-						<label>
+						<label class="block">
+							background-color: <input name="background" />
+						</label> 
+						<label class="block">
+							padding: <input name="padding" />
+						</label> 
+						<label class="block">
 							border: <input name="border" />
 						</label> 
-						<label>
+						<label class="block">
 							font-size: <input name="fontSize" />
 						</label> 
-						<label>
+						<label class="block">
 							font-family: <input name="fontFace" />
 						</label> 
 					</div>
 					<style>
-					pre {
-						background-color: {{this.data.background.toString() || 'initial'}};
-						color: {{this.data.color.falsy.toString() || 'initial'}};
-						border: {{this.data.border.falsy.toString() || 'initial'};
-						font-size: {{this.data.fontSize.falsy.toString() || 'inherit}};
-						font-family: {{this.data.fontFace.falsy.toString() || 'sans-serif'}}, sans-serif;
-					}						
+						pre {
+							background-color: {{this.data.background.toString() || 'initial'}};
+							color: {{this.data.color.toString() || 'initial'}};
+							padding: {{this.data.padding.toString() || 'initial'}};
+							border: {{this.data.border.toString() || 'initial'}};
+							font-size: {{this.data.fontSize.toString() || 'inherit'}};
+							font-family: {{this.data.fontFace.toString() || 'sans-serif'}}, sans-serif;
+						}				
+						.block {
+							display: block
+						}		
 					</style>
 				</div>`, {
 					user: {
