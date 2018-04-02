@@ -40,6 +40,30 @@
 					})-->
 						<pre>{{this.data.stringify(null, "    ")}}</pre>
 					<!--endRepeat-->
+
+					<div>
+						<label>
+							color: <input name="color" />
+						</label> 
+						<label>
+							border: <input name="border" />
+						</label> 
+						<label>
+							font-size: <input name="fontSize" />
+						</label> 
+						<label>
+							font-family: <input name="fontFace" />
+						</label> 
+					</div>
+					<style>
+					pre {
+						background-color: {{this.data.background.toString() || 'initial'}};
+						color: {{this.data.color.falsy.toString() || 'initial'}};
+						border: {{this.data.border.falsy.toString() || 'initial'};
+						font-size: {{this.data.fontSize.falsy.toString() || 'inherit}};
+						font-family: {{this.data.fontFace.falsy.toString() || 'sans-serif'}}, sans-serif;
+					}						
+					</style>
 				</div>`, {
 					user: {
 						name: "Muggy8"
