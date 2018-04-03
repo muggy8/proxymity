@@ -32,15 +32,17 @@
 
 					<pre>{{this.data.user.stringify(null, "    ")}}</pre>
 				
-					<!--repeat(this.data.options, function(item, index, whole){ 
-						// item returned is the new data obj
-						item.index = index
-						return item
-						// the item needs to re-inherit from the parent obj
+					<!--repeat
+							.on(this.data.prop)
+							.as("propName")
+							.with(function(item, index, whole){ 
+								// item returned is the new data obj
+								item.index = index
+								return item
+							})
 					})-->
 						<pre>{{this.data.stringify(null, "    ")}}</pre>
 					<!--endRepeat-->
-
 					<div>
 						<label class="block">
 							color: <input name="color" />

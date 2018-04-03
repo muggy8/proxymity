@@ -21,7 +21,10 @@ var proxymity = (function(safeEval){
 			return JSON.stringify.apply(JSON, args)
 		},
 		toString: function(){
-			return proxyProto.stringify()
+			if (Object.keys(this).length){
+				return proxyProto.stringify()
+			}
+			return ""
 		}
 	}
 	Object.defineProperty(proxyProto, "truthy", {
