@@ -1,0 +1,18 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
+		<!-- <script src="proxy-bind.js"></script> -->
+		<script src="proxymity-util.js"></script>
+		<script src="proxymity-obj.js"></script>
+    </head>
+    <body>
+        <script>
+            var events = new subscribable()
+
+            var proxiedObj1 = proxyObj({}, events)
+
+            console.log(proxiedObj1)
+        </script>
+    </body>
+</html>

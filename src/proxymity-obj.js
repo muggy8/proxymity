@@ -33,7 +33,7 @@ var proxyObjProto = {
 
 var proxyArrayProto = Object.create(Array.prototype, proxyObjProto)
 
-function proxyObj(obj, eventInstance, eventNamespace){
+function proxyObj(obj, eventInstance, eventNamespace = ""){
     if (eventNamespace){
         eventNamespace += "."
     }
