@@ -1,8 +1,13 @@
 "use strict"
 var proxymity = (function(safeEval){
-	var proxyProto = {
+	var proxyObjProto = {
 		objectify: function(){
-			var raw = {}
+			if (Array.isArray(this)){
+				var raw = []
+			}
+			else {
+				var raw = {}
+			}
 			var keys = Object.getOwnPropertyNames(this)
 			for(var index in keys){ // we dont use foreach here cuz we want to perserve the "this" variable
 				var key = keys[index]
@@ -17,38 +22,33 @@ var proxymity = (function(safeEval){
 		},
 		stringify: function(){
 			var args = arrayFrom(arguments)
-			args.unshift(proxyProto.objectify.call(this))
+			args.unshift(proxyObjProto.objectify.call(this))
 			return JSON.stringify.apply(JSON, args)
 		},
 		toString: function(){
 			if (Object.keys(this).length){
-				return proxyProto.stringify.call(this)
+				return proxyObjProto.stringify.call(this)
 			}
 			return ""
 		}
 	}
-	Object.defineProperty(proxyProto, "truthy", {
-		get: function(){
-			return !!Object.getOwnPropertyNames(this).length
-		}
-	})
-	Object.defineProperty(proxyProto, "falsy", {
-		get: function(){
-			return !Object.getOwnPropertyNames(proxyProto).length
-		}
-	})
+
+	var proxyArrayProto = Object.create(Array.prototype, proxyObjProto)
 
 	function proxyObj(obj, eventInstance, eventNamespace){
 		if (eventNamespace){
 			eventNamespace += "."
 		}
 
-		if (Array.isArray(obj)){
-			return proxyArray(obj, eventInstance, eventNamespace)
-		}
-		else if (typeof obj === "object" && Object.getPrototypeOf(obj) === Object.prototype){
+		var objProto = Object.getPrototypeOf(obj)
+		var objToProxy
+		if (typeof obj === "object" && (
+				(objProto === Object.prototype && (objToProxy = Object.create(proxyObjProto))) || 
+				(objProto === Array.prototype && (objToProxy = Object.setPrototypeOf([], proxyArrayProto)))
+			)
+		){
 			// Object.setPrototypeOf(obj, proxyProto)
-			var proxied = new Proxy(Object.create(proxyProto), {
+			var proxied = new Proxy(objToProxy, {
 				get: function(target, property){
 					// when we get a property there's 1 of 3 cases,
 					// 1: it's a property that doesn't exist, in that case, we create it as an object
@@ -120,10 +120,6 @@ var proxymity = (function(safeEval){
 			})
 			return proxied
 		}
-	}
-
-	function proxyArray(arr, eventInstance, eventNamespace){
-
 	}
 
 	function linkProxyModel(eventInstance, model, node, propertyToDefine = "data"){
