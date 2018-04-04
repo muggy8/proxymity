@@ -8,11 +8,15 @@
     </head>
     <body>
         <script>
-            var events = new subscribable()
-
-            var proxiedObj1 = proxyObj({}, events)
-
+            var events = {}
+            var proxiedObj1 = proxyObj({}, events.obj1 = new subscribable())
+            var proxiedArr1 = proxyObj([], events.arr1 = new subscribable())
             console.log(proxiedObj1)
+            console.log(proxiedArr1)
+
+            events.arr1.watch(function(payload, eventName){
+                console.log({payload: payload, name: eventName})
+            })
         </script>
     </body>
 </html>

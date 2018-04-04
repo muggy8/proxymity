@@ -31,7 +31,10 @@ var proxyObjProto = {
     }
 }
 
-var proxyArrayProto = Object.create(Array.prototype, proxyObjProto)
+var proxyArrayProto = Object.create(Array.prototype)
+proxyArrayProto.objectify = proxyObjProto.objectify
+proxyArrayProto.stringify = proxyObjProto.stringify
+proxyArrayProto.toString = proxyObjProto.toString
 
 function proxyObj(obj, eventInstance, eventNamespace = ""){
     if (eventNamespace){
