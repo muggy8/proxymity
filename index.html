@@ -1,7 +1,7 @@
 <html>
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-		<script src="https://unpkg.com/mobile-inspector"></script>
+		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
 		<script src="proxy-bind.js"></script>
 		<script src="proxymity.js"></script>
 	</head>
@@ -31,37 +31,33 @@
 					<input name='user.name' type='text' placeholder='experimenting'/><br>
 
 					<pre>{{this.data.user.stringify(null, "    ")}}</pre>
-				
-					<!--repeat
-							.on(this.data.prop)
-							.as("propName")
-							.with(function(item, index, whole){ 
-								// item returned is the new data obj
-								item.index = index
-								return item
-							})
+
+					<!--repeat.begin(this.data.prop, "propName", function(item, index, whole){
+						// item returned is the new data obj
+						item.index = index
+						return item
 					})-->
 						<pre>{{this.data.stringify(null, "    ")}}</pre>
-					<!--endRepeat-->
+					<!--repeat.end("propName")-->
 					<div>
 						<label class="block">
 							color: <input name="color" />
-						</label> 
+						</label>
 						<label class="block">
 							background-color: <input name="background" />
-						</label> 
+						</label>
 						<label class="block">
 							padding: <input name="padding" />
-						</label> 
+						</label>
 						<label class="block">
 							border: <input name="border" />
-						</label> 
+						</label>
 						<label class="block">
 							font-size: <input name="fontSize" />
-						</label> 
+						</label>
 						<label class="block">
 							font-family: <input name="fontFace" />
-						</label> 
+						</label>
 					</div>
 					<style>
 						pre {
@@ -71,10 +67,10 @@
 							border: {{this.data.border.toString() || 'initial'}};
 							font-size: {{this.data.fontSize.toString() || 'inherit'}};
 							font-family: {{this.data.fontFace.toString() || 'sans-serif'}}, sans-serif;
-						}				
+						}
 						.block {
 							display: block
-						}		
+						}
 					</style>
 				</div>`, {
 					user: {

@@ -17,12 +17,12 @@ var proxymity = (function(safeEval){
 		},
 		stringify: function(){
 			var args = arrayFrom(arguments)
-			args.unshift(proxyProto.objectify())
+			args.unshift(proxyProto.objectify.call(this))
 			return JSON.stringify.apply(JSON, args)
 		},
 		toString: function(){
 			if (Object.keys(this).length){
-				return proxyProto.stringify()
+				return proxyProto.stringify.call(this)
 			}
 			return ""
 		}
@@ -126,8 +126,8 @@ var proxymity = (function(safeEval){
 
 	}
 
-	function linkProxyModel(eventInstance, model, node){
-		Object.defineProperty(node, "data", {
+	function linkProxyModel(eventInstance, model, node, propertyToDefine = "data"){
+		Object.defineProperty(node, propertyToDefine, {
 			enumerable: false,
 			configurable: true,
 			get: function(){
@@ -149,7 +149,9 @@ var proxymity = (function(safeEval){
 			}
 		})
 
-		node.childNodes.forEach(linkProxyModel.bind(this, eventInstance, model))
+		node.childNodes.forEach(function(node){
+			linkProxyModel(eventInstance, model, node, propertyToDefine)
+		})
 
 		if (node instanceof Text){
 			var textVal = node.textContent
