@@ -52,6 +52,7 @@ function proxyObj(obj, eventInstance, eventNamespace = "", initialCall = true){
 			(objProto === Array.prototype && (objToProxy = Object.setPrototypeOf([], proxyArrayProto)))
 		)
 	){
+		// setting up helper functions and secret stuff
 		// Object.setPrototypeOf(obj, proxyProto)
 		var secretProps = {}
 		secretProps[secretSetNamespace] = function(val){
@@ -73,7 +74,14 @@ function proxyObj(obj, eventInstance, eventNamespace = "", initialCall = true){
 		secretProps[secretSetIsNotinitialCall] = function(){
 			initialCall = false
 		}
+		var runQueueIf = function(condition){
+			if (condition){
+				eventInstance.queue.run()
+			}
+			initialCall = true
+		}
 
+		// now we create the proxy that actually houses everything
 		var proxied = new Proxy(objToProxy, {
 			get: function(target, property){
 				// when we get a property there's 1 of 3 cases,
@@ -118,7 +126,7 @@ function proxyObj(obj, eventInstance, eventNamespace = "", initialCall = true){
 					targetSetNotInitial()
 				}
 
-				// console.log("setting", property)
+				console.log("setting", property)
 
 				if (val && typeof val === "object" && (valProto === Object.prototype || valProto === Array.prototype)){
 					//console.log("1", target[property])
@@ -142,12 +150,8 @@ function proxyObj(obj, eventInstance, eventNamespace = "", initialCall = true){
 				eventInstance.queue.add("render:" +  eventNamespace + property)
 				// console.log("2", target, property, target[property])
 
-				if (initialCall){
-					// console.log("running queue within set", eventNamespace + property)
-					eventInstance.queue.run()
-				}
+				runQueueIf(initialCall)
 
-				initialCall = true
 				if (typeof target[property] === 'undefined' || target[property] === null){
 					// we do the same thing as above here
 					return ""
@@ -156,15 +160,16 @@ function proxyObj(obj, eventInstance, eventNamespace = "", initialCall = true){
 			},
 			deleteProperty: function(target, property){
 				if (property in target) {
-					eventInstance.emit("del:" +  eventNamespace + property)
-					initialCall = true
+					eventInstance.queue.add("del:" +  eventNamespace + property)
+					runQueueIf(initialCall)
 					return delete target[property]
 				}
-				initialCall = true
+				runQueueIf(initialCall)
 				return false
 			}
 		})
 		
+		// this is for populating the initialized proxy with our input data if we have that
 		// This is code that we run just once when the object is initialized with some default data so we dont have to worry about deleting anything since proxied is empty when we get here. also, this ensures we always use the set method using set data method above. This means that rather than having double input we only have one path to get data into the proxy which means consistant performance and less werid bugs.
 		var initialCallInitialState = initialCall
 		Object.getOwnPropertyNames(obj).forEach(function(prop){
@@ -172,11 +177,7 @@ function proxyObj(obj, eventInstance, eventNamespace = "", initialCall = true){
 			proxied[prop] = obj[prop]
 			// console.log("setting prop", prop, setNotInitial)
 		})
-		if (initialCallInitialState){
-			// console.log("running queue within at final step", eventNamespace)
-			eventInstance.queue.run()
-			initialCall = true
-		}
+		runQueueIf(initialCallInitialState)
 		return proxied
 	}
 }
