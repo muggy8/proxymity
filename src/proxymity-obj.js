@@ -36,6 +36,9 @@ proxyArrayProto.objectify = proxyObjProto.objectify
 proxyArrayProto.stringify = proxyObjProto.stringify
 proxyArrayProto.toString = proxyObjProto.toString
 
+var secretSetNamespace = generateId(32)
+var secretGetNamespace = generateId(32)
+
 function proxyObj(obj, eventInstance, eventNamespace = ""){
     if (eventNamespace){
         eventNamespace += "."
@@ -49,22 +52,38 @@ function proxyObj(obj, eventInstance, eventNamespace = ""){
         )
     ){
         // Object.setPrototypeOf(obj, proxyProto)
+        var secretProps = {}
+        secretProps[secretSetNamespace] = function(val){
+			console.log("setting namespace")
+		} 
+		secretProps[secretGetNamespace] = function(){
+			return eventNamespace
+		}
         var proxied = new Proxy(objToProxy, {
             get: function(target, property){
                 // when we get a property there's 1 of 3 cases,
-                // 1: it's a property that doesn't exist, in that case, we create it as an object
-                // 2: it's a property that does but doesn't have an in dom model then we just return whatever is in our storage
-                // 3: it is a property that is in the dom model and we update our storage to keep things in sync and then return the value in the dom
+                // 1: it's a property that doesn't exist and isn't a secret property, in that case, we create it as an object
+                // 2: it's a property that doesn't exist but is a secret property. in that case, we return the secret prop
+                // 3: it's a property that does but doesn't have an in dom model then we just return whatever is in our storage
+                // 4: it is a property that is in the dom model and we update our storage to keep things in sync and then return the value in the dom
 
-                var payload = eventInstance.emit("get:" +  eventNamespace + property)
+				try { // try to do this but if we error whatever since this isn't required anyways because we can get weird requests we can't stringify
+                	var payload = eventInstance.emit("get:" +  eventNamespace + property)
+                }
+                catch (o3o){ // we don care lol
+                	var payload = {}
+                }
                 // console.log("get:" + eventNamespace + property, payload)
                 if (payload.hasOwnProperty("value")){
                     // always trust the DOM first cuz that could potentially update without us knowing and our cached value is bad
                     target[property] = payload.value
                 }
-                else if (!(property in target)) {
-                    // final case, the property isn't in the dom or the cache so we create it
+                else if (!(property in target) && !(property in secretProps)) {
+                    // the case, the property isn't in the dom or the cache or the secret props so we have to create it
                     target[property] = proxyObj({}, eventInstance, eventNamespace + property)
+                }
+                else if (!(property in target) && (property in secretProps)){
+                	return secretProps[property]
                 }
                 if (typeof target[property] === 'undefined' || target[property] === null){
                     // do not ever return null or undefined. the only fulsy val we return is an empty string cuz asking for the truthy property of an empty string will not result in undefined (same with ints, floats and bools)
@@ -73,12 +92,9 @@ function proxyObj(obj, eventInstance, eventNamespace = ""){
                 return target[property]
             },
             set: function(target, property, val){
-                // set will let us set any object. the Get method above created a blank proxy object for any property and as a result, we will have to overwrite that property with a regular data here we have to. If the data value to set is an object we need to proxy that too just to be safe
-                if (Array.isArray(val)) {
-                    target[property] = proxyArray(val, eventInstance, eventNamespace + property)
-                }
+            	var valProto = Object.getPrototypeOf(val) 
                 // we only overwrite and make a proxy of an object if it's a basic object. this is beause if they are storing instance of nonbasic objects (eg: date) it will have a prototype that's not the default object and as a result we dont want to proxyfy something that they probably will use in other menes and mess with it's internal functions
-                else if (val && typeof val === "object" && Object.getPrototypeOf(val) === Object.prototype){
+                if (val && typeof val === "object" && (valProto === Object.prototype || valProto === Array.prototype)){
                     //console.log("1", target[property])
                     target[property] = proxyObj(val, eventInstance, eventNamespace + property)
                 }

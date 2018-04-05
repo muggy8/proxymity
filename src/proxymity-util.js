@@ -3,6 +3,33 @@ function arrayFrom(arrayLike){ // incase we are running in a not so new browser 
     return Array.prototype.slice.call(arrayLike || [])
 }
 
+function randomInt(start, stop){
+    var actualStart, actualEnd, startZeroEnd
+    if (typeof stop === "undefined" || start > stop){
+        actualEnd = start
+        actualStart = stop || 0
+    }
+    else {
+        actualStart = start
+        actualEnd = stop
+    }
+
+    startZeroEnd = actualEnd - actualStart
+    var random = Math.round(-0.4999 + Math.random() * (startZeroEnd + 0.9998))
+    return random + actualStart
+}
+var allowedCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
+function generateId(length = 16){
+    var id = allowedCharacters[randomInt(51)]
+    for(var i = 1; i < length; i++){
+        id += allowedCharacters[randomInt(62)]
+    }
+    return id
+}
+
+var secretSetNamespace = generateId(32)
+var secretGetNamespace = generateId(32)
+
 function subscribable(){
     var listenerLibrary = {}
 
