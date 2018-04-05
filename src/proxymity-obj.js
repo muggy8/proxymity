@@ -117,7 +117,7 @@ function proxyObj(obj, eventInstance, eventNamespace = "", initialCall = true){
 					targetSetNotInitial()
 				}
 
-				console.log("setting", property)
+				// console.log("setting", property)
 
 				if (val && typeof val === "object" && (valProto === Object.prototype || valProto === Array.prototype)){
 					//console.log("1", target[property])
@@ -142,7 +142,7 @@ function proxyObj(obj, eventInstance, eventNamespace = "", initialCall = true){
 				// console.log("2", target, property, target[property])
 
 				if (initialCall){
-					console.log("running queue within set", eventNamespace + property)
+					// console.log("running queue within set", eventNamespace + property)
 					eventInstance.queue.run()
 				}
 
@@ -182,7 +182,7 @@ function proxyObj(obj, eventInstance, eventNamespace = "", initialCall = true){
 			}
 		})
 		if (initialCallInitialState){
-			console.log("running queue within at final step", eventNamespace)
+			// console.log("running queue within at final step", eventNamespace)
 			eventInstance.queue.run()
 		}
 		return proxied
