@@ -47,17 +47,27 @@ function proxyObj(obj, eventInstance, eventNamespace = ""){
     var objProto = Object.getPrototypeOf(obj)
     var objToProxy
     if (typeof obj === "object" && (
-            (objProto === Object.prototype && (objToProxy = Object.create(proxyObjProto))) || 
+            (objProto === Object.prototype && (objToProxy = Object.create(proxyObjProto))) ||
             (objProto === Array.prototype && (objToProxy = Object.setPrototypeOf([], proxyArrayProto)))
         )
     ){
         // Object.setPrototypeOf(obj, proxyProto)
         var secretProps = {}
         secretProps[secretSetNamespace] = function(val){
-			console.log("setting namespace")
-		} 
+			if (val){
+		        val += "."
+		    }
+			eventNamespace = val
+
+			Object.getOwnPropertyNames(proxied).forEach(function(prop){
+				var setPropNameSpace = proxied[prop][secretSetNamespace]
+				if (typeof setPropNameSpace == "function"){
+					setPropNameSpace(eventNamespace + prop)
+				}
+			})
+		}
 		secretProps[secretGetNamespace] = function(){
-			return eventNamespace
+			return eventNamespace.substring(0, eventNamespace.length -1)
 		}
         var proxied = new Proxy(objToProxy, {
             get: function(target, property){
@@ -92,7 +102,7 @@ function proxyObj(obj, eventInstance, eventNamespace = ""){
                 return target[property]
             },
             set: function(target, property, val){
-            	var valProto = Object.getPrototypeOf(val) 
+            	var valProto = Object.getPrototypeOf(val)
                 // we only overwrite and make a proxy of an object if it's a basic object. this is beause if they are storing instance of nonbasic objects (eg: date) it will have a prototype that's not the default object and as a result we dont want to proxyfy something that they probably will use in other menes and mess with it's internal functions
                 if (val && typeof val === "object" && (valProto === Object.prototype || valProto === Array.prototype)){
                     //console.log("1", target[property])
@@ -101,6 +111,11 @@ function proxyObj(obj, eventInstance, eventNamespace = ""){
                 // this is our degenerate case where we just set the value on the data
                 else {
                     target[property] = val
+
+					var setPropNameSpace = target[property][secretSetNamespace]
+					if (typeof setPropNameSpace == "function"){
+						setPropNameSpace(eventNamespace + property)
+					}
                 }
                 // before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update
                 var payload = eventInstance.emit("set:" +  eventNamespace + property, {
