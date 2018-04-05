@@ -165,7 +165,7 @@ function proxyObj(obj, eventInstance, eventNamespace = "", initialCall = true){
 			}
 		})
 		
-		// This is code that we run just once when the object is initialized with some default data so we dont have to worry about deleting anything since proxied is empty when we get here. also, this ensures we always use the set method to set data rather than having double input we only have one path to get data into the proxy.
+		// This is code that we run just once when the object is initialized with some default data so we dont have to worry about deleting anything since proxied is empty when we get here. also, this ensures we always use the set method using set data method above. This means that rather than having double input we only have one path to get data into the proxy which means consistant performance and less werid bugs.
 		var initialCallInitialState = initialCall
 		Object.getOwnPropertyNames(obj).forEach(function(prop){
 			initialCall = false
