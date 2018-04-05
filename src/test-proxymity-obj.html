@@ -17,6 +17,68 @@
             events.arr1.watch(function(payload, eventName){
                 console.log({payload: payload, name: eventName})
             })
+
+			console.warn("Setting up the array")
+
+			// initialize the test array
+			for(var i = 0; i < 10; i++){
+				proxiedArr1.push(randomObj())
+			}
+
+			try{
+				console.warn("TEST 1: sorting the array")
+				proxiedArr1.sort(function(a, b){
+					if (a.int1 > b.int1){
+						return 1
+					}
+					if (a.int1 < b.int1){
+						return -1
+					}
+					return 0
+				})
+
+				console.warn("TEST 1: evaluating if all array items is different")
+				var existingStr = []
+				var borkenLoop = false
+				checkNotEqual: for(var i = 0; i < proxiedArr1.length; i++){
+					var item = proxiedArr1[i]
+					var itemString = item.stringify()
+					if (existingStr.indexOf(itemString) > -1){
+						console.error("TEST 1: failed item duplicate found", existingStr, itemString)
+						borkenLoop = true
+						break checkNotEqual
+					}
+					else if (i && item.int1 < proxiedArr1[i - 1].int1){
+						console.error("TEST 1: failed all items are not sorted")
+						borkenLoop = true
+						break checkNotEqual
+					}
+					else {
+						existingStr.push(itemString)
+					}
+				}
+
+				if (!borkenLoop){
+					console.warn("TEST 1: passed")
+				}
+			}
+			catch(o3o){
+				console.warn(o3o)
+			}
+
+			function randomObj(hasArr = true){
+				var obj = {}
+				if (hasArr){
+					obj.arr = []
+					obj.arr.push(randomObj(!hasArr))
+					obj.arr.push(randomObj(!hasArr))
+				}
+				obj.str1 = generateId()
+				obj.str2 = generateId()
+				obj.int1 = randomInt(100)
+				obj.int2 = randomInt(100)
+				return obj
+			}
         </script>
     </body>
 </html>
