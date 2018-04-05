@@ -38,9 +38,8 @@ proxyArrayProto.toString = proxyObjProto.toString
 
 var secretSetNamespace = generateId(32)
 var secretGetNamespace = generateId(32)
-var secretGetEventGroup = generateId(32)
 
-function proxyObj(obj, eventInstance, eventNamespace = ""){
+function proxyObj(obj, eventInstance, eventNamespace = "", eventQueue = []){
 	if (eventNamespace){
 		eventNamespace += "."
 	}
@@ -91,7 +90,7 @@ function proxyObj(obj, eventInstance, eventNamespace = ""){
 				}
 				else if (!(property in target) && !(property in secretProps)) {
 					// the case, the property isn't in the dom or the cache or the secret props so we have to create it
-					target[property] = proxyObj({}, eventInstance, eventNamespace + property)
+					target[property] = proxyObj({}, eventInstance, eventNamespace + property, eventQueue)
 				}
 				else if (!(property in target) && (property in secretProps)){
 					return secretProps[property]
@@ -107,7 +106,7 @@ function proxyObj(obj, eventInstance, eventNamespace = ""){
 				// we only overwrite and make a proxy of an object if it's a basic object. this is beause if they are storing instance of nonbasic objects (eg: date) it will have a prototype that's not the default object and as a result we dont want to proxyfy something that they probably will use in other menes and mess with it's internal functions
 				if (val && typeof val === "object" && (valProto === Object.prototype || valProto === Array.prototype)){
 					//console.log("1", target[property])
-					target[property] = proxyObj(val, eventInstance, eventNamespace + property)
+					target[property] = proxyObj(val, eventInstance, eventNamespace + property, eventQueue)
 				}
 				// this is our degenerate case where we just set the value on the data
 				else {
