@@ -32,9 +32,9 @@ var proxyObjProto = {
 }
 
 var proxyArrayProto = Object.create(Array.prototype)
-proxyArrayProto.objectify = proxyObjProto.objectify
-proxyArrayProto.stringify = proxyObjProto.stringify
-proxyArrayProto.toString = proxyObjProto.toString
+Object.getOwnPropertyNames(proxyObjProto).forEach(function(prop){
+	proxyArrayProto[prop] = proxyObjProto[prop]
+})
 
 var secretSetNamespace = generateId(32)
 var secretGetNamespace = generateId(32)
@@ -73,6 +73,7 @@ function proxyObj(obj, eventInstance, eventNamespace = "", initialCall = true){
 		secretProps[secretSetIsNotinitialCall] = function(){
 			initialCall = false
 		}
+
 		var proxied = new Proxy(objToProxy, {
 			get: function(target, property){
 				// when we get a property there's 1 of 3 cases,
@@ -163,27 +164,18 @@ function proxyObj(obj, eventInstance, eventNamespace = "", initialCall = true){
 				return false
 			}
 		})
-		// because we are converting an object into a proxy, we want to make sure that the object
-		var oldProps = Object.getOwnPropertyNames(proxied)
-		var newProps = Object.getOwnPropertyNames(obj)
+		
+		// This is code that we run just once when the object is initialized with some default data so we dont have to worry about deleting anything since proxied is empty when we get here. also, this ensures we always use the set method to set data rather than having double input we only have one path to get data into the proxy.
 		var initialCallInitialState = initialCall
-		newProps.forEach(function(prop){
+		Object.getOwnPropertyNames(obj).forEach(function(prop){
 			initialCall = false
-			if (typeof setNotInitial == "function"){
-				// console.log("preventing stuff auto render on", prop)
-				setNotInitial()
-			}
 			proxied[prop] = obj[prop]
 			// console.log("setting prop", prop, setNotInitial)
-		})
-		oldProps.forEach(function(prop){
-			if (newProps.indexOf(prop) === -1){
-				delete proxied[prop]
-			}
 		})
 		if (initialCallInitialState){
 			// console.log("running queue within at final step", eventNamespace)
 			eventInstance.queue.run()
+			initialCall = true
 		}
 		return proxied
 	}
