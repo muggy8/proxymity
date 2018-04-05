@@ -134,14 +134,14 @@ var proxymity = (function(safeEval){
 				eventInstance.watch("del:**", delListener)
 
 				;["change", "keyup", "propertychange", "valuechange", "input"].forEach(function(listenTo){
-            		node.addEventListener(listenTo, function(ev){ // keeps everything up to date includeing outside listeners
-            			// set the property in the proxy model using eval. this is because we dont want to re-implment a bunch of javascript functionalities to fake something if eval will do just as well
-          		    	safeEval.call({
+					node.addEventListener(listenTo, function(ev){ // keeps everything up to date includeing outside listeners
+						// set the property in the proxy model using eval. this is because we dont want to re-implment a bunch of javascript functionalities to fake something if eval will do just as well
+		  				safeEval.call({
 							data: model
 						}, "this.data." + attr.value) // this will just initialize the variable and when we runt he get cycle, it'll update the model accordingly
-          		    	eventInstance.emit("render:" ) // this is needed cuz when setting the value the changed value isn't triggered because it's already changed in the dom before the data actually cahnges
-    		        })
-   		    	})
+		  				eventInstance.emit("render:" ) // this is needed cuz when setting the value the changed value isn't triggered because it's already changed in the dom before the data actually cahnges
+					})
+   				})
 			}
 			else{
 				// todo: check if the prop has a {{...}} in it. and If so, it should be watching the model for render events
@@ -191,5 +191,5 @@ var proxymity = (function(safeEval){
 		eval("var " + key + " = contextVars['" + key + "']")
 	}
 	// delete arguments[1]
-    return eval(script)
+	return eval(script)
 })

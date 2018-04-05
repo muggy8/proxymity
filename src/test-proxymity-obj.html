@@ -1,22 +1,22 @@
 <html>
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-		<script src="https://unpkg.com/mobile-inspector"></script>
+		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
 		<!-- <script src="proxy-bind.js"></script> -->
 		<script src="proxymity-util.js"></script>
 		<script src="proxymity-obj.js"></script>
-    </head>
-    <body>
-        <script>
-            var events = {}
-            var proxiedObj1 = proxyObj({}, events.obj1 = new subscribable())
-            var proxiedArr1 = proxyObj([], events.arr1 = new subscribable())
-            console.log(proxiedObj1)
-            console.log(proxiedArr1)
+	</head>
+	<body>
+		<script>
+			var events = {}
+			var proxiedObj1 = proxyObj({}, events.obj1 = new subscribable())
+			var proxiedArr1 = proxyObj([], events.arr1 = new subscribable())
+			console.log(proxiedObj1)
+			console.log(proxiedArr1)
 
-            events.arr1.watch(function(payload, eventName){
-                console.log({payload: payload, name: eventName})
-            })
+			events.arr1.watch(function(payload, eventName){
+				console.log({payload: payload, name: eventName})
+			})
 
 			console.warn("Setting up the array")
 
@@ -90,6 +90,6 @@
 				obj.int2 = randomInt(100)
 				return obj
 			}
-        </script>
-    </body>
+		</script>
+	</body>
 </html>
