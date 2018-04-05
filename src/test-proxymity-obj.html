@@ -53,8 +53,19 @@
 						borkenLoop = true
 						break checkNotEqual
 					}
+					else if (item[secretGetNamespace]() !== i.toString()){
+						console.error("TEST 1: failed item namespace didn't update")
+						borkenLoop = true
+						break checkNotEqual
+					}
+					else if (item.arr[0][secretGetNamespace]() !== `${i}.arr.0`){
+						console.error("TEST 1: failed item children namespace didn't update", item.arr[0][secretGetNamespace](), `${i}.arr.0`)
+						borkenLoop = true
+						break checkNotEqual
+					}
 					else {
 						existingStr.push(itemString)
+						//console.log(item[secretGetNamespace]())
 					}
 				}
 
