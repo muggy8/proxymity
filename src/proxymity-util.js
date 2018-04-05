@@ -33,7 +33,7 @@ var secretGetNamespace = generateId(32)
 function subscribable(){
 	var listenerLibrary = {}
 
-	this.watch = function(nameOrCallback, callback){
+	var watch = this.watch = function(nameOrCallback, callback){
 		if (callback){
 			var name = nameOrCallback
 		}
@@ -56,7 +56,7 @@ function subscribable(){
 		}
 	}
 
-	this.emit = function(name, payload = {}){
+	var emit = this.emit = function(name, payload = {}){
 		// join the callback name and the wiledcard listeners (if they exist) and call the callbacks of both listeners
 		for (var key in listenerLibrary){
 			var set = listenerLibrary[key]
@@ -68,4 +68,22 @@ function subscribable(){
 		}
 		return payload
 	}
+
+	var queue = this.queue = Object.setPrototypeOf(
+		[],
+		Object.setPrototypeOf(
+			{
+				add: function(name, payload = {}){
+					queue.push({
+						name: name,
+						payload: payload
+					})
+				},
+				run: function(){
+					for(var current; current = queue.shift(); emit(current.name, current.payload));
+				}
+			},
+			Array.prototype
+		)
+	)
 }

@@ -38,8 +38,9 @@ proxyArrayProto.toString = proxyObjProto.toString
 
 var secretSetNamespace = generateId(32)
 var secretGetNamespace = generateId(32)
+var secretSetIsNotinitialCall = generateId(32)
 
-function proxyObj(obj, eventInstance, eventNamespace = "", eventQueue = []){
+function proxyObj(obj, eventInstance, eventNamespace = "", initialCall = true){
 	if (eventNamespace){
 		eventNamespace += "."
 	}
@@ -69,6 +70,9 @@ function proxyObj(obj, eventInstance, eventNamespace = "", eventQueue = []){
 		secretProps[secretGetNamespace] = function(){
 			return eventNamespace.substring(0, eventNamespace.length -1)
 		}
+		secretProps[secretSetIsNotinitialCall] = function(){
+			initialCall = false
+		}
 		var proxied = new Proxy(objToProxy, {
 			get: function(target, property){
 				// when we get a property there's 1 of 3 cases,
@@ -90,7 +94,7 @@ function proxyObj(obj, eventInstance, eventNamespace = "", eventQueue = []){
 				}
 				else if (!(property in target) && !(property in secretProps)) {
 					// the case, the property isn't in the dom or the cache or the secret props so we have to create it
-					target[property] = proxyObj({}, eventInstance, eventNamespace + property, eventQueue)
+					target[property] = proxyObj({}, eventInstance, eventNamespace + property)
 				}
 				else if (!(property in target) && (property in secretProps)){
 					return secretProps[property]
@@ -104,9 +108,20 @@ function proxyObj(obj, eventInstance, eventNamespace = "", eventQueue = []){
 			set: function(target, property, val){
 				var valProto = Object.getPrototypeOf(val)
 				// we only overwrite and make a proxy of an object if it's a basic object. this is beause if they are storing instance of nonbasic objects (eg: date) it will have a prototype that's not the default object and as a result we dont want to proxyfy something that they probably will use in other menes and mess with it's internal functions
+				var valSetNotInitial = val[secretSetIsNotinitialCall]
+				if (typeof valSetNotInitial == "function"){
+					valSetNotInitial()
+				}
+				var targetSetNotInitial = target[property] && target[property][secretSetIsNotinitialCall]
+				if (typeof targetSetNotInitial == "function"){
+					targetSetNotInitial()
+				}
+
+				console.log("setting", property)
+
 				if (val && typeof val === "object" && (valProto === Object.prototype || valProto === Array.prototype)){
 					//console.log("1", target[property])
-					target[property] = proxyObj(val, eventInstance, eventNamespace + property, eventQueue)
+					target[property] = proxyObj(val, eventInstance, eventNamespace + property, false)
 				}
 				// this is our degenerate case where we just set the value on the data
 				else {
@@ -117,14 +132,21 @@ function proxyObj(obj, eventInstance, eventNamespace = "", eventQueue = []){
 						setPropNameSpace(eventNamespace + property)
 					}
 				}
-				// before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update
-				var payload = eventInstance.emit("set:" +  eventNamespace + property, {
+				// before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update. However, because of the nature of updating dom is very slow, we want to limit all set events to fire once and only once each primary call
+				var payload = eventInstance.queue.add("set:" +  eventNamespace + property, {
 					value: target[property]
 				})
 				// console.log(eventNamespace + property)
 				// console.log(payload)
-				eventInstance.emit("render:" +  eventNamespace + property)
+				eventInstance.queue.add("render:" +  eventNamespace + property)
 				// console.log("2", target, property, target[property])
+
+				if (initialCall){
+					console.log("running queue within set", eventNamespace + property)
+					eventInstance.queue.run()
+				}
+
+				initialCall = true
 				if (typeof target[property] === 'undefined' || target[property] === null){
 					// we do the same thing as above here
 					return ""
@@ -134,22 +156,35 @@ function proxyObj(obj, eventInstance, eventNamespace = "", eventQueue = []){
 			deleteProperty: function(target, property){
 				if (property in target) {
 					eventInstance.emit("del:" +  eventNamespace + property)
+					initialCall = true
 					return delete target[property]
 				}
+				initialCall = true
 				return false
 			}
 		})
 		// because we are converting an object into a proxy, we want to make sure that the object
 		var oldProps = Object.getOwnPropertyNames(proxied)
 		var newProps = Object.getOwnPropertyNames(obj)
+		var initialCallInitialState = initialCall
 		newProps.forEach(function(prop){
+			initialCall = false
+			if (typeof setNotInitial == "function"){
+				// console.log("preventing stuff auto render on", prop)
+				setNotInitial()
+			}
 			proxied[prop] = obj[prop]
+			// console.log("setting prop", prop, setNotInitial)
 		})
 		oldProps.forEach(function(prop){
 			if (newProps.indexOf(prop) === -1){
 				delete proxied[prop]
 			}
 		})
+		if (initialCallInitialState){
+			console.log("running queue within at final step", eventNamespace)
+			eventInstance.queue.run()
+		}
 		return proxied
 	}
 }

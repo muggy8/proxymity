@@ -14,8 +14,14 @@
 			console.log(proxiedObj1)
 			console.log(proxiedArr1)
 
-			events.arr1.watch(function(payload, eventName){
+			events.arr1.watch("get:**", function(payload, eventName){
 				console.log({payload: payload, name: eventName})
+			})
+			events.arr1.watch("set:**", function(payload, eventName){
+				console.warn({payload: payload, name: eventName})
+			})
+			events.arr1.watch("render:**", function(payload, eventName){
+				console.warn({payload: payload, name: eventName})
 			})
 
 			console.warn("Setting up the array")
