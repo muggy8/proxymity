@@ -37,23 +37,10 @@ function subscribable(){
 		return payload
 	}
 
-	var queue = this.queue = Object.setPrototypeOf(
-		[],
-		Object.setPrototypeOf(
-			{
-				add: function(name, payload = {}){
-					queue.push({
-						name: name,
-						payload: payload
-					})
-				},
-				run: function(){
-					for(var current; current = queue.shift(); emit(current.name, current.payload));
-				}
-			},
-			Array.prototype
-		)
-	)
-
-	var async = this.async = queue.add.bind(queue) // shortcut for adding async events
+	var async = this.async = function(){
+		args = arrayFrom(arguments)
+		onNextEventCycle(function(){
+			emit.apply(null, args)
+		})
+	}
 }
