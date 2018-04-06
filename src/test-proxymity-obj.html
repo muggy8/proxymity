@@ -1,7 +1,7 @@
 <html>
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
+		<script src="https://unpkg.com/mobile-inspector"></script>
 		<!-- <script src="proxy-bind.js"></script> -->
 		<script src="proxymity-util.js"></script>
 		<script src="proxymity-obj.js"></script>
@@ -56,16 +56,6 @@
 					}
 					else if (i && item.int1 < proxiedArr1[i - 1].int1){
 						console.error("TEST 1: failed all items are not sorted")
-						borkenLoop = true
-						break checkNotEqual
-					}
-					else if (item[secretGetNamespace]() !== i.toString()){
-						console.error("TEST 1: failed item namespace didn't update")
-						borkenLoop = true
-						break checkNotEqual
-					}
-					else if (item.arr[0][secretGetNamespace]() !== `${i}.arr.0`){
-						console.error("TEST 1: failed item children namespace didn't update", item.arr[0][secretGetNamespace](), `${i}.arr.0`)
 						borkenLoop = true
 						break checkNotEqual
 					}
