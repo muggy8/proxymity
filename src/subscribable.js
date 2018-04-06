@@ -54,4 +54,6 @@ function subscribable(){
 			Array.prototype
 		)
 	)
+
+	var async = this.async = queue.add.bind(queue) // shortcut for adding async events
 }
