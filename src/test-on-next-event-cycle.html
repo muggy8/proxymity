@@ -7,10 +7,20 @@
 	</head>
 	<body>
 		<script>
+            var test1 = []
             onNextEventCycle(function(){
-                console.log("from within callback 1")
+                test1.push(2)
             })
-            console.log("from the original stack")
+            test1.push(1)
+            
+            setTimeout(function(){
+                if (test1[0] === 1 && test1[1] === 2 && test1.length === 2){
+                    console.warn("TEST 1: Passed")
+                }
+                else {
+                    console.error("TEST 1: Failed, array is not [1, 2]")
+                }
+            }, 200)
 		</script>
 	</body>
 </html>
