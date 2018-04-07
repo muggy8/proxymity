@@ -98,6 +98,10 @@ function proxyObj(obj, eventInstance){
 				}
 				
 				// todo: before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update. However, because of the nature of updating dom is very slow, we want to limit all set events to fire once and only once each primary call
+				console.log("set", property)
+				eventInstance.async("set:" + secretProps[property], {
+					value: target[property]
+				})
 				
 				if (typeof target[property] === 'undefined' || target[property] === null){
 					// we do the same thing as above here
@@ -107,6 +111,7 @@ function proxyObj(obj, eventInstance){
 			},
 			deleteProperty: function(target, property){
 				if (property in target) {
+					delete secretProps[property] // we know this key MUST exist because we made sure of it when we are setting keys and the only way to set properties is through the set method above
 					return delete target[property]
 				}
 				return false
