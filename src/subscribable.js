@@ -38,7 +38,7 @@ function subscribable(){
 	}
 
 	var async = this.async = function(){
-		args = arrayFrom(arguments)
+		var args = arrayFrom(arguments)
 		onNextEventCycle(function(){
 			emit.apply(null, args)
 		})
