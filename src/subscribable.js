@@ -57,13 +57,13 @@ function subscribable(){
 				nextEventSet = false
 				queue = {}
 
-				emit("asyncstart")
+				emit("asyncstart", workingQueue)
 
 				for(var name in workingQueue){
 					emit(name, workingQueue[name])
 				}
 				
-				emit("asyncend")
+				emit("asyncend", workingQueue)
 			})
 			nextEventSet = true
 		}
