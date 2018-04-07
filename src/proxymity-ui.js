@@ -61,6 +61,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 	if (nodeOrNodeListOrHTML instanceof Node){
 		var node = nodeOrNodeListOrHTML
 
+		// step 1: define the data (or any other property for that matter) onto everything
 		Object.defineProperty(node, propertyToDefine, {
 			get: function(){
 				return model
@@ -79,12 +80,18 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			}
 		})
 
+		// step 2: set up continious rendering for everything that's a text element
 		if (node instanceof CharacterData){
 			continiousRender(node, eventInstance)
 		}
 		else {
 			proxyUI(node.childNodes, model, eventInstance, propertyToDefine)
 		}
+
+		// step 3: set up continious rendering for element properties but also link the names of items to the model
+		arrayFrom(node.attributes).forEach(function(attr){
+			continiousRender(attr)
+		})
 
 		return node
 	}
