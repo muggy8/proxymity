@@ -60,6 +60,8 @@ function subscribable(){
 				for(var name in workingQueue){
 					emit(name, workingQueue[name])
 				}
+				
+				emit("asyncend")
 			})
 			nextEventSet = true
 		}
