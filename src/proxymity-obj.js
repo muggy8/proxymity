@@ -66,7 +66,7 @@ function proxyObj(obj, eventInstance){
 				// console.log("get:" + eventNamespace + property, payload)
 				if (!(property in target) && !(property in secretProps)) {
 					// the case, the property isn't in the dom or the cache or the secret props so we have to create it
-					target[property] = proxyObj({}, eventInstance)
+					proxied[property] = {}
 				}
 				else if (!(property in target) && (property in secretProps)){
 					return secretProps[property]
@@ -104,7 +104,7 @@ function proxyObj(obj, eventInstance){
 				}
 				
 				// todo: before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update. However, because of the nature of updating dom is very slow, we want to limit all set events to fire once and only once each primary call
-				console.log("set", property)
+				// console.log("set", property)
 				eventInstance.async("set:" + secretProps[property], {
 					value: target[property]
 				})

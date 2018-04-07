@@ -16,7 +16,7 @@
 			console.log(proxiedObj1)
 			console.log(proxiedArr1)
 
-			events.arr1.watch("get:**", function(payload, eventName){
+			events.arr1.watch("get", function(payload, eventName){
 				console.log({payload: payload, name: eventName})
 			})
 			events.arr1.watch("set:**", function(payload, eventName){

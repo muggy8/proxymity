@@ -24,6 +24,7 @@ function subscribable(){
 		}
 	}
 
+	var lastEmitLog = {}
 	var emit = this.emit = function(name, payload = {}){
 		// join the callback name and the wiledcard listeners (if they exist) and call the callbacks of both listeners
 		for (var key in listenerLibrary){
@@ -34,7 +35,7 @@ function subscribable(){
 				})
 			}
 		}
-		return payload
+		return lastEmitLog[name] = payload
 	}
 
 	var queue = {}
@@ -55,5 +56,9 @@ function subscribable(){
 		}
 
 		queue[name] = payload
+	}
+	
+	var last = this.last = function(name){
+		return lastEmitLog[name]
 	}
 }
