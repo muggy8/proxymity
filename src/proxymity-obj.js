@@ -72,6 +72,12 @@ function proxyObj(obj, eventInstance){
 					return secretProps[property]
 				}
 				
+				// before we enter return cycle, we want to log what props were gotten so we can solve other get related challenges
+				// because getting an undefined or existing prop results will happen after getting the secret prop and we only emit this event if the get is for a real prop
+				eventInstance.emit("get", {
+					value: secretProps[property]
+				})
+				
 				// we checked our 2 special cases, property in target and property in secret with property in target overriding secret props. now we check the target is not null if we got here
 				if (typeof target[property] === 'undefined' || target[property] === null){
 					// do not ever return null or undefined. the only fulsy val we return is an empty string cuz asking for the truthy property of an empty string will not result in undefined (same with ints, floats and bools)
