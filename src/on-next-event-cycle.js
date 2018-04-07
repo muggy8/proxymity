@@ -1,5 +1,5 @@
 var onNextEventCycle = (function(){ // we are doing this here because this function leaves a TON of artifacts that only it uses
-    var nextEvent = generateId(randomInt(24, 48))
+    var nextEvent = generateId(randomInt(32, 48))
     var emitted = false
     var queue = []
     function onNextEventCycle(fn){
