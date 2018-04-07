@@ -37,10 +37,23 @@ function subscribable(){
 		return payload
 	}
 
-	var async = this.async = function(){
-		var args = arrayFrom(arguments)
-		onNextEventCycle(function(){
-			emit.apply(null, args)
-		})
+	var queue = {}
+
+	var nextEventSet = false
+	var async = this.async = function(name, payload = {}){
+		if (!nextEventSet){
+			onNextEventCycle(function(){
+				var workingQueue = queue 
+				nextEventSet = false
+				queue = {}
+
+				for(var name in workingQueue){
+					emit(name, workingQueue[name])
+				}
+			})
+			nextEventSet = true
+		}
+
+		queue[name] = payload
 	}
 }
