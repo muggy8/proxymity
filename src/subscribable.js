@@ -1,14 +1,23 @@
 function subscribable(){
 	var listenerLibrary = {}
 
-	var watch = this.watch = function(nameOrCallback, callback){
-		if (callback){
-			var name = nameOrCallback
+	var watch = this.watch = function(nameOrCallback, callbackOrOptions, options){
+		var name, callback
+		if (typeof callbackOrOptions == "function"){
+			name = nameOrCallback
+			callback = callbackOrOptions
+			options = options || {}
 		}
 		else {
 			name = "**"
 			callback = nameOrCallback
+			options = callbackOrOptions || {}
 		}
+		
+		for(var key in options){
+			callback.key = options.key
+		}
+		
 		var regexName = name
 			.replace(/([!@#$%^&*(){}[\]\<\>:'"`\-_,./\\+-])/g, "\\$1")
 			.replace(/\\\*\\\*/g, ".*")
