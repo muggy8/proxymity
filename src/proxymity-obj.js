@@ -36,6 +36,8 @@ Object.getOwnPropertyNames(proxyObjProto).forEach(function(prop){
 	proxyArrayProto[prop] = proxyObjProto[prop]
 })
 
+var getSecretId = generateId(randomInt(32, 48))
+
 function proxyObj(obj, eventInstance){
 	var objProto = Object.getPrototypeOf(obj)
 	var objToProxy
@@ -44,9 +46,12 @@ function proxyObj(obj, eventInstance){
 			(objProto === Array.prototype && (objToProxy = Object.setPrototypeOf([], proxyArrayProto)))
 		)
 	){
-		// setting up helper functions and secret stuff
+		// setting up helper functions and secret stuff. The secret stuff is not seen by anyone other than the internals of the framework and to make it more difficult to access and to avoid collisions, we generate random keys for secret props on every framework boot up.
 		// Object.setPrototypeOf(obj, proxyProto)
 		var secretProps = {}
+		secretProps[getSecretId] = function(prop){
+			return secretProps[prop]
+		}
 
 		// now we create the proxy that actually houses everything
 		var proxied = new Proxy(objToProxy, {
@@ -84,11 +89,12 @@ function proxyObj(obj, eventInstance){
 				// this is our degenerate case where we just set the value on the data
 				else {
 					target[property] = val
-
-					var setPropNameSpace = target[property][secretSetNamespace]
-					if (typeof setPropNameSpace == "function"){
-						setPropNameSpace(eventNamespace + property)
-					}
+				}
+				
+				// before we enter into our return procedure, we want to make sure that whatever prop we're setting, we have a secret id for that prop. we keep the secret ids for prop in the parent object because the props might be something we control or it might not be but we do know that we do control this so that's why we're keeping it here
+				// because normal props on the target always take presidence over the secret props we can use the same name as the normal prop on the secret prop 
+				if (!secretProps.hasOwnProperty(property)){
+					secretProps[property] = generateId(randomInt(32, 48))
 				}
 				
 				// todo: before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update. However, because of the nature of updating dom is very slow, we want to limit all set events to fire once and only once each primary call
