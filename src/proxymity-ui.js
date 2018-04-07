@@ -1,3 +1,17 @@
+function renderUiText(originalText, sourceEle){
+	// var workingOutput = originalText
+	return originalText.replace(/\{\{([\s\S]*?)\}\}/g, function(matched, expression){
+		// console.log(expression)
+		try {
+			return safeEval.call(sourceEle, expression)
+		}
+		catch(o3o){
+			console.warn("failed to render expression [" + expression + "]", o3o)
+		}
+		//workingOutput = workingOutput.replace(expression, safeEval.call(sourceEle, expression.replace(/^\{\{|\}\}$/g, "")))
+	})
+}
+
 var appendableArrayProto = Object.create(Array.prototype)
 appendableArrayProto.appendTo = function(selectorOrElement) {
 	if (typeof selectorOrElement === "string"){

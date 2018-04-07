@@ -24,7 +24,7 @@
 			var data = proxyObj({}, events)
 			var appendable = proxyUI(`
 			<pre>this.data: {{this.data.stringify(null, "    ")}}</pre>
-			<!-- This is a comment -->
+			<!-- This is a comment with a {{this.data.color.stringify(null, "    ")}} -->
 			<div>
 				<label class="block">
 					color: <input name="color" />
