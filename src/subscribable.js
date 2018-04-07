@@ -57,6 +57,8 @@ function subscribable(){
 				nextEventSet = false
 				queue = {}
 
+				emit("asyncstart")
+
 				for(var name in workingQueue){
 					emit(name, workingQueue[name])
 				}
