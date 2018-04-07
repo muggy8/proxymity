@@ -1,4 +1,4 @@
-function renderUiText(originalText, sourceEle){
+function renderBrackets(originalText, sourceEle){
 	// var workingOutput = originalText
 	return originalText.replace(/\{\{([\s\S]*?)\}\}/g, function(matched, expression){
 		// console.log(expression)
@@ -10,6 +10,22 @@ function renderUiText(originalText, sourceEle){
 		}
 		//workingOutput = workingOutput.replace(expression, safeEval.call(sourceEle, expression.replace(/^\{\{|\}\}$/g, "")))
 	})
+}
+function continiousRender(textSource, eventInstance){
+	var textVal = textSource.textContent
+	if (textVal.match(/\{\{([\s\S]*?)\}\}/g)){
+		eventInstance.watch("asyncend", function(asyncEvents){
+			var hasSetEvent = false
+			findIfSetEventExists: for(var key in asyncEvents){
+				if (key.substring(0, 4) === "set:"){
+					hasSetEvent = true
+					break findIfSetEventExists
+				}
+			}
+			textSource.textContent = renderBrackets(textVal, textSource)
+			// console.log(renderedText)
+		})
+	}
 }
 
 var appendableArrayProto = Object.create(Array.prototype)
@@ -64,20 +80,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 		})
 
 		if (node instanceof CharacterData){
-			var textVal = node.textContent
-			if (textVal.match(/\{\{([\s\S]*?)\}\}/g)){
-				eventInstance.watch("asyncend", function(asyncEvents){
-					var hasSetEvent = false
-					findIfSetEventExists: for(var key in asyncEvents){
-						if (key.substring(0, 4) === "set:"){
-							hasSetEvent = true
-							break findIfSetEventExists
-						}
-					}
-					node.textContent = renderUiText(textVal, node)
-					// console.log(renderedText)
-				})
-			}
+			continiousRender(node, eventInstance)
 		}
 		else {
 			proxyUI(node.childNodes, model, eventInstance, propertyToDefine)

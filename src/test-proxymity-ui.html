@@ -58,8 +58,9 @@
 					display: block
 				}
 			</style>`, data, events)
-
-			console.log(appendable)
+			events.async("set:")
+			console.log(appendable.appendTo("body"))
+			console.log(document.querySelector("input").attributes)
 		</script>
 	</body>
 </html>

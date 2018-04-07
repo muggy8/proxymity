@@ -1,7 +1,7 @@
 "use strict"
 /*
-	Ok we are going to need to redo the entire flow of the code. the initial idea is to keep the source of truth in the DOM and any time that the proxy gets a request for information, the proxy queries the DOM for values but this resuts in too much complexity and the proxy objects needs to keep track of where they are in the tree. 
-	
+	Ok we are going to need to redo the entire flow of the code. the initial idea is to keep the source of truth in the DOM and any time that the proxy gets a request for information, the proxy queries the DOM for values but this resuts in too much complexity and the proxy objects needs to keep track of where they are in the tree.
+
 	Instead we are going to make the proxy the source of truth and the proxy will emit render events which the DOM will hook onto and re-render itself
 */
 var proxymity = (function(safeEval){
