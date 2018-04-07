@@ -6,11 +6,48 @@
 		<script src="proxymity-util.js"></script>
 		<script src="on-next-event-cycle.js"></script>
 		<script src="subscribable.js"></script>
+		<script src="proxymity-obj.js"></script>
 		<script src="proxymity-ui.js"></script>
 	</head>
 	<body>
 		<script>
-			
+			var events = new subscribable()
+			var data = proxyObj({}, events)
+			var appendable = proxyUI(`<div>
+				<label class="block">
+					color: <input name="color" />
+				</label>
+				<label class="block">
+					background-color: <input name="background" />
+				</label>
+				<label class="block">
+					padding: <input name="padding" />
+				</label>
+				<label class="block">
+					border: <input name="border" />
+				</label>
+				<label class="block">
+					font-size: <input name="fontSize" />
+				</label>
+				<label class="block">
+					font-family: <input name="fontFace" />
+				</label>
+			</div>
+			<style>
+				pre {
+					background-color: {{this.data.background.toString() || 'initial'}};
+					color: {{this.data.color.toString() || 'initial'}};
+					padding: {{this.data.padding.toString() || 'initial'}};
+					border: {{this.data.border.toString() || 'initial'}};
+					font-size: {{this.data.fontSize.toString() || 'inherit'}};
+					font-family: {{this.data.fontFace.toString() || 'sans-serif'}}, sans-serif;
+				}
+				.block {
+					display: block
+				}
+			</style>`, data, events)
+
+			console.log(appendable)
 		</script>
 	</body>
 </html>
