@@ -11,9 +11,21 @@
 	</head>
 	<body>
 		<script>
+			// stubbing safeEval for now
+			var safeEval = function(script, contextVars = {}){
+				for(var key in contextVars){
+					eval("var " + key + " = contextVars['" + key + "']")
+				}
+				// delete arguments[1]
+				return eval(script)
+			}
+
 			var events = new subscribable()
 			var data = proxyObj({}, events)
-			var appendable = proxyUI(`<div>
+			var appendable = proxyUI(`
+			<pre>this.data: {{this.data.stringify(null, "    ")}}</pre>
+			<!-- This is a comment -->
+			<div>
 				<label class="block">
 					color: <input name="color" />
 				</label>

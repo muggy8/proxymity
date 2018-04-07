@@ -49,6 +49,26 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			}
 		})
 
+		if (node instanceof CharacterData){
+			var textVal = node.textContent
+			if (textVal.match(/\{\{([\s\S]*?)\}\}/g)){
+				eventInstance.watch("asyncend", function(asyncEvents){
+					var hasSetEvent = false
+					findIfSetEventExists: for(var key in asyncEvents){
+						if (key.substring(0, 4) === "set:"){
+							hasSetEvent = true
+							break findIfSetEventExists
+						}
+					}
+					node.textContent = renderUiText(textVal, node)
+					// console.log(renderedText)
+				})
+			}
+		}
+		else {
+			proxyUI(node.childNodes, model, eventInstance, propertyToDefine)
+		}
+
 		return node
 	}
 }
