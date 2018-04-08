@@ -47,6 +47,23 @@ function obtainModelSecretId(model, target, eventInstance){
 	}, "this.data." + target)
 	return eventInstance.last("get").value
 }
+
+function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners){
+	var modelKey = obtainModelSecretId(model, attributeToListenTo, eventInstance)
+	var unwatch = {}
+	// watch everything
+	for(var key in listeners){
+		unwatch[key] = eventInstance.watch(key + ":" + modelKey, listeners[key])
+	}
+
+	// if an remap event for this item every comes by, we'll run this entire operation again including myself
+	unwatch[modelKey] = eventInstance.watch("remap:" + modelKey, function(){
+		for(var key in unwatch){
+			unwatch[key]()
+		}
+		continiousUiWatch(eventInstance, model, attributeToListenTo, listeners)
+	})
+}
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = "data"){
 	if (typeof nodeOrNodeListOrHTML === "string"){
 		var template = document.createElement("template")
@@ -109,8 +126,6 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			){
 				return
 			}
-
-			var modelKey = obtainModelSecretId(model, attr.value, eventInstance)
 
 			// var unwatchSet = eventInstance.watch("set:" + modelKey, function(payload){
 			// 	if (node.value !== payload.value){
@@ -186,6 +201,15 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 					}
 				}
 			}
+
+			// var modelKey = obtainModelSecretId(model, attr.value, eventInstance)
+			// var unwatchSet = eventInstance.watch("set:" + modelKey, setListener)
+			// var unwatchDel = eventInstance.watch("del:" + modelKey, delListener)
+
+			continiousUiWatch(eventInstance, model, attr.value, {
+				set: setListener,
+				del: delListener
+			})
 		})
 
 		return node
