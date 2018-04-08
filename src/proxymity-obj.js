@@ -59,7 +59,7 @@ function proxyObj(obj, eventInstance){
 				if (typeof emitPropertyMoved === "function"){
 					emitPropertyMoved()
 				}
-				eventInstance.emit("remap:" + secretProps[property])
+				eventInstance.async("remap:" + secretProps[property])
 			})
 		}
 
@@ -104,6 +104,10 @@ function proxyObj(obj, eventInstance){
 				}
 				// this is our degenerate case where we just set the value on the data
 				else {
+					var emitPropertyMoved = target[property][secretSelfMoved]
+					if (typeof emitPropertyMoved === "function"){
+						emitPropertyMoved()
+					}
 					target[property] = val
 				}
 
