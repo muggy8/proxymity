@@ -99,6 +99,43 @@
 			components.detach()
 			components2.appendTo("body").detach()
 
+			function randomObj(hasArr = true){
+				var obj = {}
+				if (hasArr){
+					obj.arr = []
+					obj.arr.push(randomObj(!hasArr))
+					obj.arr.push(randomObj(!hasArr))
+				}
+				obj.str1 = generateId()
+				obj.str2 = generateId()
+				obj.int1 = randomInt(100)
+				obj.int2 = randomInt(100)
+				return obj
+			}
+
+			var arr = []
+			var testArrStr = ""
+
+			for(var i = 0; i < 10; i++){
+				arr.push(randomObj())
+				testArrStr += `
+					<div>
+						<strong>item ${i + 1}</strong>
+						<label class="block">
+							Str 1: <input type="text" name="[${i}].str1">
+						</label>
+						<label class="block">
+							Int 1: <input type="text" name="[${i}].int1">
+						</label>
+						<hr />
+					</div>
+				`
+			}
+			testArrStr += "<pre>{{this.data.stringify(null, '    ')}}</pre>"
+
+			var renderedArr = proxymity(testArrStr, arr)
+			renderedArr.appendTo("body")
+
 		</script>
 		<style>
 			.test-1 {
@@ -106,6 +143,9 @@
 			}
 			.test-2 {
 				background-color: blue;
+			}
+			.block {
+				display: block;
 			}
 		</style>
 	</body>
