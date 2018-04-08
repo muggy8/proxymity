@@ -8,6 +8,8 @@
 		<script src="src/proxymity-obj.js"></script>
 		<script src="src/proxymity-ui.js"></script>
 		<script src="src/proxymity.dev.js"></script>
+	</head>
+	<body>
 		<script>
 			// gonna stub this in here
 			var safeEval = function(script, contextVars = {}){
@@ -17,11 +19,6 @@
 				// delete arguments[1]
 				return eval(script)
 			}
-		</script>
-	</head>
-	<body>
-		<script>
-			// this is genearlly the desired method of working with the object
 
 			// testing Proxymity now
 			var components = proxymity(`
