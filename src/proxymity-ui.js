@@ -59,7 +59,9 @@ function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners)
 	var unwatch = {}
 	// watch everything
 	for(var key in listeners){
-		unwatch[key] = eventInstance.watch(key + ":" + modelKey, listeners[key])
+		var keyToWatch = key + ":" + modelKey
+		unwatch[key] = eventInstance.watch(keyToWatch, listeners[key])
+		listeners[key](eventInstance.last(keyToWatch))
 	}
 
 	// if an remap event for this item every comes by, we'll run this entire operation again including myself
@@ -166,7 +168,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			){
 				uiDataVal = "valueAsNumber"
 				setListener = function(payload){
-					if (typeof payload.value == "number" && payload.value !== node.valueAsNumber){
+					if (payload && typeof payload.value == "number" && payload.value !== node.valueAsNumber){
 						node.valueAsNumber = payload.value
 					}
 				}
@@ -174,7 +176,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			else if (nodeTypeLowercase === "checkbox"){
 				uiDataVal = "checked"
 				setListener = function(payload){
-					if (typeof payload.value == "boolean" && payload.value !== node.checked){
+					if (payload && typeof payload.value == "boolean" && payload.value !== node.checked){
 						node.checked = payload.value
 					}
 				}
@@ -183,10 +185,10 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 				setListener = function(payload){
 					try{
 						var payloadString = payload.value.toString()
-						if (node.value === payloadString && node.checked !== true) {
+						if (payload && node.value === payloadString && node.checked !== true) {
 							node.checked = true
 						}
-						else if (node.value !== payloadString && node.checked === true){
+						else if (payload && node.value !== payloadString && node.checked === true){
 							node.checked = false
 						}
 					}
@@ -204,7 +206,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			){
 				uiDataVal = "valueAsDate"
 				setListener = function(payload){
-					if (payload.value instanceof Date && payload.value.getTime() !== node.valueAsDate.getTime()) {
+					if (payload && payload.value instanceof Date && payload.value.getTime() !== node.valueAsDate.getTime()) {
 						node.valueAsDate = payload.value
 					}
 				}
