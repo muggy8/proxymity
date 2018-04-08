@@ -57,7 +57,7 @@ function subscribable(){
 				var workingQueue = queue
 				nextEventSet = false
 				queue = {}
-				order = []
+				order = 0
 
 				emit("asyncstart", workingQueue)
 
@@ -87,7 +87,7 @@ function subscribable(){
 		}
 
 		queue[name] = payload
-		payload.order = order.push(false)
+		payload.order = order = order + 1
 	}
 
 	var last = this.last = function(name){
