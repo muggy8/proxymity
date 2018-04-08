@@ -39,6 +39,14 @@ appendableArrayProto.appendTo = function(selectorOrElement) {
 	})
 	return this
 }
+
+function obtainModelSecretId(model, target, eventInstance){
+	// because we have no idea what the heck is going to be in the attr.value and parsing it is too hard, we let the native javascirpt runtime handle that and as long as it's valid javascript that accesses a property in the data we'll be able to track which was the last accessed property and then we'll store that as the key we track
+	safeEval.call({
+		data: model
+	}, "this.data." + target)
+	return eventInstance.last("get").value
+}
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = "data"){
 	if (typeof nodeOrNodeListOrHTML === "string"){
 		var template = document.createElement("template")
@@ -90,7 +98,25 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 
 		// step 3: set up continious rendering for element properties but also link the names of items to the model
 		arrayFrom(node.attributes).forEach(function(attr){
-			continiousRender(attr)
+			continiousRender(attr) // we want to subscribe to this first so that the stuff in the name will render before the attribute is actually used
+
+			if (
+				attr.name !== "name" || (
+					node.nodeName !== "INPUT" &
+					node.nodeName !== "TEXTAREA" &
+					node.nodeName !== "SELECT"
+				)
+			){
+				return
+			}
+
+			var modelKey = obtainModelSecretId(model, attr.value, eventInstance)
+
+			var unwatchSet = eventInstance.watch("set:" + modelKey, function(payload){
+				if (node.value !== payload.value){
+					node.value = payload.value.toString()
+				}
+			})
 		})
 
 		return node
