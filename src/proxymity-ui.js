@@ -40,16 +40,13 @@ appendableArrayProto.appendTo = function(selectorOrElement) {
 	return this
 }
 
-function obtainModelSecretId(model, target, eventInstance){
+function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners){
 	// because we have no idea what the heck is going to be in the attr.value and parsing it is too hard, we let the native javascirpt runtime handle that and as long as it's valid javascript that accesses a property in the data we'll be able to track which was the last accessed property and then we'll store that as the key we track
 	safeEval.call({
 		data: model
-	}, "this.data." + target)
-	return eventInstance.last("get").value
-}
+	}, "this.data." + attributeToListenTo)
+	var modelKey = eventInstance.last("get").value
 
-function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners){
-	var modelKey = obtainModelSecretId(model, attributeToListenTo, eventInstance)
 	var unwatch = {}
 	// watch everything
 	for(var key in listeners){
