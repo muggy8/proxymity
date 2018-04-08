@@ -32,11 +32,12 @@ var proxyObjProto = {
 }
 
 var proxyArrayProto = Object.create(Array.prototype)
-Object.getOwnPropertyNames(proxyObjProto).forEach(function(prop){
-	proxyArrayProto[prop] = proxyObjProto[prop]
+Object.getOwnPropertyNames(proxyObjProto).forEach(function(property){
+	proxyArrayProto[property] = proxyObjProto[property]
 })
 
 var getSecretId = generateId(randomInt(32, 48))
+var secretSelfMoved = generateId(randomInt(32, 48))
 
 function proxyObj(obj, eventInstance){
 	var objProto = Object.getPrototypeOf(obj)
@@ -49,8 +50,17 @@ function proxyObj(obj, eventInstance){
 		// setting up helper functions and secret stuff. The secret stuff is not seen by anyone other than the internals of the framework and to make it more difficult to access and to avoid collisions, we generate random keys for secret props on every framework boot up.
 		// Object.setPrototypeOf(obj, proxyProto)
 		var secretProps = {}
-		secretProps[getSecretId] = function(prop){
-			return secretProps[prop]
+		secretProps[getSecretId] = function(property){
+			return secretProps[property]
+		}
+		secretProps[secretSelfMoved] = function(){
+			Object.getOwnPropertyNames(proxied).forEach(function(property){
+				var emitPropertyMoved = proxied[property][secretSelfMoved]
+				if (typeof emitPropertyMoved === "function"){
+					emitPropertyMoved()
+				}
+				eventInstance.emit("remap:" + secretProps[property])
+			})
 		}
 
 		// now we create the proxy that actually houses everything
