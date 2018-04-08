@@ -72,6 +72,7 @@ function subscribable(){
 					return 0
 				})
 				eventNames.forEach(function(name){
+					console.log(name)
 					emit(name, workingQueue[name])
 				})
 				// console.log(eventNames.map(name => workingQueue[name].order), eventNames)

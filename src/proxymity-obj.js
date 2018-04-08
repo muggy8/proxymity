@@ -47,6 +47,7 @@ Object.getOwnPropertyNames(proxyObjProto).forEach(function(property){
 
 var getSecretId = generateId(randomInt(32, 48))
 var secretSelfMoved = generateId(randomInt(32, 48))
+var secretPropigateSet = generateId(randomInt(32, 48))
 
 function proxyObj(obj, eventInstance){
 	var objProto = Object.getPrototypeOf(obj)
@@ -69,6 +70,15 @@ function proxyObj(obj, eventInstance){
 					emitPropertyMoved()
 				}
 				eventInstance.async("remap:" + secretProps[property])
+			})
+		}
+		secretProps[secretPropigateSet] = function(){
+			Object.getOwnPropertyNames(proxied).forEach(function(property){
+				var descendentSetEmitter = proxied[property][secretPropigateSet]
+				if (typeof descendentSetEmitter === "function"){
+					descendentSetEmitter()
+				}
+				eventInstance.async("set:" + secretProps[property], objToProxy[property])
 			})
 		}
 
@@ -113,11 +123,20 @@ function proxyObj(obj, eventInstance){
 				}
 				// this is our degenerate case where we just set the value on the data
 				else {
+					// tell everyone that we should remap to the new item
 					var emitPropertyMoved = target[property] && target[property][secretSelfMoved]
 					if (typeof emitPropertyMoved === "function"){
 						emitPropertyMoved()
 					}
+
+					// now we need to set the actual property
 					target[property] = val
+
+					// after we set it, we should check if the moved value can emit a global set event and if so we should call it
+					var emitSetNewData = target[property] && target[property][secretPropigateSet]
+					if (typeof emitSetNewData === "function"){
+						emitSetNewData()
+					}
 				}
 
 				// before we enter into our return procedure, we want to make sure that whatever prop we're setting, we have a secret id for that prop. we keep the secret ids for prop in the parent object because the props might be something we control or it might not be but we do know that we do control this so that's why we're keeping it here
