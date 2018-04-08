@@ -24,7 +24,7 @@ var proxyObjProto = {
 		return JSON.stringify.apply(JSON, args)
 	},
 	toString: function(){
-		if (Object.keys(this).length){
+		if (Object.getOwnPropertyNames(this).length){
 			return proxyObjProto.stringify.call(this)
 		}
 		return ""
@@ -62,7 +62,7 @@ function proxyObj(obj, eventInstance){
 				// 3: it's a property that does but doesn't have an in dom model then we just return whatever is in our storage
 				// 4: it is a property that is in the dom model and we update our storage to keep things in sync and then return the value in the dom
 
-				
+
 				// console.log("get:" + eventNamespace + property, payload)
 				if (!(property in target) && !(property in secretProps)) {
 					// the case, the property isn't in the dom or the cache or the secret props so we have to create it
@@ -71,13 +71,13 @@ function proxyObj(obj, eventInstance){
 				else if (!(property in target) && (property in secretProps)){
 					return secretProps[property]
 				}
-				
+
 				// before we enter return cycle, we want to log what props were gotten so we can solve other get related challenges
 				// because getting an undefined or existing prop results will happen after getting the secret prop and we only emit this event if the get is for a real prop
 				eventInstance.emit("get", {
 					value: secretProps[property]
 				})
-				
+
 				// we checked our 2 special cases, property in target and property in secret with property in target overriding secret props. now we check the target is not null if we got here
 				if (typeof target[property] === 'undefined' || target[property] === null){
 					// do not ever return null or undefined. the only fulsy val we return is an empty string cuz asking for the truthy property of an empty string will not result in undefined (same with ints, floats and bools)
@@ -96,19 +96,19 @@ function proxyObj(obj, eventInstance){
 				else {
 					target[property] = val
 				}
-				
+
 				// before we enter into our return procedure, we want to make sure that whatever prop we're setting, we have a secret id for that prop. we keep the secret ids for prop in the parent object because the props might be something we control or it might not be but we do know that we do control this so that's why we're keeping it here
-				// because normal props on the target always take presidence over the secret props we can use the same name as the normal prop on the secret prop 
+				// because normal props on the target always take presidence over the secret props we can use the same name as the normal prop on the secret prop
 				if (!secretProps.hasOwnProperty(property)){
 					secretProps[property] = generateId(randomInt(32, 48))
 				}
-				
+
 				// todo: before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update. However, because of the nature of updating dom is very slow, we want to limit all set events to fire once and only once each primary call
 				// console.log("set", property)
 				eventInstance.async("set:" + secretProps[property], {
 					value: target[property]
 				})
-				
+
 				if (typeof target[property] === 'undefined' || target[property] === null){
 					// we do the same thing as above here
 					return ""
@@ -123,7 +123,7 @@ function proxyObj(obj, eventInstance){
 				return false
 			}
 		})
-		
+
 		// this is for populating the initialized proxy with our input data if we have that
 		// This is code that we run just once when the object is initialized with some default data so we dont have to worry about deleting anything since proxied is empty when we get here. also, this ensures we always use the set method using set data method above. This means that rather than having double input we only have one path to get data into the proxy which means consistant performance and less werid bugs.
 		Object.getOwnPropertyNames(obj).forEach(function(prop){
