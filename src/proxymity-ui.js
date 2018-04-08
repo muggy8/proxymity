@@ -64,6 +64,7 @@ function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners)
 		continiousUiWatch(eventInstance, model, attributeToListenTo, listeners)
 	})
 }
+
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = "data"){
 	if (typeof nodeOrNodeListOrHTML === "string"){
 		var template = document.createElement("template")
@@ -209,6 +210,15 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			continiousUiWatch(eventInstance, model, attr.value, {
 				set: setListener,
 				del: delListener
+			})
+
+			;["change", "keyup", "propertychange", "valuechange", "input"].forEach(function(listenTo){
+				node.addEventListener(listenTo, function(ev){
+					safeEval.call({
+						data: model,
+						value: node[uiDataVal]
+					}, "this.data." + attr.value + " = this.value")
+				})
 			})
 		})
 
