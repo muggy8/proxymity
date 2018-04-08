@@ -113,7 +113,7 @@ function proxyObj(obj, eventInstance){
 				}
 				// this is our degenerate case where we just set the value on the data
 				else {
-					var emitPropertyMoved = target[property][secretSelfMoved]
+					var emitPropertyMoved = target[property] && target[property][secretSelfMoved]
 					if (typeof emitPropertyMoved === "function"){
 						emitPropertyMoved()
 					}
