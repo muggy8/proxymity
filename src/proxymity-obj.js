@@ -30,6 +30,15 @@ var proxyObjProto = {
 		return ""
 	}
 }
+proxyObjProto[Symbol.toPrimitive] = function(hint){
+	if (hint == 'number') {
+		return Object.getOwnPropertyNames(this).length;
+	}
+	if (hint == 'string') {
+		return proxyObjProto.toString.call(this)
+	}
+	return !!Object.getOwnPropertyNames(this).length
+}
 
 var proxyArrayProto = Object.create(Array.prototype)
 Object.getOwnPropertyNames(proxyObjProto).forEach(function(property){
