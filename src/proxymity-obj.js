@@ -145,6 +145,9 @@ function proxyObj(obj, eventInstance){
 					secretProps[property] = generateId(randomInt(32, 48))
 				}
 
+				// testing stuff
+				// proxied[property].id = secretProps[property]
+
 				// todo: before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update. However, because of the nature of updating dom is very slow, we want to limit all set events to fire once and only once each primary call
 				// console.log("set", property)
 				eventInstance.async("set:" + secretProps[property], {

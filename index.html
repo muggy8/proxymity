@@ -99,33 +99,26 @@
 			components.detach()
 			components2.appendTo("body").detach()
 
-			function randomObj(hasArr = true){
-				var obj = {}
-				if (hasArr){
-					obj.arr = []
-					obj.arr.push(randomObj(!hasArr))
-					obj.arr.push(randomObj(!hasArr))
+			function randomObj(){
+				return {
+					str: generateId(),
+					int: randomInt(100)
 				}
-				obj.str1 = generateId()
-				obj.str2 = generateId()
-				obj.int1 = randomInt(100)
-				obj.int2 = randomInt(100)
-				return obj
 			}
 
 			var arr = []
 			var testArrStr = ""
 
-			for(var i = 0; i < 10; i++){
+			for(var i = 0; i < 5; i++){
 				arr.push(randomObj())
 				testArrStr += `
 					<div>
 						<strong>item ${i + 1}</strong>
 						<label class="block">
-							Str 1: <input type="text" name="[${i}].str1">
+							Str 1: <input type="text" name="[${i}].str">
 						</label>
 						<label class="block">
-							Int 1: <input type="number" name="[${i}].int1">
+							Int 1: <input type="number" name="[${i}].int">
 						</label>
 						<hr />
 					</div>
@@ -137,6 +130,15 @@
 			renderedArr.appendTo("body")
 			var renderedArrData = renderedArr[0].data
 
+			// renderedArrData.sort(function(a, b){
+			// 	if (a.int > b.int){
+			// 		return 1
+			// 	}
+			// 	if (a.int < b.int){
+			// 		return -1
+			// 	}
+			// 	return 0
+			// })
 		</script>
 		<style>
 			.test-1 {
