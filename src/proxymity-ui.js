@@ -6,12 +6,14 @@ function renderBrackets(originalText, sourceEle){
 			return safeEval.call(sourceEle, expression)
 		}
 		catch(o3o){
+			console.warn([sourceEle])
 			console.warn("failed to render expression [" + expression + "]", o3o)
 		}
 		//workingOutput = workingOutput.replace(expression, safeEval.call(sourceEle, expression.replace(/^\{\{|\}\}$/g, "")))
 	})
 }
-function continiousRender(textSource, eventInstance){
+function continiousRender(textSource, eventInstance, containingElement){
+	containingElement = containingElement || textSource
 	var textVal = textSource.textContent
 	if (textVal.match(/\{\{([\s\S]*?)\}\}/g)){
 		eventInstance.watch("asyncend", function(asyncEvents){
@@ -22,7 +24,7 @@ function continiousRender(textSource, eventInstance){
 					break findIfSetEventExists
 				}
 			}
-			textSource.textContent = renderBrackets(textVal, textSource)
+			textSource.textContent = renderBrackets(textVal, containingElement)
 			// console.log(renderedText)
 		})
 	}
@@ -113,7 +115,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 
 		// step 3: set up continious rendering for element properties but also link the names of items to the model
 		arrayFrom(node.attributes).forEach(function(attr){
-			attr.name !== "name" && continiousRender(attr, eventInstance) // only for non-name attributes because name is not going to suppor this since making it support this and bind to the data model correctly is too hard
+			attr.name !== "name" && continiousRender(attr, eventInstance, node) // only for non-name attributes because name is not going to suppor this since making it support this and bind to the data model correctly is too hard
 
 			if (
 				attr.name !== "name" || (
