@@ -118,15 +118,73 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			// 	}
 			// })
 
-			// this is the default setter for this property
+			// this is the default setter and deleter for this property that we'll use if it's not overwritten in the if statements below
 			var setListener = function(payload){
-				if (payload.value !== node.value){
-					node.value = payload.value.toString()
-					// toString is for incase we get an object here for some reason which will happen when we initialize the whole process and when we do that at least the toString method of proxied objects is going to return "" if it's empty
+				// toString is for incase we get an object here for some reason which will happen when we initialize the whole process and when we do that at least the toString method of proxied objects is going to return "" if it's empty
+				try {
+					var payloadString = payload.value.toString()
+					if (payloadString !== node.value){
+						node.value = payloadString
+					}
+				}
+				catch(o3o){ // this means the payload must be undefined or null
+					node.value = null
 				}
 			}
 			var delListener = function(){
 				node.value = null
+			}
+			var uiDataVal = "value"
+
+			var nodeTypeLowercase = node.type.toLowerCase()
+			if (
+				nodeTypeLowercase === "number" ||
+				nodeTypeLowercase === "range"
+			){
+				uiDataVal = "valueAsNumber"
+				setListener = function(payload){
+					if (typeof payload.value == "number" && payload.value !== node.valueAsNumber){
+						node.valueAsNumber = payload.value
+					}
+				}
+			}
+			else if (nodeTypeLowercase === "checkbox"){
+				setListener = function(payload){
+					if (typeof payload.value == "boolean" && payload.value !== node.checked){
+						node.checked = payload.value
+					}
+				}
+			}
+			else if (nodeTypeLowercase === "radio"){
+				uiDataVal = "checked"
+				setListener = function(payload){
+					try{
+						var payloadString = payload.value.toString()
+						if (node.value === payloadString && node.checked !== true) {
+							node.checked = true
+						}
+						else if (node.value !== payloadString && node.checked === true){
+							node.checked = false
+						}
+					}
+					catch(o3o){
+						node.checked = false
+					}
+				}
+			}
+			else if (
+				nodeTypeLowercase === "date" ||
+				nodeTypeLowercase === "month" ||
+				nodeTypeLowercase === "week" ||
+				nodeTypeLowercase === "time" ||
+				nodeTypeLowercase === "datetime-local"
+			){
+				uiDataVal = "valueAsDate"
+				setListener = function(payload){
+					if (payload.value instanceof Date && payload.value.getTime() !== node.valueAsDate.getTime()) {
+						node.valueAsDate = payload.value
+					}
+				}
 			}
 		})
 
