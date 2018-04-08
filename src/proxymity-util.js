@@ -26,3 +26,14 @@ function generateId(length = 16){
 	}
 	return id
 }
+
+function softCopy(from, to){
+	var toKeys = Object.getOwnPropertyNames(to)
+	for(var key in from){
+		to[key] = from[key]
+		toKeys.splice(toKeys.indexOf(key), 1)
+	}
+	toKeys.forEach(function(key){
+		delete to[key]
+	})
+}

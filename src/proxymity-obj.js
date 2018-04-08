@@ -47,7 +47,6 @@ Object.getOwnPropertyNames(proxyObjProto).forEach(function(property){
 
 var getSecretId = generateId(randomInt(32, 48))
 var secretSelfMoved = generateId(randomInt(32, 48))
-var secretPropigateSet = generateId(randomInt(32, 48))
 
 function proxyObj(obj, eventInstance){
 	var objProto = Object.getPrototypeOf(obj)
@@ -70,15 +69,6 @@ function proxyObj(obj, eventInstance){
 					emitPropertyMoved()
 				}
 				eventInstance.async("remap:" + secretProps[property])
-			})
-		}
-		secretProps[secretPropigateSet] = function(){
-			Object.getOwnPropertyNames(proxied).forEach(function(property){
-				var descendentSetEmitter = proxied[property][secretPropigateSet]
-				if (typeof descendentSetEmitter === "function"){
-					descendentSetEmitter()
-				}
-				eventInstance.async("set:" + secretProps[property], objToProxy[property])
 			})
 		}
 
@@ -132,11 +122,6 @@ function proxyObj(obj, eventInstance){
 					// now we need to set the actual property
 					target[property] = val
 
-					// after we set it, we should check if the moved value can emit a global set event and if so we should call it
-					var emitSetNewData = target[property] && target[property][secretPropigateSet]
-					if (typeof emitSetNewData === "function"){
-						emitSetNewData()
-					}
 				}
 
 				// before we enter into our return procedure, we want to make sure that whatever prop we're setting, we have a secret id for that prop. we keep the secret ids for prop in the parent object because the props might be something we control or it might not be but we do know that we do control this so that's why we're keeping it here
@@ -148,7 +133,7 @@ function proxyObj(obj, eventInstance){
 				// testing stuff
 				// proxied[property].id = secretProps[property]
 
-				// todo: before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update. However, because of the nature of updating dom is very slow, we want to limit all set events to fire once and only once each primary call
+				// before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update. However, because of the nature of updating dom is very slow, we want to limit all set events to fire once and only once each primary call
 				// console.log("set", property)
 				eventInstance.async("set:" + secretProps[property], {
 					value: target[property]
@@ -169,12 +154,8 @@ function proxyObj(obj, eventInstance){
 			}
 		})
 
-		// this is for populating the initialized proxy with our input data if we have that
-		// This is code that we run just once when the object is initialized with some default data so we dont have to worry about deleting anything since proxied is empty when we get here. also, this ensures we always use the set method using set data method above. This means that rather than having double input we only have one path to get data into the proxy which means consistant performance and less werid bugs.
-		Object.getOwnPropertyNames(obj).forEach(function(prop){
-			proxied[prop] = obj[prop]
-			// console.log("setting prop", prop, setNotInitial)
-		})
+		// this is for populating the initialized proxy with our input data if we have that. This ensures we always use the set method using set data method above. This means that rather than having double input we only have one path to get data into the proxy which means consistant performance and less werid bugs.
+		softCopy(obj, proxied)
 		return proxied
 	}
 }

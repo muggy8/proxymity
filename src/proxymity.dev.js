@@ -7,7 +7,19 @@ var proxymity = (function(safeEval){
 	return function(view, initialData = {}, modelProperty = "data"){
 		var events = new subscribable()
 		events.async("set:")
-		return proxyUI(view, proxyObj(initialData, events), events, modelProperty)
+		var proxied = proxyObj(initialData, events)
+		var ui = proxyUI(view, proxied, events, modelProperty)
+		Object.defineProperty(ui, modelProperty, {
+			get: function(){
+				return proxied
+			},
+			set: function(val){
+				if (typeof val === "object"){
+					softCopy(val, proxied)
+				}
+			}
+		})
+		return ui
 	}
 })(function(script, contextVars = {}){
 	for(var key in contextVars){
