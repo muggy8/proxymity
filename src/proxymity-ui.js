@@ -163,6 +163,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 				}
 			}
 			else if (nodeTypeLowercase === "checkbox"){
+				uiDataVal = "checked"
 				setListener = function(payload){
 					if (typeof payload.value == "boolean" && payload.value !== node.checked){
 						node.checked = payload.value
@@ -170,7 +171,6 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 				}
 			}
 			else if (nodeTypeLowercase === "radio"){
-				uiDataVal = "checked"
 				setListener = function(payload){
 					try{
 						var payloadString = payload.value.toString()
