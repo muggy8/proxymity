@@ -6,6 +6,7 @@ var proxymity = (function(safeEval){
 
 	return function(view, initialData = {}, modelProperty = "data"){
 		var events = new subscribable()
+		events.async("set:")
 		return proxyUI(view, proxyObj({}, events), events, modelProperty)
 	}
 })(function(script, contextVars = {}){

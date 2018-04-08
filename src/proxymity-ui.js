@@ -40,6 +40,14 @@ appendableArrayProto.appendTo = function(selectorOrElement) {
 	})
 	return this
 }
+appendableArrayProto.detach = function(){
+	this.forEach(function(node){
+		var parent = node.parentElement
+		parent && parent.removeChild(node)
+	})
+
+	return this
+}
 
 function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners){
 	// because we have no idea what the heck is going to be in the attr.value and parsing it is too hard, we let the native javascirpt runtime handle that and as long as it's valid javascript that accesses a property in the data we'll be able to track which was the last accessed property and then we'll store that as the key we track
@@ -76,7 +84,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 		return Object.setPrototypeOf(
 			arrayFrom(nodeOrNodeListOrHTML)
 				.map(function(node){
-					return proxyUI(node, model, eventInstance, propertyToDefine)
+					return proxyUI(node, model, eventInstance, propertyToDefine)[0]
 				}),
 			appendableArrayProto
 		)
@@ -220,6 +228,6 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			})
 		})
 
-		return node
+		return Object.setPrototypeOf([node], appendableArrayProto)
 	}
 }
