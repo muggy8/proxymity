@@ -112,11 +112,22 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 
 			var modelKey = obtainModelSecretId(model, attr.value, eventInstance)
 
-			var unwatchSet = eventInstance.watch("set:" + modelKey, function(payload){
-				if (node.value !== payload.value){
+			// var unwatchSet = eventInstance.watch("set:" + modelKey, function(payload){
+			// 	if (node.value !== payload.value){
+			// 		node.value = payload.value.toString()
+			// 	}
+			// })
+
+			// this is the default setter for this property
+			var setListener = function(payload){
+				if (payload.value !== node.value){
 					node.value = payload.value.toString()
+					// toString is for incase we get an object here for some reason which will happen when we initialize the whole process and when we do that at least the toString method of proxied objects is going to return "" if it's empty
 				}
-			})
+			}
+			var delListener = function(){
+				node.value = null
+			}
 		})
 
 		return node
