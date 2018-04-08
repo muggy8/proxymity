@@ -13,11 +13,11 @@ function subscribable(){
 			callback = nameOrCallback
 			options = callbackOrOptions || {}
 		}
-		
+
 		for(var key in options){
 			callback.key = options.key
 		}
-		
+
 		var regexName = name
 			.replace(/([!@#$%^&*(){}[\]\<\>:'"`\-_,./\\+-])/g, "\\$1")
 			.replace(/\\\*\\\*/g, ".*")
@@ -48,29 +48,47 @@ function subscribable(){
 	}
 
 	var queue = {}
+	var order = []
 
 	var nextEventSet = false
 	var async = this.async = function(name, payload = {}){
 		if (!nextEventSet){
 			onNextEventCycle(function(){
-				var workingQueue = queue 
+				var workingQueue = queue
 				nextEventSet = false
 				queue = {}
+				order = []
 
 				emit("asyncstart", workingQueue)
 
-				for(var name in workingQueue){
+				var eventNames = Object.getOwnPropertyNames(workingQueue)
+				eventNames.sort(function(a, b){
+					if (workingQueue[a].order > workingQueue[b].order){
+						return 1
+					}
+					else if (workingQueue[a].order < workingQueue[b].order){
+						return -1
+					}
+					return 0
+				})
+				eventNames.forEach(function(name){
 					emit(name, workingQueue[name])
-				}
-				
+				})
+				// console.log(eventNames.map(name => workingQueue[name].order), eventNames)
+
+				// for(var name in ){
+				// 	emit(name, workingQueue[name])
+				// }
+
 				emit("asyncend", workingQueue)
 			})
 			nextEventSet = true
 		}
 
 		queue[name] = payload
+		payload.order = order.push(false)
 	}
-	
+
 	var last = this.last = function(name){
 		return lastEmitLog[name]
 	}
