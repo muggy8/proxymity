@@ -113,7 +113,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 
 		// step 3: set up continious rendering for element properties but also link the names of items to the model
 		arrayFrom(node.attributes).forEach(function(attr){
-			attr.name !== "name" && continiousRender(attr) // only for non-name attributes because name is not going to suppor this since making it support this and bind to the data model correctly is too hard
+			attr.name !== "name" && continiousRender(attr, eventInstance) // only for non-name attributes because name is not going to suppor this since making it support this and bind to the data model correctly is too hard
 
 			if (
 				attr.name !== "name" || (
