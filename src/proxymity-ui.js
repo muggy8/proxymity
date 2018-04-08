@@ -6,7 +6,6 @@ function renderBrackets(originalText, sourceEle){
 			return safeEval.call(sourceEle, expression)
 		}
 		catch(o3o){
-			console.warn([sourceEle])
 			console.warn("failed to render expression [" + expression + "]", o3o)
 		}
 		//workingOutput = workingOutput.replace(expression, safeEval.call(sourceEle, expression.replace(/^\{\{|\}\}$/g, "")))
