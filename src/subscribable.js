@@ -48,7 +48,7 @@ function subscribable(){
 	}
 
 	var queue = {}
-	var order = []
+	var order = 0
 
 	var nextEventSet = false
 	var async = this.async = function(name, payload = {}){
@@ -72,7 +72,7 @@ function subscribable(){
 					return 0
 				})
 				eventNames.forEach(function(name){
-					console.log(name)
+					// console.log(name, workingQueue[name])
 					emit(name, workingQueue[name])
 				})
 				// console.log(eventNames.map(name => workingQueue[name].order), eventNames)
@@ -91,6 +91,7 @@ function subscribable(){
 	}
 
 	var last = this.last = function(name){
+		// console.log("last", name, lastEmitLog[name])
 		return lastEmitLog[name]
 	}
 }

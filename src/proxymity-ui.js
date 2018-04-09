@@ -156,8 +156,10 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 					node.value = null
 				}
 			}
-			var delListener = function(){
-				node.value = null
+			var delListener = function(payload){
+				if (typeof payload === "object"){
+					node.value = null
+				}
 			}
 			var uiDataVal = "value"
 
