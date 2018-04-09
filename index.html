@@ -127,8 +127,25 @@
 			testArrStr += "<pre>{{this.data.stringify(null, '    ')}}</pre>"
 
 			var renderedArr = proxymity(testArrStr, arr)
-			renderedArr.appendTo("body")
-			var renderedArrData = renderedArr.data
+			// renderedArr.appendTo("body")
+			// var renderedArrData = renderedArr.data
+
+			var testRepeat = proxymity(`
+				<!-- repeat(this.data).as("dataIndex", function(item, index, whole){
+					return index
+				}) -->
+					<div>
+						<strong>item {{this.index + 1}}</strong>
+						<label class="block">
+							Str 1: <input type="text" name="[this.index].str">
+						</label>
+						<label class="block">
+							Int 1: <input type="number" name="[this.index].int">
+						</label>
+						<hr />
+					</div>
+				<!-- repeat.end() -->
+			`, arr)
 
 			// renderedArrData.sort(function(a, b){
 			// 	if (a.int > b.int){
