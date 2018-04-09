@@ -85,10 +85,28 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 		return current && node instanceof Node
 	}, true))){
 		// before we get to repeatable sections we're just going to bind things to other things so this step is going to be a bit short
+		var key = function(property){
+			console.log("key:", property)
+			return key
+		}
+		key.in = function(array){
+			console.log("array:", array)
+		}
+		key.end = function(){
+			console.log("end")
+		}
 		return Object.setPrototypeOf(
 			arrayFrom(nodeOrNodeListOrHTML)
 				.map(function(node){
-					return proxyUI(node, model, eventInstance, propertyToDefine)[0]
+					var proxied = proxyUI(node, model, eventInstance, propertyToDefine)[0]
+					// console.log(node)
+					if (node instanceof Comment && node.textContent.trim().substr(0, 7).toLowerCase() === "repeat:"){
+						safeEval.call(node, node.textContent, {
+							key: key
+						})
+					}
+
+					return proxied
 				}),
 			appendableArrayProto
 		)

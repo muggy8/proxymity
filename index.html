@@ -131,7 +131,7 @@
 			// var renderedArrData = renderedArr.data
 
 			var testRepeat = proxymity(`
-				<!-- loop: key("index").in(this.data) -->
+				<!-- repeat: key("index").in(this.data) -->
 					<div>
 						<strong>item {{this.index + 1}}</strong>
 						<label class="block">
@@ -142,7 +142,7 @@
 						</label>
 						<hr />
 					</div>
-				<!-- loop.end() -->
+				<!-- repeat: key.end() -->
 			`, arr)
 
 			// renderedArrData.sort(function(a, b){
