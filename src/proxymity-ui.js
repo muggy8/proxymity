@@ -81,7 +81,9 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 		return proxyUI(parsedList, model, eventInstance, propertyToDefine)
 	}
 
-	if (nodeOrNodeListOrHTML instanceof NodeList){
+	if (nodeOrNodeListOrHTML instanceof NodeList || (nodeOrNodeListOrHTML instanceof Array && nodeOrNodeListOrHTML.reduce(function(crrent, node){
+		return current && node instanceof Node
+	}, true))){
 		// before we get to repeatable sections we're just going to bind things to other things so this step is going to be a bit short
 		return Object.setPrototypeOf(
 			arrayFrom(nodeOrNodeListOrHTML)
