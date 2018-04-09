@@ -100,7 +100,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 				.map(function(node){
 					var proxied = proxyUI(node, model, eventInstance, propertyToDefine)[0]
 					// console.log(node)
-					if (node instanceof Comment && node.textContent.trim().substr(0, 7).toLowerCase() === "repeat:"){
+					if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
 						safeEval.call(node, node.textContent, {
 							key: key
 						})
