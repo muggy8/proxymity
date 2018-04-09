@@ -15,7 +15,7 @@ function continiousRender(textSource, eventInstance, containingElement){
 	containingElement = containingElement || textSource
 	var textVal = textSource.textContent
 	if (textVal.match(/\{\{([\s\S]*?)\}\}/g)){
-		eventInstance.watch("asyncend", function(asyncEvents){
+		eventInstance.watch("asyncstart", function(asyncEvents){
 			var hasSetEvent = false
 			findIfSetEventExists: for(var key in asyncEvents){
 				if (key.substring(0, 4) === "set:"){
