@@ -1,5 +1,6 @@
 function subscribable(){
 	var listenerLibrary = {}
+	var listenerWildcards = {}
 
 	var watch = this.watch = function(nameOrCallback, callbackOrOptions, options){
 		var name, callback
@@ -18,26 +19,37 @@ function subscribable(){
 			callback.key = options.key
 		}
 
-		var regexName = name
-			.replace(/([!@#$%^&*(){}[\]\<\>:'"`\-_,./\\+-])/g, "\\$1")
-			.replace(/\\\*\\\*/g, ".*")
-			.replace(/\\\*/, "[^\:\.]+")
+		if (name.indexOf("*") > -1){
+			var regexName = name
+				.replace(/([!@#$%^&*(){}[\]\<\>:'"`\-_,./\\+-])/g, "\\$1")
+				.replace(/\\\*\\\*/g, ".*")
+				.replace(/\\\*/, "[^\:\.]+")
 
-		var listeners = listenerLibrary[name] = listenerLibrary[name] || {
-			regex: new RegExp(regexName),
-			listeners: []
+			var wiledcards = listenerWildcards[name] = listenerWildcards[name] || {
+				regex: new RegExp(regexName),
+				listeners: []
+			}
+			var addTo = wiledcards.listeners
 		}
-		listeners.listeners.push(callback)
+		else {
+			var addTo = listenerLibrary[name] = listenerLibrary[name] || []
+		}
+
+		addTo.push(callback)
 		return function(){
-			listeners.listeners.splice(listeners.listeners.indexOf(callback), 1)
+			addTo.splice(addTo.indexOf(callback), 1)
 		}
 	}
 
 	var lastEmitLog = {}
 	var emit = this.emit = function(name, payload = {}){
+		// for optimization we are going to seperate listeners with wiled cards and without wiled cards into their own catagories. when an event is emited, we emit to the named listeners first then we looop through the wiled cards and do them and check for matches. we do this so we can skip alot of named listeners that we know wont match and therefore saving clock cycles
+		for (var i = 0; listenerLibrary[name] && i < listenerLibrary[name].length; i++){
+			listenerLibrary[name][i](payload, name)
+		}
 		// join the callback name and the wiledcard listeners (if they exist) and call the callbacks of both listeners
-		for (var key in listenerLibrary){
-			var set = listenerLibrary[key]
+		for (var key in listenerWildcards){
+			var set = listenerWildcards[key]
 			if (name.match(set.regex)){
 				set.listeners.forEach(function(callback){
 					callback(payload, name)
@@ -75,11 +87,6 @@ function subscribable(){
 					// console.log(name, workingQueue[name])
 					emit(name, workingQueue[name])
 				})
-				// console.log(eventNames.map(name => workingQueue[name].order), eventNames)
-
-				// for(var name in ){
-				// 	emit(name, workingQueue[name])
-				// }
 
 				emit("asyncend", workingQueue)
 			})
