@@ -109,20 +109,23 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 	var lengthKey = eventInstance.last("get").value
 	console.log(repeatBody)
 
-	eventInstance.watch("set:" + lengthKey, function(payload){
+	var lengthSet = function(payload){
+		if (typeof payload === "undefined"){
+			return
+		}
 		// the flow: because we know that the output list is always gonna be here while we dont know the current state of the element and if it has a parent at all, the best that we can do is to build the output list right and then remove all the elements form the parent element if there is one then stick the output list in after.
 		var insertBeforeIndex = repeatBody.outputList.indexOf(repeatBody.insertBefore)
 		var elementsList = repeatBody.outputList
 		var indexKey = repeatBody.key
 		var insertAfterIndex = insertBeforeIndex-1
-		var parent = elementsList[0].parentNode
+		var parent = repeatBody.insertBefore
 
 		if (!elementsList[insertAfterIndex].hasOwnProperty(indexKey) || elementsList[insertAfterIndex][indexKey] < payload.value - 1){
 			// we dont have these items yet lets add it
 			var indexKeyValue = 0
 			elementsList[insertAfterIndex].hasOwnProperty(indexKey) && (indexKeyValue = elementsList[insertAfterIndex][indexKey] + 1)
 			// console.log(elementsList)
-			while(indexKeyValue < payload.value){
+			while(indexKeyValue < repeatBody.source.length){
 				var bodyClones = repeatBody.elements.map(function(ele){
 					var clone = ele.cloneNode(true)
 					return clone
@@ -141,9 +144,14 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 				elementsList.splice.apply(elementsList, [insertBeforeIndex, 0].concat(bodyClones))
 
 				if (parent){
-					bodyClones.forEach(function(clone){
-						parent.insertBefore(clone, repeatBody.insertBefore)
-					})
+					try{
+						bodyClones.forEach(function(clone){
+							parent.insertBefore(clone, repeatBody.insertBefore)
+						})
+					}
+					catch(o3o){
+						// whatever xP
+					}
 				}
 
 				insertAfterIndex += bodyClones.length
@@ -151,10 +159,13 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 				indexKeyValue++
 			}
 		}
-		else if (elementsList[insertBeforeIndex-1].hasOwnProperty(indexKey) && elementsList[insertBeforeIndex-1][indexKey] > payload.value - 1){
+		else if (elementsList[insertBeforeIndex-1].hasOwnProperty(indexKey) && elementsList[insertBeforeIndex-1][indexKey] > repeatBody.source.length - 1){
 			// the array got shurnk down, we need to delete elements
 		}
-	})
+	}
+	
+	eventInstance.watch("set:" + lengthKey, lengthSet)
+	lengthSet(eventInstance.last("set:" + lengthKey))
 }
 
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = "data"){
