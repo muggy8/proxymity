@@ -107,16 +107,27 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			}
 
 			initialized.source = array
+			initialized.elements = []
 
 			console.log("array:", array)
 		}
 		key.end = function(){
-			console.log("end")
+			var repeatBlock = repeatBodies.pop()
+			if (!repeatBlock || !repeatBlock.key || !repeatBlock.source || !repeatBlock.elements || !repeatBlock.elements.length){
+				throw new Error("Impropert usage of key.end(): key(string).in(array) is not called properly prior to calling key.end()")
+			}
+			repeatBlock.elements.pop() // lets get rid of the final comment haha
+			console.log("end", repeatBlock)
 		}
 		return Object.setPrototypeOf(
 			arrayFrom(nodeOrNodeListOrHTML)
 				.map(function(node){
 					var proxied = proxyUI(node, model, eventInstance, propertyToDefine)[0]
+
+					// we push this to the array first because we dont want to include the oppening comment (or the closing comment for that matter too...) in the list of repeating elements so ya
+					repeatBodies.forEach(function(repeatableElementSet){
+						repeatableElementSet.elements.push(proxied)
+					})
 					// console.log(node)
 					if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
 						safeEval.call(node, node.textContent, {
