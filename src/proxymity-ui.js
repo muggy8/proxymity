@@ -117,7 +117,8 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			if (!repeatBody || !repeatBody.key || !repeatBody.source || !repeatBody.elements || !repeatBody.elements.length){
 				throw new Error("Impropert usage of key.end([onClone]): key(string).in(array) is not called properly prior to calling key.end([onClone])")
 			}
-			repeatBody.elements.pop() // lets get rid of the final comment haha
+
+			var insertBefore = repeatBody.elements.pop() // we're going to use this comment as the place where we will be inserting all of our loopy stuff before 
 			if (typeof onClone === "function"){
 				repeatBody.onClone = onClone
 			}
