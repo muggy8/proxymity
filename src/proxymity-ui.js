@@ -29,7 +29,7 @@ function continiousRender(textSource, eventInstance, containingElement){
 	}
 	return function(){
 		textSource.textContent = textVal
-		unwatch()
+		unwatch && unwatch()
 	}
 }
 
@@ -92,10 +92,20 @@ function forEveryElement(source, callback){
 	})
 }
 
+var destroyEventName = generateId(randomInt(32, 48))
 function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
+
+	// first off, we're going to need to reset everything in these elements to it's default ground state
 	forEveryElement(repeatBody.elements, function(ele){
 		console.log(ele)
+		ele.dispatchEvent(new CustomEvent(destroyEventName))
 	})
+
+	// next up we're going to need to detach them from the parent because this is our base template that will be copied to everthing
+	repeatBody.elements.forEach(function(ele){
+		ele.parentNode && ele.parentNode.removeChild(ele)
+	})
+
 }
 
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = "data"){
@@ -110,6 +120,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 		return current && node instanceof Node
 	}, true))){
 		// before we get to repeatable sections we're just going to bind things to other things so this step is going to be a bit short
+		var elementsToExclude = []
 		var repeatBody
 		var key = function(property){
 			if (repeatBody){
@@ -145,6 +156,8 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 				repeatBody.onClone = onClone
 			}
 
+			elementsToExclude.push.apply(elementsToExclude, repeatBody.elements)
+
 			initializeRepeater(eventInstance, model, propertyToDefine, repeatBody)
 			repeatBody = undefined
 		}
@@ -167,6 +180,9 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 					}
 
 					return proxied
+				})
+				.filter(function(item){
+					return elementsToExclude.indexOf(item) === -1
 				}),
 			appendableArrayProto
 		)
@@ -336,9 +352,9 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 				fn()
 			})
 		}
-		node.addEventListener("destroy", destroyListener)
+		node.addEventListener(destroyEventName, destroyListener)
 		onDestroyCallbacks.push(function(){
-			node.removeEventListener("destroy", destroyListener)
+			node.removeEventListener(destroyEventName, destroyListener)
 		})
 
 		return Object.setPrototypeOf([node], appendableArrayProto)
