@@ -85,11 +85,29 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 		return current && node instanceof Node
 	}, true))){
 		// before we get to repeatable sections we're just going to bind things to other things so this step is going to be a bit short
+		var repeatBodies = []
 		var key = function(property){
 			console.log("key:", property)
+			repeatBodies.push({
+				key: property
+			})
 			return key
 		}
 		key.in = function(array){
+			if (repeatBodies.length === 0){
+				throw new Error("Impropert usage of key(string).in(array): key(string) not called")
+			}
+			var initialized = repeatBodies[repeatBodies.length -1]
+			if (initialized.source){
+				throw new Error("Impropert usage of key(string).in(array): in(array) called before key")
+			}
+
+			if (!Array.isArray(array) || !array[getSecretId]){
+				throw new Error("Impropert usage of key(string).in(array): in(array) is not provided with a proxified array")
+			}
+
+			initialized.source = array
+
 			console.log("array:", array)
 		}
 		key.end = function(){
@@ -104,6 +122,9 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 						safeEval.call(node, node.textContent, {
 							key: key
 						})
+						if (repeatBodies.length && !repeatBodies[repeatBodies.length -1].source){
+							throw new Error("Impropert usage of key(string).in(array): in(array) not called in conjunction with key")
+						}
 					}
 
 					return proxied
