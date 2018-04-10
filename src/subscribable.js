@@ -93,7 +93,7 @@ function subscribable(){
 			nextEventSet = true
 		}
 
-		queue[name] = payload
+		lastEmitLog[name] = queue[name] = payload
 		payload.order = order = order + 1
 	}
 
