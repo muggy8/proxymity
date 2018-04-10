@@ -16,7 +16,7 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
             return
         }
 
-        ev.stopPropagation();
+        ev.stopPropagation()
 
         var workingQueue = queue
 		nextEvent = generateId(randomInt(32, 48)) // we really dont want someone else outside triggering this on accident or on purpose. this way when we recieve a message, we're going to expect a different message next time which means even if there are eves droppers on the message channel, we'll be fine

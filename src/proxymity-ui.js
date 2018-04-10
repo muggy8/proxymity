@@ -15,7 +15,7 @@ function continiousRender(textSource, eventInstance, containingElement){
 	containingElement = containingElement || textSource
 	var textVal = textSource.textContent
 	if (textVal.match(/\{\{([\s\S]*?)\}\}/g)){
-		eventInstance.watch("asyncstart", function(asyncEvents){
+		var unwatch = eventInstance.watch("asyncstart", function(asyncEvents){
 			var hasSetEvent = false
 			findIfSetEventExists: for(var key in asyncEvents){
 				if (key.substring(0, 4) === "set:"){
@@ -26,6 +26,10 @@ function continiousRender(textSource, eventInstance, containingElement){
 			textSource.textContent = renderBrackets(textVal, containingElement)
 			// console.log(renderedText)
 		})
+	}
+	return function(){
+		textSource.textContent = textVal
+		unwatch()
 	}
 }
 
@@ -49,7 +53,7 @@ appendableArrayProto.detach = function(){
 	return this
 }
 
-function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners){
+function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners, destroyCallbacks){
 	// because we have no idea what the heck is going to be in the attr.value and parsing it is too hard, we let the native javascirpt runtime handle that and as long as it's valid javascript that accesses a property in the data we'll be able to track which was the last accessed property and then we'll store that as the key we track
 	safeEval.call({
 		data: model
@@ -60,17 +64,25 @@ function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners)
 	// watch everything
 	for(var key in listeners){
 		var keyToWatch = key + ":" + modelKey
-		unwatch[key] = eventInstance.watch(keyToWatch, listeners[key])
+		destroyCallbacks.push(
+			unwatch[key] = eventInstance.watch(keyToWatch, listeners[key])
+		)
 		listeners[key](eventInstance.last(keyToWatch))
 	}
 
 	// if an remap event for this item every comes by, we'll run this entire operation again including myself
-	unwatch[modelKey] = eventInstance.watch("remap:" + modelKey, function(){
-		for(var key in unwatch){
-			unwatch[key]()
-		}
-		continiousUiWatch(eventInstance, model, attributeToListenTo, listeners)
-	})
+	destroyCallbacks.push(
+		unwatch[modelKey] = eventInstance.watch("remap:" + modelKey, function(){
+			for(var key in unwatch){
+				unwatch[key]()
+				var removalIndex = destroyCallbacks.indexOf(unwatch[key])
+				if (removalIndex > -1){
+					destroyCallbacks.splice(removalIndex, 1)
+				}
+			}
+			continiousUiWatch(eventInstance, model, attributeToListenTo, listeners, destroyCallbacks)
+		})
+	)
 }
 
 function forEveryElement(source, callback){
@@ -162,6 +174,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 
 	if (nodeOrNodeListOrHTML instanceof Node){
 		var node = nodeOrNodeListOrHTML
+		var onDestroyCallbacks = []
 
 		// step 1: define the data (or any other property for that matter) onto everything
 		Object.defineProperty(node, propertyToDefine, {
@@ -182,10 +195,14 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 				}
 			}
 		})
+		onDestroyCallbacks.push(function(){
+			delete node[propertyToDefine]
+		})
 
 		// step 2: set up continious rendering for everything that's a text element
 		if (node instanceof CharacterData){
-			continiousRender(node, eventInstance)
+			var stopContiniousRender = continiousRender(node, eventInstance)
+			onDestroyCallbacks.push(stopContiniousRender)
 		}
 		else {
 			proxyUI(node.childNodes, model, eventInstance, propertyToDefine)
@@ -193,7 +210,11 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 
 		// step 3: set up continious rendering for element properties but also link the names of items to the model
 		arrayFrom(node.attributes).forEach(function(attr){
-			attr.name !== "name" && continiousRender(attr, eventInstance, node) // only for non-name attributes because name is not going to suppor this since making it support this and bind to the data model correctly is too hard
+			var destroyAttributeRender = attr.name !== "name" && continiousRender(attr, eventInstance, node) // only for non-name attributes because name is not going to suppor this since making it support this and bind to the data model correctly is too hard
+
+			if (destroyAttributeRender){
+				onDestroyCallbacks.push(destroyAttributeRender)
+			}
 
 			if (
 				attr.name !== "name" || (
@@ -289,16 +310,35 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			continiousUiWatch(eventInstance, model, attr.value, {
 				set: setListener,
 				del: delListener
-			})
+			}, onDestroyCallbacks)
 
-			;["change", "keyup", "propertychange", "valuechange", "input"].forEach(function(listenTo){
-				node.addEventListener(listenTo, function(ev){
-					safeEval.call({
-						data: model,
-						value: node[uiDataVal]
-					}, "this.data" + (attr.value[0] === "[" ? "" : ".") + attr.value + " = this.value")
+
+			var changeListeners = ["change", "keyup", "propertychange", "valuechange", "input"]
+			var onChange = function(ev){
+				safeEval.call({
+					data: model,
+					value: node[uiDataVal]
+				}, "this.data" + (attr.value[0] === "[" ? "" : ".") + attr.value + " = this.value")
+			}
+
+			changeListeners.forEach(function(listenTo){
+				node.addEventListener(listenTo, onChange)
+			})
+			onDestroyCallbacks.push(function(){
+				changeListeners.forEach(function(listenTo){
+					node.removeEventListener(listenTo, onChange)
 				})
 			})
+		})
+		var destroyListener = function(ev){
+			ev.stopPropagation()
+			onDestroyCallbacks.forEach(function(fn){
+				fn()
+			})
+		}
+		node.addEventListener("destroy", destroyListener)
+		onDestroyCallbacks.push(function(){
+			node.removeEventListener("destroy", destroyListener)
 		})
 
 		return Object.setPrototypeOf([node], appendableArrayProto)
