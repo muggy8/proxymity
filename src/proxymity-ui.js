@@ -405,10 +405,9 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 
 			var changeListeners = ["change", "keyup", "propertychange", "valuechange", "input"]
 			var onChange = function(ev){
-				safeEval.call({
-					data: model,
+				safeEval.call(node, "this." + propertyToDefine + (attr.value[0] === "[" ? "" : ".") + attr.value + " = value", {
 					value: node[uiDataVal]
-				}, "this.data" + (attr.value[0] === "[" ? "" : ".") + attr.value + " = this.value")
+				})
 			}
 
 			changeListeners.forEach(function(listenTo){
