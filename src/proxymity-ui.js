@@ -97,13 +97,20 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 
 	// first off, we're going to need to reset everything in these elements to it's default ground state
 	forEveryElement(repeatBody.elements, function(ele){
-		console.log(ele)
 		ele.dispatchEvent(new CustomEvent(destroyEventName))
 	})
 
 	// next up we're going to need to detach them from the parent because this is our base template that will be copied to everthing
 	repeatBody.elements.forEach(function(ele){
 		ele.parentNode && ele.parentNode.removeChild(ele)
+	})
+
+	console.log(repeatBody.source.length)
+	var lengthKey = eventInstance.last("get").value
+	console.log(lengthKey)
+
+	eventInstance.watch("set:" + lengthKey, function(payload){
+		console.log(payload)
 	})
 
 }
@@ -121,6 +128,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 	}, true))){
 		// before we get to repeatable sections we're just going to bind things to other things so this step is going to be a bit short
 		var elementsToExclude = []
+		var elementList = arrayFrom(nodeOrNodeListOrHTML)
 		var repeatBody
 		var key = function(property){
 			if (repeatBody){
@@ -151,6 +159,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 				throw new Error("Impropert usage of key.end([onClone]): key(string).in(array) is not called properly prior to calling key.end([onClone])")
 			}
 
+			repeatBody.outputList = elementList
 			repeatBody.insertBefore = repeatBody.elements.pop() // we're going to use this comment as the place where we will be inserting all of our loopy stuff before
 			if (typeof onClone === "function"){
 				repeatBody.onClone = onClone
@@ -162,7 +171,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			repeatBody = undefined
 		}
 		return Object.setPrototypeOf(
-			arrayFrom(nodeOrNodeListOrHTML)
+			elementList
 				.map(function(node){
 					var proxied = proxyUI(node, model, eventInstance, propertyToDefine)[0]
 
