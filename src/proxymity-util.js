@@ -36,4 +36,7 @@ function softCopy(from, to){
 	toKeys.forEach(function(key){
 		delete to[key]
 	})
+	if (Array.isArray(to)){
+		to.length = to.length
+	}
 }
