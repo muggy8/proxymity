@@ -73,8 +73,17 @@ function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners)
 	})
 }
 
-function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
+function forEveryElement(source, callback){
+	arrayFrom(source).forEach(function(item, index, whole){
+		callback(item)
+		forEveryElement(item.childNodes, callback)
+	})
+}
 
+function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
+	forEveryElement(repeatBody.elements, function(ele){
+		console.log(ele)
+	})
 }
 
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = "data"){
@@ -97,7 +106,6 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			repeatBody = {
 				key: property
 			}
-			console.log("key:", property)
 			return key
 		}
 		key.in = function(array){
@@ -114,8 +122,6 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 
 			repeatBody.source = array
 			repeatBody.elements = []
-
-			console.log("array:", array)
 		}
 		key.end = function(onClone){
 			if (!repeatBody || !repeatBody.key || !repeatBody.source || !repeatBody.elements || !repeatBody.elements.length){
@@ -143,7 +149,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 						safeEval.call(node, node.textContent, {
 							key: key
 						})
-						if (!repeatBody.key || !repeatBody.source || !repeatBody.elements){
+						if (repeatBody && (!repeatBody.key || !repeatBody.source || !repeatBody.elements)){
 							throw new Error("Impropert usage of key(string).in(array): in(array) not called in conjunction with key")
 						}
 					}
