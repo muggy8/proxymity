@@ -125,18 +125,19 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 			while(indexKeyValue < payload.value){
 				var bodyClones = repeatBody.elements.map(function(ele){
 					var clone = ele.cloneNode(true)
-					proxyUI(clone, model, eventInstance, mainModelVar)
-					forEveryElement(clone, function(ele){
-						Object.defineProperty(ele, indexKey, {
-							configurable: true,
-							enumerable: false,
-							get: function(index){
-								return index
-							}.bind(ele, indexKeyValue)
-						})
-					})
 					return clone
 				})
+				forEveryElement(bodyClones, function(cloneEle){
+					Object.defineProperty(cloneEle, indexKey, {
+						configurable: true,
+						enumerable: false,
+						get: function(index){
+							return index
+						}.bind(cloneEle, indexKeyValue)
+					})
+				})
+				proxyUI(bodyClones, model, eventInstance, mainModelVar)
+
 				elementsList.splice.apply(elementsList, [insertBeforeIndex, 0].concat(bodyClones))
 
 				if (parent){
@@ -153,10 +154,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 		else if (elementsList[insertBeforeIndex-1].hasOwnProperty(indexKey) && elementsList[insertBeforeIndex-1][indexKey] > payload.value - 1){
 			// the array got shurnk down, we need to delete elements
 		}
-
-
 	})
-
 }
 
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = "data"){
@@ -167,7 +165,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 		return proxyUI(parsedList, model, eventInstance, propertyToDefine)
 	}
 
-	if (nodeOrNodeListOrHTML instanceof NodeList || (nodeOrNodeListOrHTML instanceof Array && nodeOrNodeListOrHTML.reduce(function(crrent, node){
+	if (nodeOrNodeListOrHTML instanceof NodeList || (nodeOrNodeListOrHTML instanceof Array && nodeOrNodeListOrHTML.reduce(function(current, node){
 		return current && node instanceof Node
 	}, true))){
 		// before we get to repeatable sections we're just going to bind things to other things so this step is going to be a bit short
