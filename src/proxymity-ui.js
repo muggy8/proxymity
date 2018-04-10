@@ -85,20 +85,22 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 		return current && node instanceof Node
 	}, true))){
 		// before we get to repeatable sections we're just going to bind things to other things so this step is going to be a bit short
-		var repeatBodies = []
+		var repeatBody
 		var key = function(property){
-			console.log("key:", property)
-			repeatBodies.push({
+			if (repeatBody){
+				throw new error("Impropert usage of key(string).in(array): key(string) cannot be nested on the same level")
+			}
+			repeatBody = {
 				key: property
-			})
+			}
+			console.log("key:", property)
 			return key
 		}
 		key.in = function(array){
-			if (repeatBodies.length === 0){
+			if (!repeatBody){
 				throw new Error("Impropert usage of key(string).in(array): key(string) not called")
 			}
-			var initialized = repeatBodies[repeatBodies.length -1]
-			if (initialized.source){
+			if (repeatBody.source){
 				throw new Error("Impropert usage of key(string).in(array): in(array) called before key")
 			}
 
@@ -106,21 +108,19 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 				throw new Error("Impropert usage of key(string).in(array): in(array) is not provided with a proxified array")
 			}
 
-			initialized.source = array
-			initialized.elements = []
+			repeatBody.source = array
+			repeatBody.elements = []
 
 			console.log("array:", array)
 		}
 		key.end = function(onClone){
-			var repeatBlock = repeatBodies.pop()
-			if (!repeatBlock || !repeatBlock.key || !repeatBlock.source || !repeatBlock.elements || !repeatBlock.elements.length){
+			if (!repeatBody || !repeatBody.key || !repeatBody.source || !repeatBody.elements || !repeatBody.elements.length){
 				throw new Error("Impropert usage of key.end([onClone]): key(string).in(array) is not called properly prior to calling key.end([onClone])")
 			}
-			repeatBlock.elements.pop() // lets get rid of the final comment haha
+			repeatBody.elements.pop() // lets get rid of the final comment haha
 			if (typeof onClone === "function"){
-				repeatBlock.onClone = onClone
+				repeatBody.onClone = onClone
 			}
-			console.log("end", repeatBlock)
 		}
 		return Object.setPrototypeOf(
 			arrayFrom(nodeOrNodeListOrHTML)
@@ -128,15 +128,14 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 					var proxied = proxyUI(node, model, eventInstance, propertyToDefine)[0]
 
 					// we push this to the array first because we dont want to include the oppening comment (or the closing comment for that matter too...) in the list of repeating elements so ya
-					repeatBodies.forEach(function(repeatableElementSet){
-						repeatableElementSet.elements.push(proxied)
-					})
+					repeatBody && repeatBody.elements && repeatBody.elements.push(proxied)
+
 					// console.log(node)
 					if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
 						safeEval.call(node, node.textContent, {
 							key: key
 						})
-						if (repeatBodies.length && !repeatBodies[repeatBodies.length -1].source){
+						if (!repeatBody.key || !repeatBody.source || !repeatBody.elements){
 							throw new Error("Impropert usage of key(string).in(array): in(array) not called in conjunction with key")
 						}
 					}
