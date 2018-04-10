@@ -165,8 +165,8 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 	}
 	
 	eventInstance.watch("set:" + lengthKey, lengthSet)
-	lengthSet(eventInstance.last("set:" + lengthKey))
-	console.log("initialized", eventInstance.last("set:" + lengthKey))
+	lengthSet(eventInstance.next("set:" + lengthKey) || eventInstance.last("set:" + lengthKey))
+	console.log("initialized")
 }
 
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = "data"){

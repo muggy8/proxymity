@@ -93,12 +93,17 @@ function subscribable(){
 			nextEventSet = true
 		}
 
-		lastEmitLog[name] = queue[name] = payload
+		queue[name] = payload
 		payload.order = order = order + 1
 	}
 
 	var last = this.last = function(name){
 		// console.log("last", name, lastEmitLog[name])
 		return lastEmitLog[name]
+	}
+
+	var next = this.next = function(name){
+		// console.log("last", name, lastEmitLog[name])
+		return queue[name]
 	}
 }
