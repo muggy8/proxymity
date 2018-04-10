@@ -53,12 +53,12 @@ appendableArrayProto.detach = function(){
 	return this
 }
 
-function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners, destroyCallbacks){
+function continiousUiWatch(node, proxyProp, eventInstance, model, attributeToListenTo, listeners, destroyCallbacks){
 	// because we have no idea what the heck is going to be in the attr.value and parsing it is too hard, we let the native javascirpt runtime handle that and as long as it's valid javascript that accesses a property in the data we'll be able to track which was the last accessed property and then we'll store that as the key we track
-	safeEval.call({
-		data: model
-	}, "this.data" + (attributeToListenTo[0] === "[" ? "" : ".") + attributeToListenTo)
+	safeEval.call(node, "this." + proxyProp + (attributeToListenTo[0] === "[" ? "" : ".") + attributeToListenTo)
 	var modelKey = eventInstance.last("get").value
+
+	console.log(attributeToListenTo)
 
 	var unwatch = {}
 	// watch everything
@@ -67,7 +67,7 @@ function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners,
 		destroyCallbacks.push(
 			unwatch[key] = eventInstance.watch(keyToWatch, listeners[key])
 		)
-		listeners[key](eventInstance.last(keyToWatch))
+		listeners[key](eventInstance.next(keyToWatch) || eventInstance.last(keyToWatch))
 	}
 
 	// if an remap event for this item every comes by, we'll run this entire operation again including myself
@@ -80,7 +80,7 @@ function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners,
 					destroyCallbacks.splice(removalIndex, 1)
 				}
 			}
-			continiousUiWatch(eventInstance, model, attributeToListenTo, listeners, destroyCallbacks)
+			continiousUiWatch(node, proxyProp, eventInstance, model, attributeToListenTo, listeners, destroyCallbacks)
 		})
 	)
 }
@@ -139,6 +139,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 						}.bind(cloneEle, indexKeyValue)
 					})
 				})
+				// console.log(bodyClones)
 				proxyUI(bodyClones, model, eventInstance, mainModelVar)
 
 				elementsList.splice.apply(elementsList, [insertBeforeIndex, 0].concat(bodyClones))
@@ -396,7 +397,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			// var unwatchSet = eventInstance.watch("set:" + modelKey, setListener)
 			// var unwatchDel = eventInstance.watch("del:" + modelKey, delListener)
 
-			continiousUiWatch(eventInstance, model, attr.value, {
+			continiousUiWatch(node, propertyToDefine, eventInstance, model, attr.value, {
 				set: setListener,
 				del: delListener
 			}, onDestroyCallbacks)
