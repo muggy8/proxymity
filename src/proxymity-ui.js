@@ -73,7 +73,7 @@ function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners)
 	})
 }
 
-function initializeRepeater(eventInstance, repeatBody){
+function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 
 }
 
@@ -127,7 +127,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 				repeatBody.onClone = onClone
 			}
 
-			initializeRepeater(eventInstance, repeatBody)
+			initializeRepeater(eventInstance, model, propertyToDefine, repeatBody)
 			repeatBody = undefined
 		}
 		return Object.setPrototypeOf(
