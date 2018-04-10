@@ -92,25 +92,63 @@ function forEveryElement(source, callback){
 	})
 }
 
-var destroyEventName = generateId(randomInt(32, 48))
-function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
-
-	// first off, we're going to need to reset everything in these elements to it's default ground state
-	forEveryElement(repeatBody.elements, function(ele){
+function prepareTemplate(elements){
+	forEveryElement(elements, function(ele){
 		ele.dispatchEvent(new CustomEvent(destroyEventName))
 	})
 
 	// next up we're going to need to detach them from the parent because this is our base template that will be copied to everthing
-	repeatBody.elements.forEach(function(ele){
+	elements.forEach(function(ele){
 		ele.parentNode && ele.parentNode.removeChild(ele)
 	})
+}
 
-	console.log(repeatBody.source.length)
+var destroyEventName = generateId(randomInt(32, 48))
+function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
+	repeatBody.source.length
 	var lengthKey = eventInstance.last("get").value
-	console.log(lengthKey)
+	console.log(repeatBody)
 
 	eventInstance.watch("set:" + lengthKey, function(payload){
-		console.log(payload)
+		// the flow: because we know that the output list is always gonna be here while we dont know the current state of the element and if it has a parent at all, the best that we can do is to build the output list right and then remove all the elements form the parent element if there is one then stick the output list in after.
+		var insertBeforeIndex = repeatBody.outputList.indexOf(repeatBody.insertBefore)
+		var elementsList = repeatBody.outputList
+		var indexKey = repeatBody.key
+		var insertAfterIndex = insertBeforeIndex-1
+
+		if (!elementsList[insertAfterIndex].hasOwnProperty(indexKey) || elementsList[insertAfterIndex][indexKey] < payload.value - 1){
+			// we dont have these items yet lets add it
+			var indexKeyValue = 0
+			elementsList[insertAfterIndex].hasOwnProperty(indexKey) && (indexKeyValue = elementsList[insertAfterIndex][indexKey] + 1)
+			// console.log(elementsList)
+			while(indexKeyValue < payload.value){
+				var bodyClones = repeatBody.elements.map(function(ele){
+					var clone = ele.cloneNode(true)
+					proxyUI(clone, model, eventInstance, mainModelVar)
+					forEveryElement(clone, function(ele){
+						Object.defineProperty(ele, indexKey, {
+							configurable: true,
+							enumerable: false,
+							get: function(index){
+								return index
+							}.bind(ele, indexKeyValue)
+						})
+					})
+					return clone
+				})
+				console.log([insertBeforeIndex, 0].concat(bodyClones))
+				elementsList.splice.apply(elementsList, [insertBeforeIndex, 0].concat(bodyClones))
+				insertAfterIndex += bodyClones.length
+				insertBeforeIndex += bodyClones.length
+
+				indexKeyValue++
+			}
+			console.log(elementsList)
+		}
+		else if (elementsList[insertBeforeIndex-1].hasOwnProperty(indexKey) && elementsList[insertBeforeIndex-1][indexKey] > payload.value - 1){
+			// the array got shurnk down, we need to delete elements
+		}
+
 	})
 
 }
@@ -167,32 +205,33 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 
 			elementsToExclude.push.apply(elementsToExclude, repeatBody.elements)
 
+			// first off, we're going to need to reset everything in these elements to it's default ground state
+			prepareTemplate(repeatBody.elements)
+
 			initializeRepeater(eventInstance, model, propertyToDefine, repeatBody)
 			repeatBody = undefined
 		}
-		return Object.setPrototypeOf(
-			elementList
-				.map(function(node){
-					var proxied = proxyUI(node, model, eventInstance, propertyToDefine)[0]
+		elementList.forEach(function(node){
+			proxyUI(node, model, eventInstance, propertyToDefine)
 
-					// we push this to the array first because we dont want to include the oppening comment (or the closing comment for that matter too...) in the list of repeating elements so ya
-					repeatBody && repeatBody.elements && repeatBody.elements.push(proxied)
+			repeatBody && repeatBody.elements && repeatBody.elements.push(node)
 
-					// console.log(node)
-					if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
-						safeEval.call(node, node.textContent, {
-							key: key
-						})
-						if (repeatBody && (!repeatBody.key || !repeatBody.source || !repeatBody.elements)){
-							throw new Error("Impropert usage of key(string).in(array): in(array) not called in conjunction with key")
-						}
-					}
-
-					return proxied
+			if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
+				safeEval.call(node, node.textContent, {
+					key: key
 				})
-				.filter(function(item){
-					return elementsToExclude.indexOf(item) === -1
-				}),
+				if (repeatBody && (!repeatBody.key || !repeatBody.source || !repeatBody.elements)){
+					throw new Error("Improper usage of key(string).in(array): in(array) not called in conjunction with key")
+				}
+			}
+		})
+		for(var i = elementList.length - 1; i >= 0; i--){
+			if (elementsToExclude.indexOf(elementList[i]) !== -1){
+				elementList.splice(i, 1)
+			}
+		}
+		return Object.setPrototypeOf(
+			elementList,
 			appendableArrayProto
 		)
 	}

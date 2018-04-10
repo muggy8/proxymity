@@ -37,6 +37,6 @@ function softCopy(from, to){
 		delete to[key]
 	})
 	if (Array.isArray(to)){
-		to.length = to.length
+		to.length = to.length // this is to trigger the set:lengthId for this object just in case it is something depends on it (which something does)
 	}
 }
