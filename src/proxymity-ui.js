@@ -226,12 +226,12 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			initializeRepeater(eventInstance, model, propertyToDefine, repeatBody)
 			repeatBody = undefined
 		}
+
+		// we are foreaching 3 times first time we go through and find the comments with our special "foreach: ..." in it and calling the key, key.in and key.end functions. after doing that those functions will extract all of those elements from the list cuz they need a clean template to work with then we can continue with the proper init opperations
 		elementList.forEach(function(node){
-			proxyUI(node, model, eventInstance, propertyToDefine)
-
 			repeatBody && repeatBody.elements && repeatBody.elements.push(node)
-
 			if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
+				proxyUI(node, model, eventInstance, propertyToDefine)
 				safeEval.call(node, node.textContent, {
 					key: key
 				})
@@ -240,11 +240,20 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 				}
 			}
 		})
+
+		// after the first forEach we can do the extraction process
 		for(var i = elementList.length - 1; i >= 0; i--){
 			if (elementsToExclude.indexOf(elementList[i]) !== -1){
 				elementList.splice(i, 1)
 			}
 		}
+
+		// alright lets do the proper insertions now
+		elementList.forEach(function(node){
+			if (node[propertyToDefine] !== model){ // we use this if because some elements have it defined already (above) so we save more clock cycles :3
+				proxyUI(node, model, eventInstance, propertyToDefine)
+			}
+		})
 		return Object.setPrototypeOf(
 			elementList,
 			appendableArrayProto
