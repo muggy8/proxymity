@@ -73,6 +73,10 @@ function continiousUiWatch(eventInstance, model, attributeToListenTo, listeners)
 	})
 }
 
+function initializeRepeater(eventInstance, repeatBody){
+
+}
+
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = "data"){
 	if (typeof nodeOrNodeListOrHTML === "string"){
 		var template = document.createElement("template")
@@ -118,10 +122,13 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 				throw new Error("Impropert usage of key.end([onClone]): key(string).in(array) is not called properly prior to calling key.end([onClone])")
 			}
 
-			repeatBody.insertBefore = repeatBody.elements.pop() // we're going to use this comment as the place where we will be inserting all of our loopy stuff before 
+			repeatBody.insertBefore = repeatBody.elements.pop() // we're going to use this comment as the place where we will be inserting all of our loopy stuff before
 			if (typeof onClone === "function"){
 				repeatBody.onClone = onClone
 			}
+
+			initializeRepeater(eventInstance, repeatBody)
+			repeatBody = undefined
 		}
 		return Object.setPrototypeOf(
 			arrayFrom(nodeOrNodeListOrHTML)
