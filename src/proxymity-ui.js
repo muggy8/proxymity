@@ -111,12 +111,15 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 
 			console.log("array:", array)
 		}
-		key.end = function(){
+		key.end = function(onClone){
 			var repeatBlock = repeatBodies.pop()
 			if (!repeatBlock || !repeatBlock.key || !repeatBlock.source || !repeatBlock.elements || !repeatBlock.elements.length){
-				throw new Error("Impropert usage of key.end(): key(string).in(array) is not called properly prior to calling key.end()")
+				throw new Error("Impropert usage of key.end([onClone]): key(string).in(array) is not called properly prior to calling key.end([onClone])")
 			}
 			repeatBlock.elements.pop() // lets get rid of the final comment haha
+			if (typeof onClone === "function"){
+				repeatBlock.onClone = onClone
+			}
 			console.log("end", repeatBlock)
 		}
 		return Object.setPrototypeOf(
