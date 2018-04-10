@@ -115,6 +115,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 		var elementsList = repeatBody.outputList
 		var indexKey = repeatBody.key
 		var insertAfterIndex = insertBeforeIndex-1
+		var parent = elementsList[0].parentNode
 
 		if (!elementsList[insertAfterIndex].hasOwnProperty(indexKey) || elementsList[insertAfterIndex][indexKey] < payload.value - 1){
 			// we dont have these items yet lets add it
@@ -136,18 +137,23 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 					})
 					return clone
 				})
-				console.log([insertBeforeIndex, 0].concat(bodyClones))
 				elementsList.splice.apply(elementsList, [insertBeforeIndex, 0].concat(bodyClones))
+
+				if (parent){
+					bodyClones.forEach(function(clone){
+						parent.insertBefore(clone, repeatBody.insertBefore)
+					})
+				}
+
 				insertAfterIndex += bodyClones.length
 				insertBeforeIndex += bodyClones.length
-
 				indexKeyValue++
 			}
-			console.log(elementsList)
 		}
 		else if (elementsList[insertBeforeIndex-1].hasOwnProperty(indexKey) && elementsList[insertBeforeIndex-1][indexKey] > payload.value - 1){
 			// the array got shurnk down, we need to delete elements
 		}
+
 
 	})
 
