@@ -81,7 +81,6 @@ function proxyObj(obj, eventInstance){
 				// 3: it's a property that does but doesn't have an in dom model then we just return whatever is in our storage
 				// 4: it is a property that is in the dom model and we update our storage to keep things in sync and then return the value in the dom
 
-
 				// console.log("get:" + eventNamespace + property, payload)
 				if (!(property in target) && !(property in secretProps)) {
 					// the case, the property isn't in the dom or the cache or the secret props so we have to create it
@@ -93,6 +92,10 @@ function proxyObj(obj, eventInstance){
 
 				// before we enter return cycle, we want to log what props were gotten so we can solve other get related challenges
 				// because getting an undefined or existing prop results will happen after getting the secret prop and we only emit this event if the get is for a real prop
+				if (!secretProps.hasOwnProperty(property)){
+					// we also want to fill in secret props for things that dont have them because they were there in the beginning (like the length property for arrays for example)
+					secretProps[property] = generateId(randomInt(32, 48))
+				}
 				eventInstance.emit("get", {
 					value: secretProps[property]
 				})
@@ -121,7 +124,6 @@ function proxyObj(obj, eventInstance){
 
 					// now we need to set the actual property
 					target[property] = val
-
 				}
 
 				// before we enter into our return procedure, we want to make sure that whatever prop we're setting, we have a secret id for that prop. we keep the secret ids for prop in the parent object because the props might be something we control or it might not be but we do know that we do control this so that's why we're keeping it here
