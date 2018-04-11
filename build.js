@@ -63,7 +63,6 @@ new Promise(function(accept, reject){
 			unused: true
 		}
 	})
-	console.log(minified)
 
 	fs.writeFile("dist/proxymity.js", hostScript.contents, function(o3o){
 		o3o && console.log(o3o)

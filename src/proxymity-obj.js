@@ -171,12 +171,7 @@ function proxyObj(obj, eventInstance){
 						p: property
                     })
                 }
-
-				if (typeof target[property] === 'undefined' || target[property] === null){
-					// we do the same thing as above here
-					return ""
-				}
-				return target[property]
+				return true
 			},
 			deleteProperty: function(target, property){
 				if (property in target) {
