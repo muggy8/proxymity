@@ -51,7 +51,7 @@ function subscribable(){
 		for (var key in listenerWildcards){
 			var set = listenerWildcards[key]
 			if (name.match(set.regex)){
-				set.listeners.forEach(function(callback){
+				forEach(set.listeners, function(callback){
 					callback(payload, name)
 				})
 			}
@@ -95,7 +95,7 @@ function subscribable(){
 					order: emitOrder
 				})
 
-				emitOrder.forEach(function(name){
+				forEach(emitOrder, function(name){
 					// console.log(name, workingQueue[name])
 					emit(name, workingQueue[name])
 				})

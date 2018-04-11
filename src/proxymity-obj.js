@@ -41,7 +41,7 @@ proxyObjProto[Symbol.toPrimitive] = function(hint){
 }
 
 var proxyArrayProto = Object.create(Array.prototype)
-Object.getOwnPropertyNames(proxyObjProto).forEach(function(property){
+forEach(Object.getOwnPropertyNames(proxyObjProto), function(property){
 	proxyArrayProto[property] = proxyObjProto[property]
 })
 
@@ -64,7 +64,7 @@ function proxyObj(obj, eventInstance){
 			return secretProps[property]
 		}
 		secretProps[secretSelfMoved] = function(){
-			Object.getOwnPropertyNames(proxied).forEach(function(property){
+			forEach(Object.getOwnPropertyNames(proxied), function(property){
 				var emitPropertyMoved = proxied[property][secretSelfMoved]
 				if (typeof emitPropertyMoved === "function"){
 					emitPropertyMoved()
@@ -75,7 +75,7 @@ function proxyObj(obj, eventInstance){
 			})
 		}
 		secretProps[secretSelfDeleted] = function(){
-			Object.getOwnPropertyNames(proxied).forEach(function(property){
+			forEach(Object.getOwnPropertyNames(proxied), function(property){
 				var emitPropertyDeleted = proxied[property][secretSelfDeleted]
 				if (typeof emitPropertyDeleted === "function"){
 					emitPropertyDeleted()

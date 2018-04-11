@@ -23,7 +23,7 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
         emitted = false
         queue = []
 
-        workingQueue.forEach(function(fn){
+        forEach(workingQueue, function(fn){
             fn()
         })
     })

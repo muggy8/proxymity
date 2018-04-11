@@ -1,6 +1,9 @@
-
 function arrayFrom(arrayLike){ // incase we are running in a not so new browser without the Array.from function (and to save on compression size hehe :P)
 	return Array.prototype.slice.call(arrayLike || [])
+}
+
+function forEach(arrayLike, callback){
+	arrayFrom(arrayLike).forEach(callback)
 }
 
 function randomInt(start, stop){
@@ -32,8 +35,8 @@ function softCopy(from, to){
 	for(var key in from){
 		to[key] = from[key]
 		toKeys.splice(toKeys.indexOf(key), 1)
+		forEach(toKeys, function(key){
 	}
-	toKeys.forEach(function(key){
 		delete to[key]
 	})
 	// if (Array.isArray(to)){
