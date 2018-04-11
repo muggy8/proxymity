@@ -96,7 +96,7 @@ function subscribable(){
 				})
 
 				emitOrder.forEach(function(name){
-					console.log(name, workingQueue[name])
+					// console.log(name, workingQueue[name])
 					emit(name, workingQueue[name])
 				})
 
