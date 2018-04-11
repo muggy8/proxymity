@@ -1,0 +1,155 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
+		<script src="proxymity.js"></script>
+	</head>
+	<body>
+		<div id="view">
+			<input name='user.name' type='text' placeholder='name'/><br>
+			<input name='user.age' placeholder='age' type='number'/><br>
+			<input name='user.birthday' placeholder='yyyy-mm-dd' type='date'/><br>
+			<input name='user.trusted' type='checkbox'/><br>
+			<textarea name='user.bio'></textarea><br>
+			<select name='user.pronouns'>
+				<option value="0">N/A</option>
+				<option value="1">He/Him</option>
+				<option value="2">She/Her</option>
+				<option value="3">They/Them</option>
+			</select><br>
+			<div class='{{this.data.user.name.toString() && "test-1"}} {{parseInt(this.data.user.age) && "test-2"}}'>
+				<label><input name='user.class' type='radio' value="A"/> A</label>
+				<label><input name='user.class' type='radio' value="B"/> B</label>
+				<label><input name='user.class' type='radio' value="C"/> C</label>
+			</div><br>
+			<input name='user.name' type='text' placeholder='experimenting'/><br>
+
+			<pre>{{this.data.user.stringify(null, "    ")}}</pre>
+			<div>
+				<label class="block">
+					color: <input name="color" />
+				</label>
+				<label class="block">
+					background-color: <input name="background" />
+				</label>
+				<label class="block">
+					padding: <input name="padding" />
+				</label>
+				<label class="block">
+					border: <input name="border" />
+				</label>
+				<label class="block">
+					font-size: <input name="fontSize" />
+				</label>
+				<label class="block">
+					font-family: <input name="fontFace" />
+				</label>
+			</div>
+			<style>
+				pre {
+					background-color: {{this.data.background.toString() || 'initial'}};
+					color: {{this.data.color.toString() || 'initial'}};
+					padding: {{this.data.padding.toString() || 'initial'}};
+					border: {{this.data.border.toString() || 'initial'}};
+					font-size: {{this.data.fontSize.toString() || 'inherit'}};
+					font-family: {{this.data.fontFace.toString() || 'sans-serif'}}, sans-serif;
+				}
+				.block {
+					display: block
+				}
+			</style>
+		</div>
+		<script>
+			// testing Proxymity now
+			var components = proxymity(document.querySelector("#view"), {
+					user: {
+						name: "Muggy8"
+					}
+				}
+			)
+
+			var components2 = proxymity(document.querySelector("#view").innerHTML, {
+					user: {
+						name: "Muggy8"
+					}
+				}
+			)
+			components.detach()
+			components2.appendTo("body").detach()
+
+			function randomObj(number){
+				return {
+					str: "this is a string " + number,
+					int: number
+				}
+			}
+
+			var arr = []
+			var testArrStr = ""
+
+			for(var i = 0; i < 5; i++){
+				arr.push(randomObj(i))
+				testArrStr += `
+					<div>
+						<strong>item ${i + 1}</strong>
+						<label class="block">
+							Str 1: <input type="text" name="[${i}].str">
+						</label>
+						<label class="block">
+							Int 1: <input type="number" name="[${i}].int">
+						</label>
+						<hr />
+					</div>
+				`
+			}
+			testArrStr += "<pre>{{this.data.stringify(null, '    ')}}</pre>"
+
+			var renderedArr = proxymity(testArrStr, arr)
+			renderedArr.appendTo("body")
+			// var renderedArrData = renderedArr.data
+
+			var testRepeat = proxymity(`
+				<!-- foreach: key("index").in(this.data.arr) -->
+					<div>
+						<strong>item {{this.index + 1}}</strong>
+						<label class="block">
+							Str 1: <input type="text" name="arr[this.index].str">
+						</label>
+						<label class="block">
+							Int 1: <input type="number" name="arr[this.index].int">
+						</label>
+						<hr />
+					</div>
+				<!-- foreach: key.end() -->
+				<!-- {{this.data.filtered = this.data.arr.filter(function(_, index){
+					return index < 2
+				})}} -->
+				<pre>{{this.data.stringify(null, "    ")}}</pre>
+			`, {
+				arr: arr
+			})
+			testRepeat.appendTo("body")
+
+			// renderedArrData.sort(function(a, b){
+			// 	if (a.int > b.int){
+			// 		return 1
+			// 	}
+			// 	if (a.int < b.int){
+			// 		return -1
+			// 	}
+			// 	return 0
+			// })
+		</script>
+		<style>
+			.test-1 {
+				border: solid 1px red;
+			}
+			.test-2 {
+				background-color: blue;
+			}
+			.block {
+				display: block;
+			}
+		</style>
+	</body>
+</html>
