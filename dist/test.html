@@ -109,7 +109,9 @@
 			// var renderedArrData = renderedArr.data
 
 			var testRepeat = proxymity(`
-				<!-- foreach: key("index").in(this.data.arr) -->
+				<!-- foreach:
+					key("index").in(this.data.arr)
+				-->
 					<div>
 						<strong>item {{this.index + 1}}</strong>
 						<label class="block">

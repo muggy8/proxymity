@@ -31,10 +31,12 @@ var proxymity = (function(safeEval){
 		})
 		return ui
 	}
-})(function(script, contextVars = {}){
-	for(var key in contextVars){
-		eval("var " + key + " = contextVars['" + key + "']")
+})(function(script, sv = {}){
+	var prepend = ""
+	for(var key in sv){
+		prepend += "var " + key + " = sv." + key + ";\n"
 	}
+
 	// delete arguments[1]
-	return eval(script)
+	return eval(prepend + script)
 })
