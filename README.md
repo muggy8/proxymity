@@ -2,7 +2,7 @@
 Testing markdown md stuff
 Proxymity is a 2 way data binding library with the aim to keep everything as simple and close to vanilla javascript and html as possible.
 
-# Basic Usage
+## Basic Usage
 my-script.js
 ```javascript
 var controller = {}
