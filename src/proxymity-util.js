@@ -35,8 +35,8 @@ function softCopy(from, to){
 	for(var key in from){
 		to[key] = from[key]
 		toKeys.splice(toKeys.indexOf(key), 1)
-		forEach(toKeys, function(key){
 	}
+	forEach(toKeys, function(key){
 		delete to[key]
 	})
 	// if (Array.isArray(to)){
