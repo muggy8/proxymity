@@ -62,6 +62,9 @@ function subscribable(){
 	var queue = {}
 	var order = 0
 
+	var currentAsyncLoop = 0
+	var maxAsyncLoop = 3
+
 	var nextEventSet = false
 	var async = this.async = function(name, payload = {}){
 		if (!nextEventSet){
@@ -70,6 +73,11 @@ function subscribable(){
 				nextEventSet = false
 				queue = {}
 				order = 0
+				currentAsyncLoop++
+				if (currentAsyncLoop > maxAsyncLoop){
+					currentAsyncLoop = 0
+					return
+				}
 
 				var emitOrder = Object.getOwnPropertyNames(workingQueue)
 				emitOrder.sort(function(a, b){
@@ -88,11 +96,15 @@ function subscribable(){
 				})
 
 				emitOrder.forEach(function(name){
-					// console.log(name, workingQueue[name])
+					console.log(name, workingQueue[name])
 					emit(name, workingQueue[name])
 				})
 
 				emit("asyncend", workingQueue)
+
+				if (!nextEventSet){
+					currentAsyncLoop = 0
+				}
 			})
 			nextEventSet = true
 		}

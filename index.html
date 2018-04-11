@@ -131,21 +131,25 @@
 			// var renderedArrData = renderedArr.data
 
 			var testRepeat = proxymity(`
-				<!-- foreach: key("index").in(this.data) -->
+				<!-- foreach: key("index").in(this.data.arr) -->
 					<div>
 						<strong>item {{this.index + 1}}</strong>
 						<label class="block">
-							Str 1: <input type="text" name="[this.index].str">
+							Str 1: <input type="text" name="arr[this.index].str">
 						</label>
 						<label class="block">
-							Int 1: <input type="number" name="[this.index].int">
+							Int 1: <input type="number" name="arr[this.index].int">
 						</label>
 						<hr />
 					</div>
 				<!-- foreach: key.end() -->
+				<!-- {{this.data.filtered = this.data.arr.filter(function(_, index){
+					return index < 2
+				})}} -->
 				<pre>{{this.data.stringify(null, "    ")}}</pre>
-			`, arr)
-			console.log(JSON.stringify(testRepeat))
+			`, {
+				arr: arr
+			})
 			testRepeat.appendTo("body")
 
 			// renderedArrData.sort(function(a, b){
