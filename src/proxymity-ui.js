@@ -103,6 +103,10 @@ function prepareTemplate(elements){
 	})
 }
 
+function groupBy(itemArray, propertyToGroupBy){
+
+}
+
 var destroyEventName = generateId(randomInt(32, 48))
 function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 	repeatBody.source.length
@@ -145,14 +149,9 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 				elementsList.splice.apply(elementsList, [insertBeforeIndex, 0].concat(bodyClones))
 
 				if (parent){
-					try{
-						bodyClones.forEach(function(clone){
-							parent.insertBefore(clone, repeatBody.insertBefore)
-						})
-					}
-					catch(o3o){
-						console.warn(parent, repeatBody.insertBefore, o3o)
-					}
+					bodyClones.forEach(function(clone){
+						parent.insertBefore(clone, repeatBody.insertBefore)
+					})
 				}
 
 				insertAfterIndex += bodyClones.length
@@ -225,6 +224,14 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			// first off, we're going to need to reset everything in these elements to it's default ground state
 			prepareTemplate(repeatBody.elements)
 
+    		// we're doing this here so we can clean up the body so every element between the end and the start comment are empty s we know that they are next to each other and can set where we want to do our insertions later
+    		for(var i = elementList.length - 1; i >= 0; i--){
+    			if (elementsToExclude.indexOf(elementList[i]) !== -1){
+    				elementList.splice(i, 1)
+    			}
+    		}
+            repeatBody.insertAfter = repeatBody.insertBefore.previousSibling
+
 			initializeRepeater(eventInstance, model, propertyToDefine, repeatBody)
 			repeatBody = undefined
 		}
@@ -243,14 +250,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			}
 		})
 
-		// after the first forEach we can do the extraction process
-		for(var i = elementList.length - 1; i >= 0; i--){
-			if (elementsToExclude.indexOf(elementList[i]) !== -1){
-				elementList.splice(i, 1)
-			}
-		}
-
-		// alright lets do the proper insertions now
+		// By the time we get here, the elementList already has what it needs to slice off sliced off. so we can get strait to inserting variables that we need to insert
 		elementList.forEach(function(node){
 			if (node[propertyToDefine] !== model){ // we use this if because some elements have it defined already (above) so we save more clock cycles :3
 				proxyUI(node, model, eventInstance, propertyToDefine)
