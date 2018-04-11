@@ -58,7 +58,7 @@ function continiousUiWatch(node, proxyProp, eventInstance, model, attributeToLis
 	safeEval.call(node, "this." + proxyProp + (attributeToListenTo[0] === "[" ? "" : ".") + attributeToListenTo)
 	var modelKey = eventInstance.last("get").value
 
-	console.log(attributeToListenTo)
+	console.log(attributeToListenTo, node.index)
 
 	var unwatch = {}
 	// watch everything
@@ -163,6 +163,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
         else if (currentGroups.length > repeatBody.source.length){
             while (currentGroups.length !== repeatBody.source.length){
                 var setToRemove = currentGroups.pop()
+				console.log(setToRemove, currentGroups.length)
                 setToRemove.forEach(function(node){
                     elementsList.splice(elementsList.indexOf(node), 1)
                     if (node.parentNode){

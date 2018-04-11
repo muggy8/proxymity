@@ -47,6 +47,7 @@ Object.getOwnPropertyNames(proxyObjProto).forEach(function(property){
 
 var getSecretId = generateId(randomInt(32, 48))
 var secretSelfMoved = generateId(randomInt(32, 48))
+var secretSelfDeleted = generateId(randomInt(32, 48))
 
 function proxyObj(obj, eventInstance){
 	var objProto = Object.getPrototypeOf(obj)
@@ -69,6 +70,16 @@ function proxyObj(obj, eventInstance){
 					emitPropertyMoved()
 				}
 				eventInstance.async("remap:" + secretProps[property])
+			})
+		}
+		secretProps[secretSelfDeleted] = function(){
+			Object.getOwnPropertyNames(proxied).forEach(function(property){
+				var emitPropertyDeleted = proxied[property][secretSelfDeleted]
+				if (typeof emitPropertyDeleted === "function"){
+					emitPropertyDeleted()
+				}
+				// eventInstance.async("set:" + secretProps[property], {value: null})
+				eventInstance.async("del:" + secretProps[property])
 			})
 		}
 
@@ -133,7 +144,7 @@ function proxyObj(obj, eventInstance){
 					// now we need to set the actual property
 					target[property] = val
 
-                    console.log(selfIsArray, target)
+                    // console.log("set", target, property, val)
 				}
 
 				// before we enter into our return procedure, we want to make sure that whatever prop we're setting, we have a secret id for that prop. we keep the secret ids for prop in the parent object because the props might be something we control or it might not be but we do know that we do control this so that's why we're keeping it here
@@ -147,10 +158,12 @@ function proxyObj(obj, eventInstance){
 
 				// before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update. However, because of the nature of updating dom is very slow, we want to limit all set events to fire once and only once each primary call
 				// console.log("set", property)
+				console.log("async set", property)
 				eventInstance.async("set:" + secretProps[property], {
 					value: target[property]
 				})
                 if (selfIsArray && selfLength !== target.length){
+					console.log("async set length")
                     eventInstance.async("set:" + secretProps["length"], {
                         value: target.length
                     })
@@ -164,6 +177,29 @@ function proxyObj(obj, eventInstance){
 			},
 			deleteProperty: function(target, property){
 				if (property in target) {
+					// if (Array.isArray(target) && target[parseInt(property)] === target[property]){
+					// 	eventInstance.async("set:" + secretProps["length"], {
+	                //         value: target.length - 1
+	                //     })
+					// 	var remapIndex = parseInt(property)
+					// 	while (target.hasOwnProperty(remapIndex)){
+					// 		var objToRemap = target[remapIndex]
+					// 		var remapRecursive = objToRemap[secretSelfMoved]
+					// 		if (typeof remapRecursive === "function"){
+					// 			remapRecursive()
+					// 		}
+					// 		remapIndex++
+					// 	}
+					// }
+					console.log("async del", property)
+					var emitDeleted = target[property][secretSelfDeleted]
+					if (typeof emitDeleted === "function"){
+						emitDeleted()
+					}
+					eventInstance.async("del:" + secretProps[property], {
+						value: target[property]
+					})
+
 					delete secretProps[property] // we know this key MUST exist because we made sure of it when we are setting keys and the only way to set properties is through the set method above
 					return delete target[property]
 				}
