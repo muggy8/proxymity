@@ -1,12 +1,13 @@
 # About
-Testing markdown md stuff
-Proxymity is a 2 way data binding library with the aim to keep everything as simple and close to vanilla javascript and html as possible.
+Proxymity is a 2 way data binding library with the aim to keep everything as simple and close to vanilla javascript and html as possible. Because it's a library and not a framework, you are in control the whole way through.
 
 ## Basic Usage
 my-script.js
 ```javascript
 var controller = {}
+// initialize my view and controller object and attach the controller object to the html element as the property "controller"
 proximity(document.querySelector("body"), {}, "controller")
+// creating a function on my controller
 controller.fibonacci = function(n){
 	if (n < 0){
 		return 0;
@@ -16,7 +17,7 @@ controller.fibonacci = function(n){
 	}
 	return controller.fibonacci(n - 2) + controller.fibonacci(n - 1)
 }
-// jquery to get stuff from endpoint our imaginary end point (user session maybe?). the view will (re)render automagically
+// get stuff from endpoint our imaginary end point (user session maybe?) using a 3rd party software. updating the controller (asynchronously even) will cause the view to (re)render automagically
 $.ajax("/api/endpoint", function(text){
 	controller.user = JSON.parse(text)
 }
