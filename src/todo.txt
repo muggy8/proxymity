@@ -9,3 +9,5 @@ instead of render on asyncstart only
 name="prop" make it support {{}}
 proxyProtoObj.watch -> external watch 
 prop api would be nice
+move on-next-event-cycle into 
+subscribable
