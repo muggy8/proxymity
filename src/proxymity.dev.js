@@ -29,10 +29,6 @@ var proxymity = (function(safeEval){
 				}
 			}
 		})
-
-		events.watch("asyncend", function(){
-			events.emit("rendering", {value: false})
-		})
 		return ui
 	}
 })(function(script, contextVars = {}){
