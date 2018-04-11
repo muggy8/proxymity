@@ -109,6 +109,13 @@ function proxyObj(obj, eventInstance){
 			},
 			set: function(target, property, val){
 				var valProto = Object.getPrototypeOf(val)
+                var selfIsArray = Array.isArray(target)
+                if (selfIsArray){
+                    var selfLength = target.length
+                    if (!secretProps.hasOwnProperty("length")){
+    					secretProps["length"] = generateId(randomInt(32, 48))
+    				}
+                }
 
 				if (val && typeof val === "object" && (valProto === Object.prototype || valProto === Array.prototype)){
 					//console.log("1", target[property])
@@ -116,6 +123,7 @@ function proxyObj(obj, eventInstance){
 				}
 				// this is our degenerate case where we just set the value on the data
 				else {
+
 					// tell everyone that we should remap to the new item
 					var emitPropertyMoved = target[property] && target[property][secretSelfMoved]
 					if (typeof emitPropertyMoved === "function"){
@@ -124,10 +132,12 @@ function proxyObj(obj, eventInstance){
 
 					// now we need to set the actual property
 					target[property] = val
+
+                    console.log(selfIsArray, target)
 				}
 
 				// before we enter into our return procedure, we want to make sure that whatever prop we're setting, we have a secret id for that prop. we keep the secret ids for prop in the parent object because the props might be something we control or it might not be but we do know that we do control this so that's why we're keeping it here
-				// because normal props on the target always take presidence over the secret props we can use the same name as the normal prop on the secret prop
+				// because normal props on the target always take presidense over the secret props we can use the same name as the normal prop on the secret prop
 				if (!secretProps.hasOwnProperty(property)){
 					secretProps[property] = generateId(randomInt(32, 48))
 				}
@@ -140,6 +150,11 @@ function proxyObj(obj, eventInstance){
 				eventInstance.async("set:" + secretProps[property], {
 					value: target[property]
 				})
+                if (selfIsArray && selfLength !== target.length){
+                    eventInstance.async("set:" + secretProps["length"], {
+                        value: target.length
+                    })
+                }
 
 				if (typeof target[property] === 'undefined' || target[property] === null){
 					// we do the same thing as above here
