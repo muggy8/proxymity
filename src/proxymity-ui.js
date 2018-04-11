@@ -118,7 +118,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 		var elementsList = repeatBody.outputList
 		var indexKey = repeatBody.key
 		var insertAfterIndex = insertBeforeIndex-1
-		var parent = repeatBody.insertBefore
+		var parent = repeatBody.insertBefore.parentNode
 
 		if (!elementsList[insertAfterIndex].hasOwnProperty(indexKey) || elementsList[insertAfterIndex][indexKey] < payload.value - 1){
 			// we dont have these items yet lets add it
@@ -151,7 +151,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 						})
 					}
 					catch(o3o){
-						// whatever xP
+						console.warn(parent, repeatBody.insertBefore, o3o)
 					}
 				}
 
@@ -164,7 +164,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 			// the array got shurnk down, we need to delete elements
 		}
 	}
-	
+
 	eventInstance.watch("set:" + lengthKey, lengthSet)
 	lengthSet(eventInstance.next("set:" + lengthKey) || eventInstance.last("set:" + lengthKey))
 	console.log("initialized")
