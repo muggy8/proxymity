@@ -79,7 +79,7 @@ function subscribable(){
 					return
 				}
 
-				var emitOrder = Object.getOwnPropertyNames(workingQueue)
+				var emitOrder = propsIn(workingQueue)
 				emitOrder.sort(function(a, b){
 					if (workingQueue[a].order > workingQueue[b].order){
 						return 1

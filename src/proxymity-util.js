@@ -3,7 +3,11 @@ function arrayFrom(arrayLike){ // incase we are running in a not so new browser 
 }
 
 function forEach(arrayLike, callback){
-	arrayFrom(arrayLike).forEach(callback)
+	return arrayFrom(arrayLike).forEach(callback)
+}
+
+function propsIn(obj){
+	return Object.getOwnPropertyNames(obj)
 }
 
 function randomInt(start, stop){
@@ -31,7 +35,7 @@ function generateId(length = 16){
 }
 
 function softCopy(from, to){
-	var toKeys = Object.getOwnPropertyNames(to)
+	var toKeys = propsIn(to)
 	for(var key in from){
 		to[key] = from[key]
 		toKeys.splice(toKeys.indexOf(key), 1)

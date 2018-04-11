@@ -6,7 +6,7 @@ var proxyObjProto = {
 		else {
 			var raw = {}
 		}
-		var keys = Object.getOwnPropertyNames(this)
+		var keys = propsIn(this)
 		for(var index in keys){ // we dont use foreach here cuz we want to perserve the "this" variable
 			var key = keys[index]
 			if (typeof this[key] === "object" && this[key].objectify){
@@ -24,7 +24,7 @@ var proxyObjProto = {
 		return JSON.stringify.apply(JSON, args)
 	},
 	toString: function(){
-		if (Object.getOwnPropertyNames(this).length){
+		if (propsIn(this).length){
 			return proxyObjProto.stringify.call(this)
 		}
 		return ""
@@ -32,16 +32,16 @@ var proxyObjProto = {
 }
 proxyObjProto[Symbol.toPrimitive] = function(hint){
 	if (hint == 'number') {
-		return Object.getOwnPropertyNames(this).length;
+		return propsIn(this).length;
 	}
 	if (hint == 'string') {
 		return proxyObjProto.toString.call(this)
 	}
-	return !!Object.getOwnPropertyNames(this).length
+	return !!propsIn(this).length
 }
 
 var proxyArrayProto = Object.create(Array.prototype)
-forEach(Object.getOwnPropertyNames(proxyObjProto), function(property){
+forEach(propsIn(proxyObjProto), function(property){
 	proxyArrayProto[property] = proxyObjProto[property]
 })
 
@@ -64,7 +64,7 @@ function proxyObj(obj, eventInstance){
 			return secretProps[property]
 		}
 		secretProps[secretSelfMoved] = function(){
-			forEach(Object.getOwnPropertyNames(proxied), function(property){
+			forEach(propsIn(proxied), function(property){
 				var emitPropertyMoved = proxied[property][secretSelfMoved]
 				if (typeof emitPropertyMoved === "function"){
 					emitPropertyMoved()
@@ -75,7 +75,7 @@ function proxyObj(obj, eventInstance){
 			})
 		}
 		secretProps[secretSelfDeleted] = function(){
-			forEach(Object.getOwnPropertyNames(proxied), function(property){
+			forEach(propsIn(proxied), function(property){
 				var emitPropertyDeleted = proxied[property][secretSelfDeleted]
 				if (typeof emitPropertyDeleted === "function"){
 					emitPropertyDeleted()

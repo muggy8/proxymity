@@ -281,14 +281,6 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			set: function(val){
 				if (typeof val === "object"){
 					softCopy(val, model)
-					// var modelKeys = Object.getOwnPropertyNames(model)
-					// for(var key in val){
-					// 	model[key] = val[key]
-					// 	modelKeys.splice(modelKeys.indexOf(key), 1)
-					// }
-					// modelKeys.forEach(function(key){
-					// 	delete model[key]
-					// })
 				}
 			}
 		})

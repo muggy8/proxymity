@@ -2,9 +2,16 @@
 var proxymity = (function(safeEval){
 
 // src/proxymity-util.js
-
 function arrayFrom(arrayLike){ // incase we are running in a not so new browser without the Array.from function (and to save on compression size hehe :P)
 	return Array.prototype.slice.call(arrayLike || [])
+}
+
+function forEach(arrayLike, callback){
+	return arrayFrom(arrayLike).forEach(callback)
+}
+
+function propsIn(obj){
+	return Object.getOwnPropertyNames(obj)
 }
 
 function randomInt(start, stop){
@@ -32,12 +39,12 @@ function generateId(length = 16){
 }
 
 function softCopy(from, to){
-	var toKeys = Object.getOwnPropertyNames(to)
+	var toKeys = propsIn(to)
 	for(var key in from){
 		to[key] = from[key]
 		toKeys.splice(toKeys.indexOf(key), 1)
 	}
-	toKeys.forEach(function(key){
+	forEach(toKeys, function(key){
 		delete to[key]
 	})
 	// if (Array.isArray(to)){
@@ -71,7 +78,7 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
         emitted = false
         queue = []
 
-        workingQueue.forEach(function(fn){
+        forEach(workingQueue, function(fn){
             fn()
         })
     })
@@ -133,7 +140,7 @@ function subscribable(){
 		for (var key in listenerWildcards){
 			var set = listenerWildcards[key]
 			if (name.match(set.regex)){
-				set.listeners.forEach(function(callback){
+				forEach(set.listeners, function(callback){
 					callback(payload, name)
 				})
 			}
@@ -161,7 +168,7 @@ function subscribable(){
 					return
 				}
 
-				var emitOrder = Object.getOwnPropertyNames(workingQueue)
+				var emitOrder = propsIn(workingQueue)
 				emitOrder.sort(function(a, b){
 					if (workingQueue[a].order > workingQueue[b].order){
 						return 1
@@ -177,7 +184,7 @@ function subscribable(){
 					order: emitOrder
 				})
 
-				emitOrder.forEach(function(name){
+				forEach(emitOrder, function(name){
 					// console.log(name, workingQueue[name])
 					emit(name, workingQueue[name])
 				})
@@ -215,7 +222,7 @@ var proxyObjProto = {
 		else {
 			var raw = {}
 		}
-		var keys = Object.getOwnPropertyNames(this)
+		var keys = propsIn(this)
 		for(var index in keys){ // we dont use foreach here cuz we want to perserve the "this" variable
 			var key = keys[index]
 			if (typeof this[key] === "object" && this[key].objectify){
@@ -233,7 +240,7 @@ var proxyObjProto = {
 		return JSON.stringify.apply(JSON, args)
 	},
 	toString: function(){
-		if (Object.getOwnPropertyNames(this).length){
+		if (propsIn(this).length){
 			return proxyObjProto.stringify.call(this)
 		}
 		return ""
@@ -241,16 +248,16 @@ var proxyObjProto = {
 }
 proxyObjProto[Symbol.toPrimitive] = function(hint){
 	if (hint == 'number') {
-		return Object.getOwnPropertyNames(this).length;
+		return propsIn(this).length;
 	}
 	if (hint == 'string') {
 		return proxyObjProto.toString.call(this)
 	}
-	return !!Object.getOwnPropertyNames(this).length
+	return !!propsIn(this).length
 }
 
 var proxyArrayProto = Object.create(Array.prototype)
-Object.getOwnPropertyNames(proxyObjProto).forEach(function(property){
+forEach(propsIn(proxyObjProto), function(property){
 	proxyArrayProto[property] = proxyObjProto[property]
 })
 
@@ -273,7 +280,7 @@ function proxyObj(obj, eventInstance){
 			return secretProps[property]
 		}
 		secretProps[secretSelfMoved] = function(){
-			Object.getOwnPropertyNames(proxied).forEach(function(property){
+			forEach(propsIn(proxied), function(property){
 				var emitPropertyMoved = proxied[property][secretSelfMoved]
 				if (typeof emitPropertyMoved === "function"){
 					emitPropertyMoved()
@@ -284,7 +291,7 @@ function proxyObj(obj, eventInstance){
 			})
 		}
 		secretProps[secretSelfDeleted] = function(){
-			Object.getOwnPropertyNames(proxied).forEach(function(property){
+			forEach(propsIn(proxied), function(property){
 				var emitPropertyDeleted = proxied[property][secretSelfDeleted]
 				if (typeof emitPropertyDeleted === "function"){
 					emitPropertyDeleted()
@@ -448,13 +455,13 @@ appendableArrayProto.appendTo = function(selectorOrElement) {
 		return appendableArrayProto.appendTo.call(this, document.querySelector(selectorOrElement))
 	}
 	var target = selectorOrElement
-	this.forEach(function(node){
+	forEach(this, function(node){
 		target.appendChild(node)
 	})
 	return this
 }
 appendableArrayProto.detach = function(){
-	this.forEach(function(node){
+	forEach(this, function(node){
 		var parent = node.parentElement
 		parent && parent.removeChild(node)
 	})
@@ -493,7 +500,7 @@ function continiousUiWatch(node, proxyProp, eventInstance, model, attributeToLis
 }
 
 function forEveryElement(source, callback){
-	arrayFrom(source).forEach(function(item, index, whole){
+	forEach(source, function(item, index, whole){
 		callback(item)
 		forEveryElement(item.childNodes, callback)
 	})
@@ -505,14 +512,14 @@ function destroyListeners(elements){
 	})
 
 	// next up we're going to need to detach them from the parent because this is our base template that will be copied to everthing
-	elements.forEach(function(ele){
+	forEach(elements, function(ele){
 		ele.parentNode && ele.parentNode.removeChild(ele)
 	})
 }
 
 function groupBy(itemArray, propertyToGroupBy){
     var groups = []
-    itemArray.forEach(function(node){
+    forEach(itemArray, function(node){
         var nodeIndex = node[propertyToGroupBy]
         groups[nodeIndex] = groups[nodeIndex] || []
         groups[nodeIndex].push(node)
@@ -554,7 +561,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 
                 proxyUI(bodyClones, model, eventInstance, mainModelVar)
                 if (parent){
-                    bodyClones.forEach(function(clone){
+                    forEach(bodyClones, function(clone){
     					parent.insertBefore(clone, repeatBody.insertBefore)
     				})
                 }
@@ -570,7 +577,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
             while (currentGroups.length !== repeatBody.source.length){
                 var setToRemove = currentGroups.pop()
 				console.log(setToRemove, currentGroups.length)
-                setToRemove.forEach(function(node){
+                forEach(setToRemove, function(node){
                     elementsList.splice(elementsList.indexOf(node), 1)
                     if (node.parentNode){
                         node.parentNode.removeChild(node)
@@ -653,7 +660,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 		}
 
 		// we are foreaching 3 times first time we go through and find the comments with our special "foreach: ..." in it and calling the key, key.in and key.end functions. after doing that those functions will extract all of those elements from the list cuz they need a clean template to work with then we can continue with the proper init opperations
-		elementList.forEach(function(node){
+		forEach(elementList, function(node){
 			repeatBody && repeatBody.elements && repeatBody.elements.push(node)
 			if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
 				proxyUI(node, model, eventInstance, propertyToDefine)
@@ -667,7 +674,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 		})
 
 		// By the time we get here, the elementList already has what it needs to slice off sliced off. so we can get strait to inserting variables that we need to insert
-		elementList.forEach(function(node){
+		forEach(elementList, function(node){
 			if (node[propertyToDefine] !== model){ // we use this if because some elements have it defined already (above) so we save more clock cycles :3
 				proxyUI(node, model, eventInstance, propertyToDefine)
 			}
@@ -690,14 +697,6 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			set: function(val){
 				if (typeof val === "object"){
 					softCopy(val, model)
-					// var modelKeys = Object.getOwnPropertyNames(model)
-					// for(var key in val){
-					// 	model[key] = val[key]
-					// 	modelKeys.splice(modelKeys.indexOf(key), 1)
-					// }
-					// modelKeys.forEach(function(key){
-					// 	delete model[key]
-					// })
 				}
 			}
 		})
@@ -715,7 +714,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 		}
 
 		// step 3: set up continious rendering for element properties but also link the names of items to the model
-		arrayFrom(node.attributes).forEach(function(attr){
+		forEach(node.attributes, function(attr){
 			var destroyAttributeRender = attr.name !== "name" && continiousRender(attr, eventInstance, node) // only for non-name attributes because name is not going to suppor this since making it support this and bind to the data model correctly is too hard
 
 			if (destroyAttributeRender){
@@ -827,18 +826,18 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 				})
 			}
 
-			changeListeners.forEach(function(listenTo){
+			forEach(changeListeners, function(listenTo){
 				node.addEventListener(listenTo, onChange)
 			})
 			onDestroyCallbacks.push(function(){
-				changeListeners.forEach(function(listenTo){
+				forEach(changeListeners, function(listenTo){
 					node.removeEventListener(listenTo, onChange)
 				})
 			})
 		})
 		var destroyListener = function(ev){
 			ev.stopPropagation()
-			onDestroyCallbacks.forEach(function(fn){
+			forEach(onDestroyCallbacks, function(fn){
 				fn()
 			})
 		}
