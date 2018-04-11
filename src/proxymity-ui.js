@@ -104,7 +104,13 @@ function prepareTemplate(elements){
 }
 
 function groupBy(itemArray, propertyToGroupBy){
-
+    var groups = []
+    itemArray.forEach(function(node){
+        var nodeIndex = node[propertyToGroupBy]
+        groups[nodeIndex] = groups[nodeIndex] || []
+        groups[nodeIndex].push(node)
+    })
+    return groups
 }
 
 var destroyEventName = generateId(randomInt(32, 48))
@@ -119,49 +125,41 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 		}
 		// the flow: because we know that the output list is always gonna be here while we dont know the current state of the element and if it has a parent at all, the best that we can do is to build the output list right and then remove all the elements form the parent element if there is one then stick the output list in after.
 		var insertBeforeIndex = repeatBody.outputList.indexOf(repeatBody.insertBefore)
+        var insertAfterIndex = repeatBody.outputList.indexOf(repeatBody.insertAfter)
 		var elementsList = repeatBody.outputList
-		var indexKey = repeatBody.key
-		var insertAfterIndex = insertBeforeIndex-1
 		var parent = repeatBody.insertBefore.parentNode
+        var currentGroups = groupBy(elementsList.slice(insertAfterIndex + 1, insertBeforeIndex), repeatBody.key)
 
-		if (!elementsList[insertAfterIndex].hasOwnProperty(indexKey) || elementsList[insertAfterIndex][indexKey] < payload.value - 1){
-			// we dont have these items yet lets add it
-			var indexKeyValue = 0
-			elementsList[insertAfterIndex].hasOwnProperty(indexKey) && (indexKeyValue = elementsList[insertAfterIndex][indexKey] + 1)
-			// console.log(elementsList)
-			while(indexKeyValue < repeatBody.source.length){
-				var bodyClones = repeatBody.elements.map(function(ele){
-					var clone = ele.cloneNode(true)
-					return clone
-				})
-				forEveryElement(bodyClones, function(cloneEle){
-					Object.defineProperty(cloneEle, indexKey, {
+        if (currentGroups.length < repeatBody.source.length){
+            while (currentGroups.length !== repeatBody.source.length){
+                var bodyClones = repeatBody.elements.map(function(ele){
+                    return ele.cloneNode(true)
+                })
+
+                forEveryElement(bodyClones, function(cloneEle){
+					Object.defineProperty(cloneEle, repeatBody.key, {
 						configurable: true,
 						enumerable: false,
 						get: function(index){
 							return index
-						}.bind(cloneEle, indexKeyValue)
+						}.bind(cloneEle, currentGroups.length)
 					})
 				})
-				// console.log(bodyClones)
-				proxyUI(bodyClones, model, eventInstance, mainModelVar)
 
-				elementsList.splice.apply(elementsList, [insertBeforeIndex, 0].concat(bodyClones))
+                proxyUI(bodyClones, model, eventInstance, mainModelVar)
+                bodyClones.forEach(function(clone){
+					parent.insertBefore(clone, repeatBody.insertBefore)
+				})
 
-				if (parent){
-					bodyClones.forEach(function(clone){
-						parent.insertBefore(clone, repeatBody.insertBefore)
-					})
-				}
+                // add to elements list and update where to insert
+                elementsList.splice.apply(elementsList, [insertBeforeIndex, 0].concat(bodyClones))
+                insertBeforeIndex += bodyClones.length
+                currentGroups.push(bodyClones)
+            }
+        }
+        else if (currentGroups.length < repeatBody.source.length){
 
-				insertAfterIndex += bodyClones.length
-				insertBeforeIndex += bodyClones.length
-				indexKeyValue++
-			}
-		}
-		else if (elementsList[insertBeforeIndex-1].hasOwnProperty(indexKey) && elementsList[insertBeforeIndex-1][indexKey] > repeatBody.source.length - 1){
-			// the array got shurnk down, we need to delete elements
-		}
+        }
 	}
 
 	eventInstance.watch("set:" + lengthKey, lengthSet)
