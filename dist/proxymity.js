@@ -414,7 +414,7 @@ function proxyObj(obj, eventInstance){
 }
 
 // src/proxymity-ui.js
-var bracketsRegex = /\{\{([\s\S]*?)\}\}/g
+var bracketsRegex = /\{\:([\s\S]*?)\:\}/g
 function renderBrackets(originalText, sourceEle){
 	// var workingOutput = originalText
 	return originalText.replace(bracketsRegex, function(matched, expression){

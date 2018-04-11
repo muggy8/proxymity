@@ -22,21 +22,21 @@
 				<option value="2">She/Her</option>
 				<option value="3">They/Them</option>
 			</select><br>
-			<div class='{{this.data.user.name.toString() && "test-1"}} {{parseInt(this.data.user.age) && "test-2"}}'>
+			<div class='{:this.data.user.name.toString() && "test-1":} {:parseInt(this.data.user.age) && "test-2":}'>
 				<label><input name='user.class' type='radio' value="A"/> A</label>
 				<label><input name='user.class' type='radio' value="B"/> B</label>
 				<label><input name='user.class' type='radio' value="C"/> C</label>
 			</div><br>
 			<input name='user.name' type='text' placeholder='experimenting'/><br>
 
-			<pre>{{this.data.user.stringify(null, "    ")}}</pre>
+			<pre>{:this.data.user.stringify(null, "    "):}</pre>
 
 			<!--repeat.begin(this.data.prop, "propName", function(item, index, whole){
 				// item returned is the new data obj
 				item.index = index
 				return item
 			})-->
-				<pre>{{this.data.stringify(null, "    ")}}</pre>
+				<pre>{:this.data.stringify(null, "    "):}</pre>
 			<!--repeat.end("propName")-->
 			<div>
 				<label class="block">
@@ -60,12 +60,12 @@
 			</div>
 			<style>
 				pre {
-					background-color: {{this.data.background.toString() || 'initial'}};
-					color: {{this.data.color.toString() || 'initial'}};
-					padding: {{this.data.padding.toString() || 'initial'}};
-					border: {{this.data.border.toString() || 'initial'}};
-					font-size: {{this.data.fontSize.toString() || 'inherit'}};
-					font-family: {{this.data.fontFace.toString() || 'sans-serif'}}, sans-serif;
+					background-color: {:this.data.background.toString() || 'initial':};
+					color: {:this.data.color.toString() || 'initial':};
+					padding: {:this.data.padding.toString() || 'initial':};
+					border: {:this.data.border.toString() || 'initial':};
+					font-size: {:this.data.fontSize.toString() || 'inherit':};
+					font-family: {:this.data.fontFace.toString() || 'sans-serif':}, sans-serif;
 				}
 				.block {
 					display: block
@@ -124,7 +124,7 @@
 					</div>
 				`
 			}
-			testArrStr += "<pre>{{this.data.stringify(null, '    ')}}</pre>"
+			testArrStr += "<pre>{:this.data.stringify(null, '    '):}</pre>"
 
 			var renderedArr = proxymity(testArrStr, arr)
 			// renderedArr.appendTo("body")
@@ -133,7 +133,7 @@
 			var testRepeat = proxymity(`
 				<!-- foreach: key("index").in(this.data.arr) -->
 					<div>
-						<strong>item {{this.index + 1}}</strong>
+						<strong>item {:this.index + 1:}</strong>
 						<label class="block">
 							Str 1: <input type="text" name="arr[this.index].str">
 						</label>
@@ -143,10 +143,10 @@
 						<hr />
 					</div>
 				<!-- foreach: key.end() -->
-				<!-- {{this.data.filtered = this.data.arr.filter(function(_, index){
+				<!-- {:this.data.filtered = this.data.arr.filter(function(_, index){
 					return index < 2
-				})}} -->
-				<pre>{{this.data.stringify(null, "    ")}}</pre>
+				}):} -->
+				<pre>{:this.data.stringify(null, "    "):}</pre>
 			`, {
 				arr: arr
 			})
