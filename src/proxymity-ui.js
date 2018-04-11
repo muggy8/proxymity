@@ -1,6 +1,7 @@
+var bracketsRegex = /\{\{([\s\S]*?)\}\}/g
 function renderBrackets(originalText, sourceEle){
 	// var workingOutput = originalText
-	return originalText.replace(/\{\{([\s\S]*?)\}\}/g, function(matched, expression){
+	return originalText.replace(bracketsRegex, function(matched, expression){
 		// console.log(expression)
 		try {
 			return safeEval.call(sourceEle, expression)
@@ -14,16 +15,16 @@ function renderBrackets(originalText, sourceEle){
 function continiousRender(textSource, eventInstance, containingElement){
 	containingElement = containingElement || textSource
 	var textVal = textSource.textContent
-	if (textVal.match(/\{\{([\s\S]*?)\}\}/g)){
+	if (textVal.match(bracketsRegex)){
 		var unwatch = eventInstance.watch("asyncstart", function(asyncEvents){
 			var hasSetEvent = false
-			findIfSetEventExists: for(var key in asyncEvents){
+			findIfSetEventExists: for(var key in asyncEvents.payload){
 				if (key.substring(0, 4) === "set:"){
 					hasSetEvent = true
 					break findIfSetEventExists
 				}
 			}
-			textSource.textContent = renderBrackets(textVal, containingElement)
+			hasSetEvent && (textSource.textContent = renderBrackets(textVal, containingElement))
 			// console.log(renderedText)
 		})
 	}
