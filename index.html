@@ -140,6 +140,8 @@
 						<label class="block">
 							Int 1: <input type="number" name="arr[this.index].int">
 						</label>
+                        <button onclick="this.data.arr.splice(this.index + 1, 0, {})">Add another Below</button>
+                        <button onclick="this.data.arr.splice(this.index, 1)">Delete This</button>
 						<hr />
 					</div>
 				<!-- foreach: key.end() -->
