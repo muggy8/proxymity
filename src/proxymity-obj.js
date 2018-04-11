@@ -70,7 +70,7 @@ function proxyObj(obj, eventInstance){
 					emitPropertyMoved()
 				}
 				eventInstance.async("remap:" + secretProps[property], {
-					property: property
+					p: property
 				})
 			})
 		}
@@ -81,7 +81,7 @@ function proxyObj(obj, eventInstance){
 					emitPropertyDeleted()
 				}
 				eventInstance.async("del:" + secretProps[property], {
-					property: property
+					p: property
 				})
 			})
 		}
@@ -163,12 +163,12 @@ function proxyObj(obj, eventInstance){
 				// console.log("set", property)
 				eventInstance.async("set:" + secretProps[property], {
 					value: target[property],
-					property: property
+					p: property
 				})
                 if (selfIsArray && selfLength !== target.length){
                     eventInstance.async("set:" + secretProps["length"], {
                         value: target.length,
-						property: property
+						p: property
                     })
                 }
 
@@ -186,7 +186,7 @@ function proxyObj(obj, eventInstance){
 					}
 					eventInstance.async("del:" + secretProps[property], {
 						value: target[property],
-						property: property
+						p: property
 					})
 
 					delete secretProps[property] // we know this key MUST exist because we made sure of it when we are setting keys and the only way to set properties is through the set method above
