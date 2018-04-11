@@ -92,7 +92,7 @@ function forEveryElement(source, callback){
 	})
 }
 
-function prepareTemplate(elements){
+function destroyListeners(elements){
 	forEveryElement(elements, function(ele){
 		ele.dispatchEvent(new CustomEvent(destroyEventName))
 	})
@@ -147,9 +147,12 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 				})
 
                 proxyUI(bodyClones, model, eventInstance, mainModelVar)
-                bodyClones.forEach(function(clone){
-					parent.insertBefore(clone, repeatBody.insertBefore)
-				})
+                if (parent){
+                    bodyClones.forEach(function(clone){
+    					parent.insertBefore(clone, repeatBody.insertBefore)
+    				})
+                }
+
 
                 // add to elements list and update where to insert
                 elementsList.splice.apply(elementsList, [insertBeforeIndex, 0].concat(bodyClones))
@@ -157,8 +160,17 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
                 currentGroups.push(bodyClones)
             }
         }
-        else if (currentGroups.length < repeatBody.source.length){
-
+        else if (currentGroups.length > repeatBody.source.length){
+            while (currentGroups.length !== repeatBody.source.length){
+                var setToRemove = currentGroups.pop()
+                setToRemove.forEach(function(node){
+                    elementsList.splice(elementsList.indexOf(node), 1)
+                    if (node.parentNode){
+                        node.parentNode.removeChild(node)
+                    }
+                })
+                destroyListeners(setToRemove)
+            }
         }
 	}
 
@@ -220,7 +232,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			elementsToExclude.push.apply(elementsToExclude, repeatBody.elements)
 
 			// first off, we're going to need to reset everything in these elements to it's default ground state
-			prepareTemplate(repeatBody.elements)
+			// destroyListeners(repeatBody.elements)
 
     		// we're doing this here so we can clean up the body so every element between the end and the start comment are empty s we know that they are next to each other and can set where we want to do our insertions later
     		for(var i = elementList.length - 1; i >= 0; i--){
