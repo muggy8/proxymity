@@ -71,10 +71,8 @@ function subscribable(){
 				queue = {}
 				order = 0
 
-				emit("asyncstart", workingQueue)
-
-				var eventNames = Object.getOwnPropertyNames(workingQueue)
-				eventNames.sort(function(a, b){
+				var emitOrder = Object.getOwnPropertyNames(workingQueue)
+				emitOrder.sort(function(a, b){
 					if (workingQueue[a].order > workingQueue[b].order){
 						return 1
 					}
@@ -83,8 +81,14 @@ function subscribable(){
 					}
 					return 0
 				})
-				eventNames.forEach(function(name){
-					// console.log(name, workingQueue[name])
+
+				emit("asyncstart", {
+					payload: workingQueue,
+					order: emitOrder
+				})
+
+				emitOrder.forEach(function(name){
+					console.log(name, workingQueue[name])
 					emit(name, workingQueue[name])
 				})
 
