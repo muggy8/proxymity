@@ -58,8 +58,6 @@ function continiousUiWatch(node, proxyProp, eventInstance, model, attributeToLis
 	safeEval.call(node, "this." + proxyProp + (attributeToListenTo[0] === "[" ? "" : ".") + attributeToListenTo)
 	var modelKey = eventInstance.last("get").value
 
-	console.log(attributeToListenTo, node.index)
-
 	var unwatch = {}
 	// watch everything
 	for(var key in listeners){
@@ -117,7 +115,6 @@ var destroyEventName = generateId(randomInt(32, 48))
 function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 	repeatBody.source.length
 	var lengthKey = eventInstance.last("get").value
-	console.log(repeatBody)
 
 	var lengthSet = function(payload){
 		if (typeof payload === "undefined"){
@@ -177,7 +174,6 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 
 	eventInstance.watch("set:" + lengthKey, lengthSet)
 	lengthSet(eventInstance.next("set:" + lengthKey) || eventInstance.last("set:" + lengthKey))
-	console.log("initialized")
 }
 
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = "data"){
