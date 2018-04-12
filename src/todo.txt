@@ -5,3 +5,4 @@ default data key -> find one that fits better
 name="prop.{{}}" make it support work
 proxyProtoObj.watch -> external watch prop api would be nice
 move on-next-event-cycle into subscribable
+sharing model objects
