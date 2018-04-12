@@ -23,8 +23,8 @@
 			var events = new subscribable()
 			var data = proxyObj({}, events)
 			var appendable = proxyUI(`
-			<pre>this.proxy: {:this.proxy.stringify(null, "    "):}</pre>
-			<!-- This is a comment with a {:this.proxy.color.toString(null, "    ")}} -->
+			<pre>this.app: {:this.app.stringify(null, "    "):}</pre>
+			<!-- This is a comment with a {:this.app.color.toString(null, "    ")}} -->
 			<div>
 				<label class="block">
 					color: <input name="color" />
@@ -50,12 +50,12 @@
 			</div>
 			<style>
 				pre {
-					background-color: {:this.proxy.background.toString() || 'initial'}};
-					color: {:this.proxy.color.toString() || 'initial'}};
-					padding: {:this.proxy.padding.toString() || 'initial'}};
-					border: {:this.proxy.border.toString() || 'initial'}};
-					font-size: {:this.proxy.fontSize.toString() || 'inherit'}};
-					font-family: {:this.proxy.fontFace.toString() || 'sans-serif'}}, sans-serif;
+					background-color: {:this.app.background.toString() || 'initial'}};
+					color: {:this.app.color.toString() || 'initial'}};
+					padding: {:this.app.padding.toString() || 'initial'}};
+					border: {:this.app.border.toString() || 'initial'}};
+					font-size: {:this.app.fontSize.toString() || 'inherit'}};
+					font-family: {:this.app.fontFace.toString() || 'sans-serif'}}, sans-serif;
 				}
 				.block {
 					display: block
