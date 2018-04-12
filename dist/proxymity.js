@@ -477,9 +477,9 @@ function continiousUiWatch(node, proxyProp, eventInstance, model, attributeToLis
 	var unwatch = {}
 	// watch everything
 	for(var key in listeners){
-		var keyToWatch = key + ":" + modelKey
+		var keyToWatch = listeners[key].to + ":" + modelKey
 		destroyCallbacks.push(
-			unwatch[key] = eventInstance.watch(keyToWatch, listeners[key])
+			unwatch[listeners[key].to] = eventInstance.watch(keyToWatch, listeners[key])
 		)
 		listeners[key](eventInstance.next(keyToWatch) || eventInstance.last(keyToWatch))
 	}
@@ -565,7 +565,9 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
     					parent.insertBefore(clone, repeatBody.insertBefore)
     				})
                 }
-
+				repeatBody.onClone && forEach(bodyClones, function(clone){
+					clone instanceof HTMLElement && repeatBody.onClone(clone)
+				})
 
                 // add to elements list and update where to insert
                 elementsList.splice.apply(elementsList, [insertBeforeIndex, 0].concat(bodyClones))
@@ -701,11 +703,6 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			}
 		})
 		onDestroyCallbacks.push(function(){
-            // console.log([node], propertyToDefine)
-            // Object.defineProperty(node, propertyToDefine, {
-            //     configurable: true,
-            //     set: undefined
-            // })
             delete node[propertyToDefine]
 		})
 
@@ -835,10 +832,12 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			// var unwatchSet = eventInstance.watch("set:" + modelKey, setListener)
 			// var unwatchDel = eventInstance.watch("del:" + modelKey, delListener)
 
-			continiousUiWatch(node, propertyToDefine, eventInstance, model, attr.value, {
-				set: setListener,
-				del: delListener
-			}, onDestroyCallbacks)
+			delListener.to = "del"
+			setListener.to = "set"
+			continiousUiWatch(node, propertyToDefine, eventInstance, model, attr.value, [
+				delListener,
+				setListener
+			], onDestroyCallbacks)
 
 
 			var changeListeners = ["change", "keyup", "propertychange", "valuechange", "input"]
