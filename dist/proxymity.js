@@ -690,6 +690,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 		// step 1: define the data (or any other property for that matter) onto everything
 		Object.defineProperty(node, propertyToDefine, {
+            configurable: true,
 			get: function(){
 				return model
 			},
@@ -700,7 +701,12 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			}
 		})
 		onDestroyCallbacks.push(function(){
-			delete node[propertyToDefine]
+            // console.log([node], propertyToDefine)
+            // Object.defineProperty(node, propertyToDefine, {
+            //     configurable: true,
+            //     set: undefined
+            // })
+            delete node[propertyToDefine]
 		})
 
 		// step 2: set up continious rendering for everything that's a text element
