@@ -131,19 +131,18 @@ function proxyObj(obj, eventInstance){
     				}
                 }
 
+				// tell everyone that we should remap to the new item
+				var emitPropertyMoved = target[property] && target[property][secretSelfMoved]
+				if (typeof emitPropertyMoved === "function"){
+					emitPropertyMoved()
+				}
+
 				if (val && typeof val === "object" && (valProto === Object.prototype || valProto === Array.prototype)){
 					//console.log("1", target[property])
 					target[property] = proxyObj(val, eventInstance)
 				}
 				// this is our degenerate case where we just set the value on the data
 				else {
-
-					// tell everyone that we should remap to the new item
-					var emitPropertyMoved = target[property] && target[property][secretSelfMoved]
-					if (typeof emitPropertyMoved === "function"){
-						emitPropertyMoved()
-					}
-
 					// now we need to set the actual property
 					target[property] = val
 

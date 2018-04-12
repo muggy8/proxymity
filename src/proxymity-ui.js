@@ -161,7 +161,6 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
         else if (currentGroups.length > repeatBody.source.length){
             while (currentGroups.length !== repeatBody.source.length){
                 var setToRemove = currentGroups.pop()
-				console.log(setToRemove, currentGroups.length)
                 forEach(setToRemove, function(node){
                     elementsList.splice(elementsList.indexOf(node), 1)
                     if (node.parentNode){
@@ -349,17 +348,29 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			){
 				uiDataVal = "valueAsNumber"
 				setListener = function(payload){
-					if (payload && typeof payload.value == "number" && payload.value !== node.valueAsNumber){
+                    if (!payload){
+                        return
+                    }
+					if (typeof payload.value == "number" && payload.value !== node.valueAsNumber){
 						node.valueAsNumber = payload.value
 					}
+                    else if (typeof payload.value !== "number"){
+                        node.value = null
+                    }
 				}
 			}
 			else if (nodeTypeLowercase === "checkbox"){
 				uiDataVal = "checked"
 				setListener = function(payload){
-					if (payload && typeof payload.value == "boolean" && payload.value !== node.checked){
+                    if (!payload){
+                        return
+                    }
+					if (typeof payload.value == "boolean" && payload.value !== node.checked){
 						node.checked = payload.value
 					}
+                    else if (typeof payload.value !== "boolean"){
+                        node.checked = false
+                    }
 				}
 			}
 			else if (nodeTypeLowercase === "radio"){
@@ -387,9 +398,15 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = 
 			){
 				uiDataVal = "valueAsDate"
 				setListener = function(payload){
-					if (payload && payload.value instanceof Date && payload.value.getTime() !== node.valueAsDate.getTime()) {
+                    if (!payload){
+                        return
+                    }
+					if (payload.value instanceof Date && payload.value.getTime() !== node.valueAsDate.getTime()) {
 						node.valueAsDate = payload.value
 					}
+                    else if (!(payload.value instanceof Date)){
+                        node.value = null
+                    }
 				}
 			}
 
