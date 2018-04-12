@@ -150,7 +150,9 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
     					parent.insertBefore(clone, repeatBody.insertBefore)
     				})
                 }
-
+				repeatBody.onClone && forEach(bodyClones, function(clone){
+					clone instanceof HTMLElement && repeatBody.onClone(clone)
+				})
 
                 // add to elements list and update where to insert
                 elementsList.splice.apply(elementsList, [insertBeforeIndex, 0].concat(bodyClones))
@@ -286,11 +288,6 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			}
 		})
 		onDestroyCallbacks.push(function(){
-            // console.log([node], propertyToDefine)
-            // Object.defineProperty(node, propertyToDefine, {
-            //     configurable: true,
-            //     set: undefined
-            // })
             delete node[propertyToDefine]
 		})
 
