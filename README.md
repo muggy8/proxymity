@@ -2,12 +2,10 @@
 Proxymity is a 2 way data binding library with the aim to keep everything as simple and close to vanilla javascript and html as possible. Because it's a library and not a framework, you are in control the whole way through.
 
 ## Basic Usage
-my-script.js
+#### script.js
 ```javascript
-var controller = {}
-// initialize my view and controller object and attach the controller object to the html element as the property "controller"
-proximity(document.querySelector("body"), {}, "controller")
-// creating a function on my controller
+var view = proxymity(document.querySelector("body"), {}, "controller")
+var controller = view.controller
 controller.fibonacci = function(n){
 	if (n < 0){
 		return 0;
@@ -17,37 +15,37 @@ controller.fibonacci = function(n){
 	}
 	return controller.fibonacci(n - 2) + controller.fibonacci(n - 1)
 }
-// get stuff from endpoint our imaginary end point (user session maybe?) using a 3rd party software. updating the controller (asynchronously even) will cause the view to (re)render automagically
-$.ajax("/api/endpoint", function(text){
-	controller.user = JSON.parse(text)
-}
 ```
 
-index.html
+#### index.html
 ```html
+<!DOCTYPE html>
 <html>
-	<head>
-		<title>your age in Fibonacci</title>
-		<script src="path/to/proxymity.min.js"></script>
-		<script src="path/to/jquery.min.js"></script>
-		<style>
-			body.this {
-				opacity: 0;
-			}
-		</style>
-	</head>
-	<body class="{{void this }}">
-		<h1>Welcome {{this.controller.user.name}}</h1>
-		<div>
-			age: <input type="number" name="user.age">
-		</div>
+
+    <head>
+        <script src="/path/to/proxymity.min.js"></script>
+        <style>
+    		body.this {
+    			opacity: 0;
+    		}
+    	</style>
+    </head>
+
+    <body class="{:void this :}">
+		<h1>Welcome {:this.controller.user.name:}</h1>
 		<div>
 			name: <input type="text" name="user.name">
 		</div>
+		<div>
+			age: <input type="number" name="user.age">
+		</div>
 		<p>
-			The Fibonacci number associated with your age is {{this.controller.fibonacci(this.controller.user.age)}}
+			The Fibonacci number associated with your age is {:this.controller.fibonacci(parseInt(this.controller.user.age)):}
 		</p>
-        <script src="my-script.js"></script>
+
+		<script src="script.js"></script>
 	</body>
 </html>
 ```
+
+[Edit on Plunker](https://plnkr.co/edit/GTgntq0CTPmuccehjsWv)
