@@ -2,6 +2,7 @@
 [X]	: default data key -> find one that fits better
 [ ]	: {{}} -> render on init as well as async start
 [ ]	: {{}} -> can watch prop and render instead of render on asyncstart only
+[ ]	: nested foreach on the same level would be nice
 [ ]	: name="prop.{{}}" make it support work
 [ ]	: proxyProtoObj.watch -> external watch prop api would be nice
 [ ]	: move on-next-event-cycle into subscribable
