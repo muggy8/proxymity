@@ -63,28 +63,46 @@ function proxyObj(obj, eventInstance){
 		secretProps[getSecretId] = function(property){
 			return secretProps[property]
 		}
-		secretProps[secretSelfMoved] = function(){
-			forEach(propsIn(proxied), function(property){
-				var emitPropertyMoved = proxied[property][secretSelfMoved]
-				if (typeof emitPropertyMoved === "function"){
-					emitPropertyMoved()
-				}
-				eventInstance.async("remap:" + secretProps[property], {
-					p: property
+
+		function secretSelfEventFn(secretProp, eventPrefix){
+			return function(){
+				forEach(propsIn(proxied), function(property){
+					var emitPropertyMoved = proxied[property][secretProp]
+					if (typeof emitPropertyMoved === "function"){
+						emitPropertyMoved()
+					}
+					eventInstance.async(eventPrefix + secretProps[property], {
+						p: property
+					})
 				})
-			})
+			}
 		}
-		secretProps[secretSelfDeleted] = function(){
-			forEach(propsIn(proxied), function(property){
-				var emitPropertyDeleted = proxied[property][secretSelfDeleted]
-				if (typeof emitPropertyDeleted === "function"){
-					emitPropertyDeleted()
-				}
-				eventInstance.async("del:" + secretProps[property], {
-					p: property
-				})
-			})
-		}
+
+		secretProps[secretSelfMoved] = secretSelfEventFn(secretSelfMoved, "remap:")
+		secretProps[secretSelfDeleted] = secretSelfEventFn(secretSelfDeleted, "del:")
+
+		// secretProps[secretSelfMoved] = function(){
+		// 	forEach(propsIn(proxied), function(property){
+		// 		var emitPropertyMoved = proxied[property][secretSelfMoved]
+		// 		if (typeof emitPropertyMoved === "function"){
+		// 			emitPropertyMoved()
+		// 		}
+		// 		eventInstance.async("remap:" + secretProps[property], {
+		// 			p: property
+		// 		})
+		// 	})
+		// }
+		// secretProps[secretSelfDeleted] = function(){
+		// 	forEach(propsIn(proxied), function(property){
+		// 		var emitPropertyDeleted = proxied[property][secretSelfDeleted]
+		// 		if (typeof emitPropertyDeleted === "function"){
+		// 			emitPropertyDeleted()
+		// 		}
+		// 		eventInstance.async("del:" + secretProps[property], {
+		// 			p: property
+		// 		})
+		// 	})
+		// }
 
 		// now we create the proxy that actually houses everything
 		var proxied = new Proxy(objToProxy, {
