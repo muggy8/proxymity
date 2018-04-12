@@ -318,11 +318,15 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				return
 			}
 
-			// var unwatchSet = eventInstance.watch("set:" + modelKey, function(payload){
-			// 	if (node.value !== payload.value){
-			// 		node.value = payload.value.toString()
-			// 	}
-			// })
+			// we are gonna get rid of del listeners cuz they cause more trouble than they're worth. instead the only 2 events that will be emmited by the data object is set and remap. since remap wild find the last/next item on resolve anyways, we need to handle that that here. 
+			// the different situations we expect is 
+			
+			// getting a payload with a matching value => update
+			// getting a payload with unmatching values => clear (eg we get a proxy object instead of a number)
+			// getting no payload => clear
+
+
+			// (rework below)
 
 			// this is the default setter and deleter for this property that we'll use if it's not overwritten in the if statements below
 			var setListener = function(payload){
