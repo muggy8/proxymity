@@ -62,9 +62,9 @@ function continiousUiWatch(node, proxyProp, eventInstance, model, attributeToLis
 	var unwatch = {}
 	// watch everything
 	for(var key in listeners){
-		var keyToWatch = key + ":" + modelKey
+		var keyToWatch = listeners[key].to + ":" + modelKey
 		destroyCallbacks.push(
-			unwatch[key] = eventInstance.watch(keyToWatch, listeners[key])
+			unwatch[listeners[key].to] = eventInstance.watch(keyToWatch, listeners[key])
 		)
 		listeners[key](eventInstance.next(keyToWatch) || eventInstance.last(keyToWatch))
 	}
@@ -417,10 +417,12 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			// var unwatchSet = eventInstance.watch("set:" + modelKey, setListener)
 			// var unwatchDel = eventInstance.watch("del:" + modelKey, delListener)
 
-			continiousUiWatch(node, propertyToDefine, eventInstance, model, attr.value, {
-				set: setListener,
-				del: delListener
-			}, onDestroyCallbacks)
+			delListener.to = "del"
+			setListener.to = "set"
+			continiousUiWatch(node, propertyToDefine, eventInstance, model, attr.value, [
+				delListener,
+				setListener
+			], onDestroyCallbacks)
 
 
 			var changeListeners = ["change", "keyup", "propertychange", "valuechange", "input"]
