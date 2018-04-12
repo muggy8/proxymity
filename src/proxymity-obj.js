@@ -192,7 +192,7 @@ function proxyObj(obj, eventInstance){
 			},
 			deleteProperty: function(target, property){
 				if (property in target) {
-					var emitDeleted = target[property][secretSelfDeleted]
+					var emitDeleted = target[property][secretSelfMoved]
 					if (typeof emitDeleted === "function"){
 						emitDeleted()
 					}

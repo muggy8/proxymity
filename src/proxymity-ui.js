@@ -355,29 +355,23 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			){
 				uiDataVal = "valueAsNumber"
 				setListener = function(payload){
-                    if (!payload){
-                        return
-                    }
-					if (typeof payload.value == "number" && payload.value !== node.valueAsNumber){
-						node.valueAsNumber = payload.value
-					}
-                    else if (typeof payload.value !== "number"){
+                    if (!payload || typeof payload.value !== "number"){
                         node.value = null
                     }
+					else if (typeof payload.value == "number" && payload.value !== node.valueAsNumber){
+						node.valueAsNumber = payload.value
+					}
 				}
 			}
 			else if (nodeTypeLowercase === "checkbox"){
 				uiDataVal = "checked"
 				setListener = function(payload){
-                    if (!payload){
-                        return
-                    }
-					if (typeof payload.value == "boolean" && payload.value !== node.checked){
-						node.checked = payload.value
-					}
-                    else if (typeof payload.value !== "boolean"){
+                    if (!payload || typeof payload.value !== "boolean"){
                         node.checked = false
                     }
+					else if (typeof payload.value == "boolean" && payload.value !== node.checked){
+						node.checked = payload.value
+					}
 				}
 			}
 			else if (nodeTypeLowercase === "radio"){
@@ -405,15 +399,12 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			){
 				uiDataVal = "valueAsDate"
 				setListener = function(payload){
-                    if (!payload){
-                        return
-                    }
-					if (payload.value instanceof Date && payload.value.getTime() !== node.valueAsDate.getTime()) {
-						node.valueAsDate = payload.value
-					}
-                    else if (!(payload.value instanceof Date)){
+                    if (!payload || !(payload.value instanceof Date)){
                         node.value = null
                     }
+					else if (payload.value instanceof Date && payload.value.getTime() !== node.valueAsDate.getTime()) {
+						node.valueAsDate = payload.value
+					}
 				}
 			}
 
