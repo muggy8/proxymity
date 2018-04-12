@@ -176,7 +176,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 	lengthSet(eventInstance.next("set:" + lengthKey) || eventInstance.last("set:" + lengthKey))
 }
 
-function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine = "data"){
+function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 	if (typeof nodeOrNodeListOrHTML === "string"){
 		var template = document.createElement("template")
 		template.innerHTML = nodeOrNodeListOrHTML.trim()

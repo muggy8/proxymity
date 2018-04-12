@@ -22,21 +22,21 @@
 				<option value="2">She/Her</option>
 				<option value="3">They/Them</option>
 			</select><br>
-			<div class='{:this.data.user.name.toString() && "test-1":} {:parseInt(this.data.user.age) && "test-2":}'>
+			<div class='{:this.proxy.user.name.toString() && "test-1":} {:parseInt(this.proxy.user.age) && "test-2":}'>
 				<label><input name='user.class' type='radio' value="A"/> A</label>
 				<label><input name='user.class' type='radio' value="B"/> B</label>
 				<label><input name='user.class' type='radio' value="C"/> C</label>
 			</div><br>
 			<input name='user.name' type='text' placeholder='experimenting'/><br>
 
-			<pre>{:this.data.user.stringify(null, "    "):}</pre>
+			<pre>{:this.proxy.user.stringify(null, "    "):}</pre>
 
-			<!--repeat.begin(this.data.prop, "propName", function(item, index, whole){
+			<!--repeat.begin(this.proxy.prop, "propName", function(item, index, whole){
 				// item returned is the new data obj
 				item.index = index
 				return item
 			})-->
-				<pre>{:this.data.stringify(null, "    "):}</pre>
+				<pre>{:this.proxy.stringify(null, "    "):}</pre>
 			<!--repeat.end("propName")-->
 			<div>
 				<label class="block">
@@ -60,12 +60,12 @@
 			</div>
 			<style>
 				pre {
-					background-color: {:this.data.background.toString() || 'initial':};
-					color: {:this.data.color.toString() || 'initial':};
-					padding: {:this.data.padding.toString() || 'initial':};
-					border: {:this.data.border.toString() || 'initial':};
-					font-size: {:this.data.fontSize.toString() || 'inherit':};
-					font-family: {:this.data.fontFace.toString() || 'sans-serif':}, sans-serif;
+					background-color: {:this.proxy.background.toString() || 'initial':};
+					color: {:this.proxy.color.toString() || 'initial':};
+					padding: {:this.proxy.padding.toString() || 'initial':};
+					border: {:this.proxy.border.toString() || 'initial':};
+					font-size: {:this.proxy.fontSize.toString() || 'inherit':};
+					font-family: {:this.proxy.fontFace.toString() || 'sans-serif':}, sans-serif;
 				}
 				.block {
 					display: block
@@ -124,14 +124,14 @@
 					</div>
 				`
 			}
-			testArrStr += "<pre>{:this.data.stringify(null, '    '):}</pre>"
+			testArrStr += "<pre>{:this.proxy.stringify(null, '    '):}</pre>"
 
 			var renderedArr = proxymity(testArrStr, arr)
 			// renderedArr.appendTo("body")
 			// var renderedArrData = renderedArr.data
 
 			var testRepeat = proxymity(`
-				<!-- foreach: key("index").in(this.data.arr) -->
+				<!-- foreach: key("index").in(this.proxy.arr) -->
 					<div>
 						<strong>item {:this.index + 1:}</strong>
 						<label class="block">
@@ -140,15 +140,15 @@
 						<label class="block">
 							Int 1: <input type="number" name="arr[this.index].int">
 						</label>
-                        <button onclick="this.data.arr.splice(this.index + 1, 0, {})">Add another Below</button>
-                        <button onclick="this.data.arr.splice(this.index, 1)">Delete This</button>
+                        <button onclick="this.proxy.arr.splice(this.index + 1, 0, {})">Add another Below</button>
+                        <button onclick="this.proxy.arr.splice(this.index, 1)">Delete This</button>
 						<hr />
 					</div>
 				<!-- foreach: key.end() -->
-				<!-- {:this.data.filtered = this.data.arr.filter(function(_, index){
+				<!-- {:this.proxy.filtered = this.proxy.arr.filter(function(_, index){
 					return index < 2
 				}):} -->
-				<pre>{:this.data.stringify(null, "    "):}</pre>
+				<pre>{:this.proxy.stringify(null, "    "):}</pre>
 			`, {
 				arr: arr
 			})
