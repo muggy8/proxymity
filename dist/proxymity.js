@@ -10,6 +10,26 @@ function forEach(arrayLike, callback){
 	return arrayFrom(arrayLike).forEach(callback)
 }
 
+function isFunction(val){
+	return typeof val === "function"
+}
+
+function isString(val){
+	return typeof val === "string"
+}
+
+function isBool(val){
+	return typeof val === "boolean"
+}
+
+function isNumber(val){
+	return typeof val === "number"
+}
+
+function isObject(val){
+	return typeof val === "object"
+}
+
 function propsIn(obj){
 	return Object.getOwnPropertyNames(obj)
 }
@@ -93,7 +113,7 @@ function subscribable(){
 
 	var watch = this.watch = function(nameOrCallback, callbackOrOptions, options){
 		var name, callback
-		if (typeof callbackOrOptions == "function"){
+		if (isFunction(callbackOrOptions)){
 			name = nameOrCallback
 			callback = callbackOrOptions
 			options = options || {}
@@ -225,7 +245,7 @@ var proxyObjProto = {
 		var keys = propsIn(this)
 		for(var index in keys){ // we dont use foreach here cuz we want to perserve the "this" variable
 			var key = keys[index]
-			if (typeof this[key] === "object" && this[key].objectify){
+			if (isObject(this[key]) && this[key].objectify){
 				raw[key] = this[key].objectify()
 			}
 			else {
@@ -268,7 +288,7 @@ var secretSelfDeleted = generateId(randomInt(32, 48))
 function proxyObj(obj, eventInstance){
 	var objProto = Object.getPrototypeOf(obj)
 	var objToProxy
-	if (typeof obj === "object" && (
+	if (isObject(obj) && (
 			(objProto === Object.prototype && (objToProxy = Object.create(proxyObjProto))) ||
 			(objProto === Array.prototype && (objToProxy = Object.setPrototypeOf([], proxyArrayProto)))
 		)
@@ -284,7 +304,7 @@ function proxyObj(obj, eventInstance){
 			return function(){
 				forEach(propsIn(proxied), function(property){
 					var emitPropertyMoved = proxied[property][secretProp]
-					if (typeof emitPropertyMoved === "function"){
+					if (isFunction(emitPropertyMoved)){
 						emitPropertyMoved()
 					}
 					eventInstance.async(eventPrefix + secretProps[property], {
@@ -296,29 +316,6 @@ function proxyObj(obj, eventInstance){
 
 		secretProps[secretSelfMoved] = secretSelfEventFn(secretSelfMoved, "remap:")
 		secretProps[secretSelfDeleted] = secretSelfEventFn(secretSelfDeleted, "del:")
-
-		// secretProps[secretSelfMoved] = function(){
-		// 	forEach(propsIn(proxied), function(property){
-		// 		var emitPropertyMoved = proxied[property][secretSelfMoved]
-		// 		if (typeof emitPropertyMoved === "function"){
-		// 			emitPropertyMoved()
-		// 		}
-		// 		eventInstance.async("remap:" + secretProps[property], {
-		// 			p: property
-		// 		})
-		// 	})
-		// }
-		// secretProps[secretSelfDeleted] = function(){
-		// 	forEach(propsIn(proxied), function(property){
-		// 		var emitPropertyDeleted = proxied[property][secretSelfDeleted]
-		// 		if (typeof emitPropertyDeleted === "function"){
-		// 			emitPropertyDeleted()
-		// 		}
-		// 		eventInstance.async("del:" + secretProps[property], {
-		// 			p: property
-		// 		})
-		// 	})
-		// }
 
 		// now we create the proxy that actually houses everything
 		var proxied = new Proxy(objToProxy, {
@@ -367,11 +364,11 @@ function proxyObj(obj, eventInstance){
 
 				// tell everyone that we should remap to the new item
 				var emitPropertyMoved = target[property] && target[property][secretSelfMoved]
-				if (typeof emitPropertyMoved === "function"){
+				if (isFunction(emitPropertyMoved)){
 					emitPropertyMoved()
 				}
 
-				if (val && typeof val === "object" && (valProto === Object.prototype || valProto === Array.prototype)){
+				if (val && isObject(val) && (valProto === Object.prototype || valProto === Array.prototype)){
 					//console.log("1", target[property])
 					target[property] = proxyObj(val, eventInstance)
 				}
@@ -408,9 +405,9 @@ function proxyObj(obj, eventInstance){
 			},
 			deleteProperty: function(target, property){
 				if (property in target) {
-					var emitDeleted = target[property][secretSelfMoved]
-					if (typeof emitDeleted === "function"){
-						emitDeleted()
+					var emitMoved = target[property][secretSelfMoved]
+					if (isFunction(emitMoved)){
+						emitMoved()
 					}
 					eventInstance.async("del:" + secretProps[property], {
 						value: target[property],
@@ -469,7 +466,7 @@ function continiousRender(textSource, eventInstance, containingElement){
 
 var appendableArrayProto = Object.create(Array.prototype)
 appendableArrayProto.appendTo = function(selectorOrElement) {
-	if (typeof selectorOrElement === "string"){
+	if (isString(selectorOrElement)){
 		return appendableArrayProto.appendTo.call(this, document.querySelector(selectorOrElement))
 	}
 	var target = selectorOrElement
@@ -616,7 +613,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 }
 
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
-	if (typeof nodeOrNodeListOrHTML === "string"){
+	if (isString(nodeOrNodeListOrHTML)){
 		var template = document.createElement("template")
 		template.innerHTML = nodeOrNodeListOrHTML.trim()
 		var parsedList = template.content.childNodes
@@ -661,7 +658,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 			repeatBody.outputList = elementList
 			repeatBody.insertBefore = repeatBody.elements.pop() // we're going to use this comment as the place where we will be inserting all of our loopy stuff before
-			if (typeof onClone === "function"){
+			if (isFunction(onClone)){
 				repeatBody.onClone = onClone
 			}
 
@@ -719,7 +716,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				return model
 			},
 			set: function(val){
-				if (typeof val === "object"){
+				if (isObject(val)){
 					softCopy(val, model)
 				}
 			}
@@ -779,7 +776,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				}
 			}
 			var delListener = function(payload){
-				if (typeof payload === "object"){
+				if (isObject(payload)){
 					node.value = null
 				}
 			}
@@ -792,7 +789,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			){
 				uiDataVal = "valueAsNumber"
 				setListener = function(payload){
-                    if (!payload || typeof payload.value !== "number"){
+                    if (!payload || !isNumber(payload.value)){
                         node.value = null
                     }
 					else if (typeof payload.value == "number" && payload.value !== node.valueAsNumber){
@@ -803,10 +800,10 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			else if (nodeTypeLowercase === "checkbox"){
 				uiDataVal = "checked"
 				setListener = function(payload){
-                    if (!payload || typeof payload.value !== "boolean"){
+                    if (!payload || isBool(payload.value)){
                         node.checked = false
                     }
-					else if (typeof payload.value == "boolean" && payload.value !== node.checked){
+					else if (isBool(payload.value) && payload.value !== node.checked){
 						node.checked = payload.value
 					}
 				}
@@ -903,7 +900,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				return proxied
 			},
 			set: function(val){
-				if (typeof val === "object"){
+				if (isObject(val)){
 					softCopy(val, proxied)
 				}
 			}
