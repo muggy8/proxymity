@@ -279,28 +279,46 @@ function proxyObj(obj, eventInstance){
 		secretProps[getSecretId] = function(property){
 			return secretProps[property]
 		}
-		secretProps[secretSelfMoved] = function(){
-			forEach(propsIn(proxied), function(property){
-				var emitPropertyMoved = proxied[property][secretSelfMoved]
-				if (typeof emitPropertyMoved === "function"){
-					emitPropertyMoved()
-				}
-				eventInstance.async("remap:" + secretProps[property], {
-					p: property
+
+		function secretSelfEventFn(secretProp, eventPrefix){
+			return function(){
+				forEach(propsIn(proxied), function(property){
+					var emitPropertyMoved = proxied[property][secretProp]
+					if (typeof emitPropertyMoved === "function"){
+						emitPropertyMoved()
+					}
+					eventInstance.async(eventPrefix + secretProps[property], {
+						p: property
+					})
 				})
-			})
+			}
 		}
-		secretProps[secretSelfDeleted] = function(){
-			forEach(propsIn(proxied), function(property){
-				var emitPropertyDeleted = proxied[property][secretSelfDeleted]
-				if (typeof emitPropertyDeleted === "function"){
-					emitPropertyDeleted()
-				}
-				eventInstance.async("del:" + secretProps[property], {
-					p: property
-				})
-			})
-		}
+
+		secretProps[secretSelfMoved] = secretSelfEventFn(secretSelfMoved, "remap:")
+		secretProps[secretSelfDeleted] = secretSelfEventFn(secretSelfDeleted, "del:")
+
+		// secretProps[secretSelfMoved] = function(){
+		// 	forEach(propsIn(proxied), function(property){
+		// 		var emitPropertyMoved = proxied[property][secretSelfMoved]
+		// 		if (typeof emitPropertyMoved === "function"){
+		// 			emitPropertyMoved()
+		// 		}
+		// 		eventInstance.async("remap:" + secretProps[property], {
+		// 			p: property
+		// 		})
+		// 	})
+		// }
+		// secretProps[secretSelfDeleted] = function(){
+		// 	forEach(propsIn(proxied), function(property){
+		// 		var emitPropertyDeleted = proxied[property][secretSelfDeleted]
+		// 		if (typeof emitPropertyDeleted === "function"){
+		// 			emitPropertyDeleted()
+		// 		}
+		// 		eventInstance.async("del:" + secretProps[property], {
+		// 			p: property
+		// 		})
+		// 	})
+		// }
 
 		// now we create the proxy that actually houses everything
 		var proxied = new Proxy(objToProxy, {
@@ -390,7 +408,7 @@ function proxyObj(obj, eventInstance){
 			},
 			deleteProperty: function(target, property){
 				if (property in target) {
-					var emitDeleted = target[property][secretSelfDeleted]
+					var emitDeleted = target[property][secretSelfMoved]
 					if (typeof emitDeleted === "function"){
 						emitDeleted()
 					}
@@ -529,8 +547,8 @@ function groupBy(itemArray, propertyToGroupBy){
 
 var destroyEventName = generateId(randomInt(32, 48))
 function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
-	repeatBody.source.length
-	var lengthKey = eventInstance.last("get").value
+	repeatBody.source.length // this is used so we can get the last variable emitted by the proxy object and so we know what were looking to listen to
+	var listenTo = "set:" + eventInstance.last("get").value
 
 	var lengthSet = function(payload){
 		if (typeof payload === "undefined"){
@@ -589,8 +607,12 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
         }
 	}
 
-	eventInstance.watch("set:" + lengthKey, lengthSet)
-	lengthSet(eventInstance.next("set:" + lengthKey) || eventInstance.last("set:" + lengthKey))
+	eventInstance.watch("asyncstart", function(emits){
+		if (emits.payload.hasOwnProperty(listenTo)){
+			lengthSet(emits.payload[listenTo])
+		}
+	})
+	lengthSet(eventInstance.next(listenTo) || eventInstance.last(listenTo))
 }
 
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
@@ -733,11 +755,15 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				return
 			}
 
-			// var unwatchSet = eventInstance.watch("set:" + modelKey, function(payload){
-			// 	if (node.value !== payload.value){
-			// 		node.value = payload.value.toString()
-			// 	}
-			// })
+			// we are gonna get rid of del listeners cuz they cause more trouble than they're worth. instead the only 2 events that will be emmited by the data object is set and remap. since remap wild find the last/next item on resolve anyways, we need to handle that that here. 
+			// the different situations we expect is 
+			
+			// getting a payload with a matching value => update
+			// getting a payload with unmatching values => clear (eg we get a proxy object instead of a number)
+			// getting no payload => clear
+
+
+			// (rework below)
 
 			// this is the default setter and deleter for this property that we'll use if it's not overwritten in the if statements below
 			var setListener = function(payload){
@@ -766,29 +792,23 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			){
 				uiDataVal = "valueAsNumber"
 				setListener = function(payload){
-                    if (!payload){
-                        return
-                    }
-					if (typeof payload.value == "number" && payload.value !== node.valueAsNumber){
-						node.valueAsNumber = payload.value
-					}
-                    else if (typeof payload.value !== "number"){
+                    if (!payload || typeof payload.value !== "number"){
                         node.value = null
                     }
+					else if (typeof payload.value == "number" && payload.value !== node.valueAsNumber){
+						node.valueAsNumber = payload.value
+					}
 				}
 			}
 			else if (nodeTypeLowercase === "checkbox"){
 				uiDataVal = "checked"
 				setListener = function(payload){
-                    if (!payload){
-                        return
-                    }
-					if (typeof payload.value == "boolean" && payload.value !== node.checked){
-						node.checked = payload.value
-					}
-                    else if (typeof payload.value !== "boolean"){
+                    if (!payload || typeof payload.value !== "boolean"){
                         node.checked = false
                     }
+					else if (typeof payload.value == "boolean" && payload.value !== node.checked){
+						node.checked = payload.value
+					}
 				}
 			}
 			else if (nodeTypeLowercase === "radio"){
@@ -816,15 +836,12 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			){
 				uiDataVal = "valueAsDate"
 				setListener = function(payload){
-                    if (!payload){
-                        return
-                    }
-					if (payload.value instanceof Date && payload.value.getTime() !== node.valueAsDate.getTime()) {
-						node.valueAsDate = payload.value
-					}
-                    else if (!(payload.value instanceof Date)){
+                    if (!payload || !(payload.value instanceof Date)){
                         node.value = null
                     }
+					else if (payload.value instanceof Date && payload.value.getTime() !== node.valueAsDate.getTime()) {
+						node.valueAsDate = payload.value
+					}
 				}
 			}
 
@@ -878,15 +895,6 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 	return function(view, initialData = {}, modelProperty = "app"){
 		var events = new subscribable()
 
-		// we only want to render the view at most twice per primary update cycle. an update cycle is when something somewhere in the main data object is modified from either the UI or the user code, either way if we have any code that modifies the main data on rendering through the {{}} syntax (eg: {{this.data.filteredArray = this.data.array.filter(item=>item.caninclude)}}), the second render will allow that to show up, however because the re-render action is triggered from within a render cycle, this will lead to an infinite render loop if left unchecked which isn't really good for battery or UX so we want to limit the render cycle to forcefully complete after 2 renders which is rather reasonable. The 2 following listeners will accomplish this by emiting events at the start and end of the events that will trigger the render cycle and therefore must be seperated by the main initiation code. the proxy obj will check the last emited rendering event before emitting events that would trigger UI re-renders
-		events.watch("asyncstart", function(queue){
-			for(var i = 0; i < queue.order.length; i++){
-				if (queue.order[i].substr(0, 4) === "del:"){
-					queue.order.unshift(queue.order.splice(i, 1)[0])
-				}
-			}
-		})
-
 		events.async("set:")
 		var proxied = proxyObj(initialData, events)
 		var ui = proxyUI(view, proxied, events, modelProperty)
@@ -903,9 +911,8 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 		return ui
 	}
 })(function(script, sv = {}){
-	var prepend = ""
 	for(var key in sv){
-		prepend += "var " + key + " = sv." + key + ";\n"
+		script = "var " + key + " = sv." + key + ";\n" + script
 	}
 
 	// delete arguments[1]
