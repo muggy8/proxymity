@@ -1,4 +1,5 @@
-var bracketsRegex = /\{\:([\s\S]*?)\:\}/g
+var bracketsRegex = /\{\:([\s\S]*?)\:\}(\/\*[\s\S]*?\*\/)?/g
+// should match {:whatever:}(:whatever:)
 function renderBrackets(originalText, sourceEle){
 	// var workingOutput = originalText
 	return originalText.replace(bracketsRegex, function(matched, expression){
@@ -12,26 +13,58 @@ function renderBrackets(originalText, sourceEle){
 		//workingOutput = workingOutput.replace(expression, safeEval.call(sourceEle, expression.replace(/^\{\{|\}\}$/g, "")))
 	})
 }
-function continiousRender(textSource, eventInstance, containingElement){
-	containingElement = containingElement || textSource
-	var textVal = textSource.textContent
-	if (textVal.match(bracketsRegex)){
-		var unwatch = eventInstance.watch("asyncstart", function(asyncEvents){
-			var hasSetEvent = false
-			findIfSetEventExists: for(var key in asyncEvents.payload){
-				if (key.substring(0, 4) === "set:"){
-					hasSetEvent = true
-					break findIfSetEventExists
-				}
-			}
-			hasSetEvent && (textSource.textContent = renderBrackets(textVal, containingElement))
-			// console.log(renderedText)
+function renderCustomSyntax(textSource, eventInstance, containingElement, model){
+	var sourceText = textSource.textContent
+	var onRenderEvalQueue = []
+	sourceText.replace(bracketsRegex, function(wholeMatch, evalText, dependencyText){
+		// console.log(evalText, dependencyText)
+		onRenderEvalQueue.push({
+			drop: wholeMatch,
+			run: evalText.substring(2, evalText.length - 2),
+			on: dependencyText && dependencyText.substring(2, dependencyText.length - 2).split("//")
 		})
+	})
+
+	// we spliced out what we had above that we can use to render the text. if have a render queue then this text is worth parsing and running and re-running on asyncstart or whatever. other wise it's jsut regular text so we ignore it :3
+	if (onRenderEvalQueue.length){
+		forEach(onRenderEvalQueue, function(queuedItem){
+			var dataVar = generateId(randomInt(32, 48))
+			queuedItem.on && forEach(queuedItem.on, function(experssion){
+				safeEval.call(
+					containingElement,
+					dataVar + (experssion[0] === "[" ? "" : ".") + experssion,
+					{
+						[dataVar]: model
+					}
+				)
+				var lastGet = eventInstance.last("get").value
+
+				onRenderEvalQueue.watchFor = onRenderEvalQueue.watchFor || []
+				onRenderEvalQueue.watchFor.push("set:" + lastGet)
+				onRenderEvalQueue.watchFor.push("del:" + lastGet)
+			})
+		})
+		console.log(onRenderEvalQueue)
 	}
-	return function(){
-		textSource.textContent = textVal
-		unwatch && unwatch()
-	}
+
+
+	// if (sourceText.match(bracketsRegex)){
+	// 	var unwatch = eventInstance.watch("asyncstart", function(asyncEvents){
+	// 		var hasSetEvent = false
+	// 		findIfSetEventExists: for(var key in asyncEvents.payload){
+	// 			if (key.substring(0, 4) === "set:"){
+	// 				hasSetEvent = true
+	// 				break findIfSetEventExists
+	// 			}
+	// 		}
+	// 		hasSetEvent && (textSource.textContent = renderBrackets(sourceText, containingElement))
+	// 		// console.log(renderedText)
+	// 	})
+	// }
+	// return function(){
+	// 	textSource.textContent = sourceText
+	// 	unwatch && unwatch()
+	// }
 }
 
 var appendableArrayProto = Object.create(Array.prototype)
@@ -54,7 +87,7 @@ appendableArrayProto.detach = function(){
 	return this
 }
 
-function continiousUiWatch(node, proxyProp, eventInstance, model, attributeToListenTo, listeners, destroyCallbacks){
+function continiousDataWatch(node, proxyProp, eventInstance, model, attributeToListenTo, listeners, destroyCallbacks){
 	// because we have no idea what the heck is going to be in the attr.value and parsing it is too hard, we let the native javascirpt runtime handle that and as long as it's valid javascript that accesses a property in the data we'll be able to track which was the last accessed property and then we'll store that as the key we track
 	safeEval.call(node, "this." + proxyProp + (attributeToListenTo[0] === "[" ? "" : ".") + attributeToListenTo)
 	var modelKey = eventInstance.last("get").value
@@ -79,7 +112,7 @@ function continiousUiWatch(node, proxyProp, eventInstance, model, attributeToLis
 					destroyCallbacks.splice(removalIndex, 1)
 				}
 			}
-			continiousUiWatch(node, proxyProp, eventInstance, model, attributeToListenTo, listeners, destroyCallbacks)
+			continiousDataWatch(node, proxyProp, eventInstance, model, attributeToListenTo, listeners, destroyCallbacks)
 		})
 	)
 }
@@ -297,8 +330,8 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 		// step 2: set up continious rendering for everything that's a text element
 		if (node instanceof CharacterData){
-			var stopContiniousRender = continiousRender(node, eventInstance)
-			onDestroyCallbacks.push(stopContiniousRender)
+			var stopRendering = renderCustomSyntax(node, eventInstance, node, model)
+			onDestroyCallbacks.push(stopRendering)
 		}
 		else {
 			proxyUI(node.childNodes, model, eventInstance, propertyToDefine)
@@ -306,7 +339,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 		// step 3: set up continious rendering for element properties but also link the names of items to the model
 		forEach(node.attributes, function(attr){
-			var destroyAttributeRender = attr.name !== "name" && continiousRender(attr, eventInstance, node) // only for non-name attributes because name is not going to suppor this since making it support this and bind to the data model correctly is too hard
+			var destroyAttributeRender = attr.name !== "name" && renderCustomSyntax(attr, eventInstance, node, model) // only for non-name attributes because name is not going to suppor this since making it support this and bind to the data model correctly is too hard
 
 			if (destroyAttributeRender){
 				onDestroyCallbacks.push(destroyAttributeRender)
@@ -322,9 +355,9 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				return
 			}
 
-			// we are gonna get rid of del listeners cuz they cause more trouble than they're worth. instead the only 2 events that will be emmited by the data object is set and remap. since remap wild find the last/next item on resolve anyways, we need to handle that that here. 
-			// the different situations we expect is 
-			
+			// we are gonna get rid of del listeners cuz they cause more trouble than they're worth. instead the only 2 events that will be emmited by the data object is set and remap. since remap wild find the last/next item on resolve anyways, we need to handle that that here.
+			// the different situations we expect is
+
 			// getting a payload with a matching value => update
 			// getting a payload with unmatching values => clear (eg we get a proxy object instead of a number)
 			// getting no payload => clear
@@ -418,7 +451,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 			delListener.to = "del"
 			setListener.to = "set"
-			continiousUiWatch(node, propertyToDefine, eventInstance, model, attr.value, [
+			continiousDataWatch(node, propertyToDefine, eventInstance, model, attr.value, [
 				delListener,
 				setListener
 			], onDestroyCallbacks)

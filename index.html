@@ -22,7 +22,7 @@
 				<option value="2">She/Her</option>
 				<option value="3">They/Them</option>
 			</select><br>
-			<div class='{:this.app.user.name.toString() && "test-1":} {:parseInt(this.app.user.age) && "test-2":}'>
+			<div class='{:this.app.user.name.toString() && "test-1":}(:this.app.user.name:) {:parseInt(this.app.user.age) && "test-2":}/* user.age // user.name // user.class */'>
 				<label><input name='user.class' type='radio' value="A"/> A</label>
 				<label><input name='user.class' type='radio' value="B"/> B</label>
 				<label><input name='user.class' type='radio' value="C"/> C</label>
@@ -74,12 +74,11 @@
 		</div>
 		<script>
 			// gonna stub this in here
-			var safeEval = function(script, contextVars = {}){
-				for(var key in contextVars){
-					eval("var " + key + " = contextVars['" + key + "']")
+			var safeEval = function(s, sv = {}){
+				for(var k in sv){
+					s = "var " + k + " = sv." + k + ";\n" + s
 				}
-				// delete arguments[1]
-				return eval(script)
+				return eval(s)
 			}
 
 			// testing Proxymity now
