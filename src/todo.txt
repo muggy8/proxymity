@@ -1,9 +1,9 @@
 [X]	: key.end(callback) -> make it actually work
 [X]	: default data key -> find one that fits better
-[ ]	: {{}} -> render on init as well as async start
-[ ]	: {{}} -> can watch prop and render instead of render on asyncstart only
-[ ]	: name="prop.{{}}" make it support work
+[X]	: {{}} -> render on init as well as async start
+[X]	: {{}} -> can watch prop and render instead of render on asyncstart only
+[ ]	: name="prop.{{}}" make it support work (to support checkboxes)
 [ ]	: move on-next-event-cycle into subscribable
 [ ]	: nested foreach on the same level would be nice
 [ ]	: proxyProtoObj.watch -> external watch prop api would be nice
-[ ]	: sharing model objects
+[ ]	: sharing model objects would be nice
