@@ -23,9 +23,8 @@ var proxymity = (function(safeEval){
 		return ui
 	}
 })(function(script, sv = {}){
-	var prepend = ""
 	for(var key in sv){
-		prepend += "var " + key + " = sv." + key + ";\n"
+		script = "var " + key + " = sv." + key + ";\n" + script
 	}
 
 	// delete arguments[1]
