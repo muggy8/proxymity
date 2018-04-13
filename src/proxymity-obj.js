@@ -9,7 +9,7 @@ var proxyObjProto = {
 		var keys = propsIn(this)
 		for(var index in keys){ // we dont use foreach here cuz we want to perserve the "this" variable
 			var key = keys[index]
-			if (typeof this[key] === "object" && this[key].objectify){
+			if (isObject(this[key]) && this[key].objectify){
 				raw[key] = this[key].objectify()
 			}
 			else {
@@ -52,7 +52,7 @@ var secretSelfDeleted = generateId(randomInt(32, 48))
 function proxyObj(obj, eventInstance){
 	var objProto = Object.getPrototypeOf(obj)
 	var objToProxy
-	if (typeof obj === "object" && (
+	if (isObject(obj) && (
 			(objProto === Object.prototype && (objToProxy = Object.create(proxyObjProto))) ||
 			(objProto === Array.prototype && (objToProxy = Object.setPrototypeOf([], proxyArrayProto)))
 		)
@@ -132,7 +132,7 @@ function proxyObj(obj, eventInstance){
 					emitPropertyMoved()
 				}
 
-				if (val && typeof val === "object" && (valProto === Object.prototype || valProto === Array.prototype)){
+				if (val && isObject(val) && (valProto === Object.prototype || valProto === Array.prototype)){
 					//console.log("1", target[property])
 					target[property] = proxyObj(val, eventInstance)
 				}

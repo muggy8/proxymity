@@ -286,7 +286,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				return model
 			},
 			set: function(val){
-				if (typeof val === "object"){
+				if (isObject(val)){
 					softCopy(val, model)
 				}
 			}
@@ -346,7 +346,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				}
 			}
 			var delListener = function(payload){
-				if (typeof payload === "object"){
+				if (isObject(payload)){
 					node.value = null
 				}
 			}

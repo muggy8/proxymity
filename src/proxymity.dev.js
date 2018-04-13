@@ -15,7 +15,7 @@ var proxymity = (function(safeEval){
 				return proxied
 			},
 			set: function(val){
-				if (typeof val === "object"){
+				if (isObject(val)){
 					softCopy(val, proxied)
 				}
 			}
