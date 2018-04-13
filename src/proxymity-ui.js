@@ -114,7 +114,7 @@ function groupBy(itemArray, propertyToGroupBy){
 
 var destroyEventName = generateId(randomInt(32, 48))
 function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
-	repeatBody.source.length
+	repeatBody.source.length // this is used so we can get the last variable emitted by the proxy object and so we know what were looking to listen to
 	var listenTo = "set:" + eventInstance.last("get").value
 
 	var lengthSet = function(payload){
