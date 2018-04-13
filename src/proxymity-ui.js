@@ -115,7 +115,7 @@ function groupBy(itemArray, propertyToGroupBy){
 var destroyEventName = generateId(randomInt(32, 48))
 function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 	repeatBody.source.length
-	var lengthKey = eventInstance.last("get").value
+	var listenTo = "set:" + eventInstance.last("get").value
 
 	var lengthSet = function(payload){
 		if (typeof payload === "undefined"){
@@ -174,8 +174,8 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
         }
 	}
 
-	eventInstance.watch("set:" + lengthKey, lengthSet)
-	lengthSet(eventInstance.next("set:" + lengthKey) || eventInstance.last("set:" + lengthKey))
+	eventInstance.watch(listenTo, lengthSet)
+	lengthSet(eventInstance.next(listenTo) || eventInstance.last(listenTo))
 }
 
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
