@@ -18,7 +18,7 @@ function isBool(val){
 	return typeof val === "boolean"
 }
 
-function isNumaric(val){
+function isNumber(val){
 	return typeof val === "number"
 }
 
