@@ -359,7 +359,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			){
 				uiDataVal = "valueAsNumber"
 				setListener = function(payload){
-                    if (!payload || isNumber(payload.value)){
+                    if (!payload || !isNumber(payload.value)){
                         node.value = null
                     }
 					else if (typeof payload.value == "number" && payload.value !== node.valueAsNumber){
