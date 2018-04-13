@@ -1,17 +1,18 @@
 var bracketsRegex = /\{\:([\s\S]*?)\:\}(\/\*[\s\S]*?\*\/)?/g
 // should match {:whatever:}(:whatever:)
-function renderBrackets(originalText, sourceEle){
-	// var workingOutput = originalText
-	return originalText.replace(bracketsRegex, function(matched, expression){
-		// console.log(expression)
-		try {
-			return safeEval.call(sourceEle, expression)
-		}
-		catch(o3o){
-			console.warn("failed to render expression [" + expression + "]", o3o)
-		}
-		//workingOutput = workingOutput.replace(expression, safeEval.call(sourceEle, expression.replace(/^\{\{|\}\}$/g, "")))
+function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue){
+	forEach(evalQueue, function(queuedItem){
+		originalText = originalText.replace(queuedItem.drop, function(){
+			try {
+				return safeEval.call(sourceEle, queuedItem.run)
+			}
+			catch(o3o){
+				console.error("failed to render expression [" + queuedItem.run + "]", o3o)
+				return ""
+			}
+		})
 	})
+	return originalText
 }
 function renderCustomSyntax(textSource, eventInstance, containingElement, model){
 	var sourceText = textSource.textContent
@@ -20,7 +21,7 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, model)
 		// console.log(evalText, dependencyText)
 		onRenderEvalQueue.push({
 			drop: wholeMatch,
-			run: evalText.substring(2, evalText.length - 2),
+			run: evalText,
 			on: dependencyText && dependencyText.substring(2, dependencyText.length - 2).split("//")
 		})
 	})
@@ -29,22 +30,29 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, model)
 	if (onRenderEvalQueue.length){
 		forEach(onRenderEvalQueue, function(queuedItem){
 			var dataVar = generateId(randomInt(32, 48))
-			queuedItem.on && forEach(queuedItem.on, function(experssion){
-				safeEval.call(
-					containingElement,
-					dataVar + (experssion[0] === "[" ? "" : ".") + experssion,
-					{
-						[dataVar]: model
-					}
-				)
-				var lastGet = eventInstance.last("get").value
+			if (queuedItem.on){
+				forEach(queuedItem.on, function(experssion){
+					safeEval.call(
+						containingElement,
+						dataVar + (experssion[0] === "[" ? "" : ".") + experssion,
+						{
+							[dataVar]: model
+						}
+					)
+					var lastGet = eventInstance.last("get").value
 
-				queuedItem.watchFor = queuedItem.watchFor || []
-				queuedItem.watchFor.push("set:" + lastGet)
-				queuedItem.watchFor.push("del:" + lastGet)
-			})
+					queuedItem.watchFor = queuedItem.watchFor || []
+					queuedItem.watchFor.push("set:" + lastGet)
+					queuedItem.watchFor.push("del:" + lastGet)
+				})
+			}
+			else {
+				queuedItem.waitFor = ["asyncstart"]
+			}
 		})
-		console.log(onRenderEvalQueue)
+		console.log(onRenderEvalQueue, evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue))
+
+
 	}
 
 
