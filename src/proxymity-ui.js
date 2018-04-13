@@ -14,7 +14,7 @@ function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue){
 	})
 	return originalText
 }
-function renderCustomSyntax(textSource, eventInstance, containingElement, model){
+function renderCustomSyntax(textSource, eventInstance, containingElement, appProp, model, destroyCallbacks){
 	var sourceText = textSource.textContent
 	var onRenderEvalQueue = []
 	sourceText.replace(bracketsRegex, function(wholeMatch, evalText, dependencyText){
@@ -28,31 +28,31 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, model)
 
 	// we spliced out what we had above that we can use to render the text. if have a render queue then this text is worth parsing and running and re-running on asyncstart or whatever. other wise it's jsut regular text so we ignore it :3
 	if (onRenderEvalQueue.length){
+		var renderFn = function(){
+			textSource.textContent = evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue)
+		}
 		forEach(onRenderEvalQueue, function(queuedItem){
 			var dataVar = generateId(randomInt(32, 48))
 			if (queuedItem.on){
-				forEach(queuedItem.on, function(experssion){
-					safeEval.call(
-						containingElement,
-						dataVar + (experssion[0] === "[" ? "" : ".") + experssion,
-						{
-							[dataVar]: model
-						}
-					)
-					var lastGet = eventInstance.last("get").value
-
-					queuedItem.watchFor = queuedItem.watchFor || []
-					queuedItem.watchFor.push("set:" + lastGet)
-					queuedItem.watchFor.push("del:" + lastGet)
+				var watchfor = []
+				forEach(queuedItem.on, function(attributeToListenTo){
+					var delFn = renderFn.bind(null)
+					delFn.to = "del"
+					var setFn = renderFn.bind(null)
+					setFn.to = "set"
+					continiousDataWatch(containingElement, appProp, eventInstance, model, attributeToListenTo, [
+						delFn, setFn
+					], destroyCallbacks)
 				})
 			}
 			else {
-				queuedItem.waitFor = ["asyncstart"]
+				destroyCallbacks.push(
+					eventInstance.watch("asyncstart", renderFn)
+				)
+				renderFn() // render immediately first
 			}
 		})
-		console.log(onRenderEvalQueue, evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue))
-
-
+		// console.log(onRenderEvalQueue, evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue))
 	}
 
 
@@ -338,8 +338,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 		// step 2: set up continious rendering for everything that's a text element
 		if (node instanceof CharacterData){
-			var stopRendering = renderCustomSyntax(node, eventInstance, node, model)
-			onDestroyCallbacks.push(stopRendering)
+			renderCustomSyntax(node, eventInstance, node, propertyToDefine, model, onDestroyCallbacks)
 		}
 		else {
 			proxyUI(node.childNodes, model, eventInstance, propertyToDefine)
@@ -347,11 +346,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 		// step 3: set up continious rendering for element properties but also link the names of items to the model
 		forEach(node.attributes, function(attr){
-			var destroyAttributeRender = attr.name !== "name" && renderCustomSyntax(attr, eventInstance, node, model) // only for non-name attributes because name is not going to suppor this since making it support this and bind to the data model correctly is too hard
-
-			if (destroyAttributeRender){
-				onDestroyCallbacks.push(destroyAttributeRender)
-			}
+			renderCustomSyntax(attr, eventInstance, node, propertyToDefine, model, onDestroyCallbacks) // only for non-name attributes because name is not going to suppor this since making it support this and bind to the data model correctly is too hard
 
 			if (
 				attr.name !== "name" || (

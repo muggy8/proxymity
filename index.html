@@ -144,9 +144,12 @@
 						<hr />
 					</div>
 				<!-- foreach: key.end() -->
-				<!-- {:this.app.filtered = this.app.arr.filter(function(_, index){
-					return index < 2
-				}):} -->
+				<!-- {:
+					this.app.filtered = this.app.arr.filter(function(_, index){
+						return index < 2
+					})
+					console.log(this.app.filtered.objectify())
+				:}/*arr.length*/ -->
 				<pre>{:this.app.stringify(null, "    "):}</pre>
 			`, {
 				arr: arr
