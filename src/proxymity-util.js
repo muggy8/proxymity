@@ -6,6 +6,26 @@ function forEach(arrayLike, callback){
 	return arrayFrom(arrayLike).forEach(callback)
 }
 
+function isFunction(val){
+	return typeof val === "function"
+}
+
+function isString(val){
+	return typeof val === "string"
+}
+
+function isBool(val){
+	return typeof val === "boolean"
+}
+
+function isNumaric(val){
+	return typeof val === "number"
+}
+
+function isObject(val){
+	return typeof val === "object"
+}
+
 function propsIn(obj){
 	return Object.getOwnPropertyNames(obj)
 }

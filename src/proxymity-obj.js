@@ -68,7 +68,7 @@ function proxyObj(obj, eventInstance){
 			return function(){
 				forEach(propsIn(proxied), function(property){
 					var emitPropertyMoved = proxied[property][secretProp]
-					if (typeof emitPropertyMoved === "function"){
+					if (isFunction(emitPropertyMoved)){
 						emitPropertyMoved()
 					}
 					eventInstance.async(eventPrefix + secretProps[property], {
@@ -80,29 +80,6 @@ function proxyObj(obj, eventInstance){
 
 		secretProps[secretSelfMoved] = secretSelfEventFn(secretSelfMoved, "remap:")
 		secretProps[secretSelfDeleted] = secretSelfEventFn(secretSelfDeleted, "del:")
-
-		// secretProps[secretSelfMoved] = function(){
-		// 	forEach(propsIn(proxied), function(property){
-		// 		var emitPropertyMoved = proxied[property][secretSelfMoved]
-		// 		if (typeof emitPropertyMoved === "function"){
-		// 			emitPropertyMoved()
-		// 		}
-		// 		eventInstance.async("remap:" + secretProps[property], {
-		// 			p: property
-		// 		})
-		// 	})
-		// }
-		// secretProps[secretSelfDeleted] = function(){
-		// 	forEach(propsIn(proxied), function(property){
-		// 		var emitPropertyDeleted = proxied[property][secretSelfDeleted]
-		// 		if (typeof emitPropertyDeleted === "function"){
-		// 			emitPropertyDeleted()
-		// 		}
-		// 		eventInstance.async("del:" + secretProps[property], {
-		// 			p: property
-		// 		})
-		// 	})
-		// }
 
 		// now we create the proxy that actually houses everything
 		var proxied = new Proxy(objToProxy, {
@@ -151,7 +128,7 @@ function proxyObj(obj, eventInstance){
 
 				// tell everyone that we should remap to the new item
 				var emitPropertyMoved = target[property] && target[property][secretSelfMoved]
-				if (typeof emitPropertyMoved === "function"){
+				if (isFunction(emitPropertyMoved)){
 					emitPropertyMoved()
 				}
 
@@ -192,9 +169,9 @@ function proxyObj(obj, eventInstance){
 			},
 			deleteProperty: function(target, property){
 				if (property in target) {
-					var emitDeleted = target[property][secretSelfMoved]
-					if (typeof emitDeleted === "function"){
-						emitDeleted()
+					var emitMoved = target[property][secretSelfMoved]
+					if (isFunction(emitMoved)){
+						emitMoved()
 					}
 					eventInstance.async("del:" + secretProps[property], {
 						value: target[property],

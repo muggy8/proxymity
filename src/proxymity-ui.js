@@ -228,7 +228,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 			repeatBody.outputList = elementList
 			repeatBody.insertBefore = repeatBody.elements.pop() // we're going to use this comment as the place where we will be inserting all of our loopy stuff before
-			if (typeof onClone === "function"){
+			if (isFunction(onClone)){
 				repeatBody.onClone = onClone
 			}
 

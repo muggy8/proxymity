@@ -4,7 +4,7 @@ function subscribable(){
 
 	var watch = this.watch = function(nameOrCallback, callbackOrOptions, options){
 		var name, callback
-		if (typeof callbackOrOptions == "function"){
+		if (isFunction(callbackOrOptions)){
 			name = nameOrCallback
 			callback = callbackOrOptions
 			options = options || {}
