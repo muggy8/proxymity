@@ -199,7 +199,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 		var repeatBody
 		var key = function(property){
 			if (repeatBody){
-				throw new error("Impropert usage of key(string).in(array): key(string) cannot be nested on the same level")
+				throw new error("Improper usage of key(string).in(array): key(string) cannot be nested on the same level")
 			}
 			repeatBody = {
 				key: property
@@ -208,14 +208,14 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 		}
 		key.in = function(array){
 			if (!repeatBody){
-				throw new Error("Impropert usage of key(string).in(array): key(string) not called")
+				throw new Error("Improper usage of key(string).in(array): key(string) not called")
 			}
 			if (repeatBody.source){
-				throw new Error("Impropert usage of key(string).in(array): in(array) called before key")
+				throw new Error("Improper usage of key(string).in(array): in(array) called before key")
 			}
 
 			if (!Array.isArray(array) || !array[getSecretId]){
-				throw new Error("Impropert usage of key(string).in(array): in(array) is not provided with a proxified array")
+				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified array")
 			}
 
 			repeatBody.source = array
@@ -223,7 +223,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 		}
 		key.end = function(onClone){
 			if (!repeatBody || !repeatBody.key || !repeatBody.source || !repeatBody.elements || !repeatBody.elements.length){
-				throw new Error("Impropert usage of key.end([onClone]): key(string).in(array) is not called properly prior to calling key.end([onClone])")
+				throw new Error("Improper usage of key.end([onClone]): key(string).in(array) is not called properly prior to calling key.end([onClone])")
 			}
 
 			repeatBody.outputList = elementList
