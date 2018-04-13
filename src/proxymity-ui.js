@@ -39,9 +39,9 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, model)
 				)
 				var lastGet = eventInstance.last("get").value
 
-				onRenderEvalQueue.watchFor = onRenderEvalQueue.watchFor || []
-				onRenderEvalQueue.watchFor.push("set:" + lastGet)
-				onRenderEvalQueue.watchFor.push("del:" + lastGet)
+				queuedItem.watchFor = queuedItem.watchFor || []
+				queuedItem.watchFor.push("set:" + lastGet)
+				queuedItem.watchFor.push("del:" + lastGet)
 			})
 		})
 		console.log(onRenderEvalQueue)
