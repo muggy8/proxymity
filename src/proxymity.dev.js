@@ -22,11 +22,9 @@ var proxymity = (function(safeEval){
 		})
 		return ui
 	}
-})(function(script, sv = {}){
-	for(var key in sv){
-		script = "var " + key + " = sv." + key + ";\n" + script
+})(function(s, sv = {}){
+	for(var k in sv){
+		s = "var " + k + " = sv." + k + ";\n" + s
 	}
-
-	// delete arguments[1]
-	return eval(prepend + script)
+	return eval(s)
 })
