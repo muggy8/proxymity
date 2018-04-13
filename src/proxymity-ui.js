@@ -174,7 +174,11 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
         }
 	}
 
-	eventInstance.watch(listenTo, lengthSet)
+	eventInstance.watch("asyncstart", function(emits){
+		if (emits.payload.hasOwnProperty(listenTo)){
+			lengthSet(emits.payload[listenTo])
+		}
+	})
 	lengthSet(eventInstance.next(listenTo) || eventInstance.last(listenTo))
 }
 
