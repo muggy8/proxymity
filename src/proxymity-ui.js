@@ -40,7 +40,9 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, appPro
 					delFn.to = "del"
 					var setFn = renderFn.bind(null)
 					setFn.to = "set"
-					continiousDataWatch(containingElement, appProp, eventInstance, model, attributeToListenTo, [
+					continiousDataWatch(containingElement, appProp, eventInstance, model, function(){
+						return attributeToListenTo
+					}, [
 						delFn, setFn
 					], destroyCallbacks)
 				})
@@ -96,8 +98,9 @@ appendableArrayProto.detach = function(){
 }
 
 function continiousDataWatch(node, proxyProp, eventInstance, model, attributeToListenTo, listeners, destroyCallbacks){
+	var listenTo = attributeToListenTo()
 	// because we have no idea what the heck is going to be in the attr.value and parsing it is too hard, we let the native javascirpt runtime handle that and as long as it's valid javascript that accesses a property in the data we'll be able to track which was the last accessed property and then we'll store that as the key we track
-	safeEval.call(node, "this." + proxyProp + (attributeToListenTo[0] === "[" ? "" : ".") + attributeToListenTo)
+	safeEval.call(node, "this." + proxyProp + (listenTo[0] === "[" ? "" : ".") + listenTo)
 	var modelKey = eventInstance.last("get").value
 
 	var unwatch = {}
@@ -346,7 +349,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 		// step 3: set up continious rendering for element properties but also link the names of items to the model
 		forEach(node.attributes, function(attr){
-			renderCustomSyntax(attr, eventInstance, node, propertyToDefine, model, onDestroyCallbacks) // only for non-name attributes because name is not going to suppor this since making it support this and bind to the data model correctly is too hard
+			renderCustomSyntax(attr, eventInstance, node, propertyToDefine, model, onDestroyCallbacks) // we do this for everything because we want this to also be the case for stuff inside name
 
 			if (
 				attr.name !== "name" || (
@@ -454,7 +457,9 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 			delListener.to = "del"
 			setListener.to = "set"
-			continiousDataWatch(node, propertyToDefine, eventInstance, model, attr.value, [
+			continiousDataWatch(node, propertyToDefine, eventInstance, model, function(){
+				return attr.value
+			}, [
 				delListener,
 				setListener
 			], onDestroyCallbacks)

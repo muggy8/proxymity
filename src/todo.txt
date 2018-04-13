@@ -2,7 +2,7 @@
 [X]	: default data key -> find one that fits better
 [X]	: {{}} -> render on init as well as async start
 [X]	: {{}} -> can watch prop and render instead of render on asyncstart only
-[ ]	: name="prop.{{}}" make it support work (to support checkboxes)
+[ ]	: name="prop.{{}}" make it support supported (to support checkboxes)
 [ ]	: move on-next-event-cycle into subscribable
 [ ]	: proxyProtoObj.watch -> external watch prop api would be nice
 [ ]	: nested foreach on the same level would be nice

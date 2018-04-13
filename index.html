@@ -139,6 +139,17 @@
 						<label class="block">
 							Int 1: <input type="number" name="arr[this.index].int">
 						</label>
+						<div>
+							<label>
+								Option 1 <input type="radio" name="arr[{:this.index:}].option" value="Option 1">
+							</label>
+							<label>
+								Option 2 <input type="radio" name="arr[{:this.index:}].option" value="Option 2">
+							</label>
+							<label>
+								Option 3 <input type="radio" name="arr[{:this.index:}].option" value="Option 3">
+							</label>
+						</div>
                         <button onclick="this.app.arr.splice(this.index + 1, 0, {})">Add another Below</button>
                         <button onclick="this.app.arr.splice(this.index, 1)">Delete This</button>
 						<hr />
