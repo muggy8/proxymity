@@ -370,10 +370,10 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			else if (nodeTypeLowercase === "checkbox"){
 				uiDataVal = "checked"
 				setListener = function(payload){
-                    if (!payload || typeof payload.value !== "boolean"){
+                    if (!payload || isBool(payload.value)){
                         node.checked = false
                     }
-					else if (typeof payload.value == "boolean" && payload.value !== node.checked){
+					else if (isBool(payload.value) && payload.value !== node.checked){
 						node.checked = payload.value
 					}
 				}
