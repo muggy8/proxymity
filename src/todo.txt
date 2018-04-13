@@ -4,7 +4,7 @@
 [X]	: {{}} -> can watch prop and render instead of render on asyncstart only
 [X]	: name="prop.{{}}" make it support supported (to support checkboxes)
 [ ]	: move on-next-event-cycle into subscribable
-[ ]	: expand rebinding name -> remap on key change or on other data change for name attributes.
 [ ]	: proxyProtoObj.watch -> external watch prop api would be nice
+[ ]	: expand rebinding name -> remap on key change or on other data change for name attributes would be nice
 [ ]	: nested foreach on the same level would be nice
 [ ]	: sharing model objects would be nice
