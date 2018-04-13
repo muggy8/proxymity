@@ -36,7 +36,7 @@ function continiousRender(textSource, eventInstance, containingElement){
 
 var appendableArrayProto = Object.create(Array.prototype)
 appendableArrayProto.appendTo = function(selectorOrElement) {
-	if (typeof selectorOrElement === "string"){
+	if (isString(selectorOrElement)){
 		return appendableArrayProto.appendTo.call(this, document.querySelector(selectorOrElement))
 	}
 	var target = selectorOrElement
@@ -183,7 +183,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 }
 
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
-	if (typeof nodeOrNodeListOrHTML === "string"){
+	if (isString(nodeOrNodeListOrHTML)){
 		var template = document.createElement("template")
 		template.innerHTML = nodeOrNodeListOrHTML.trim()
 		var parsedList = template.content.childNodes
