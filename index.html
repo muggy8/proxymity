@@ -23,9 +23,9 @@
 				<option value="3">They/Them</option>
 			</select><br>
 			<div class='{:this.app.user.name.toString() && "test-1":}(:this.app.user.name:) {:parseInt(this.app.user.age) && "test-2":}|
-				{ user.age } , 
-				{ user.name } , 
-				{ user.class } 
+				{ user.age } ,
+				{ user.name } ,
+				{ user.class }
 			|'>
 				<label><input name='user.class' type='radio' value="A"/> A</label>
 				<label><input name='user.class' type='radio' value="B"/> B</label>
@@ -165,9 +165,26 @@
 					})
 					console.log(this.app.filtered.objectify())
 				:}|{arr.length}| -->
-				<pre data-script="{: 
-					void (this.innerHTML = this.app.stringify(null, '    ') )
-				:}"></pre>
+
+				<label>
+					Option 1 <input type="radio" name="choice" value="0">
+				</label>
+				<label>
+					Option 2 <input type="radio" name="choice" value="1">
+				</label>
+
+				<div>
+					<strong>choice {:(parseInt(this.app.choice) || 0) + 1:}</strong>
+					<label class="block">
+						Str 1: <input type="text" name="filtered[(parseInt(this.app.choice) || 0)].str">
+					</label>
+					<label class="block">
+						Int 1: <input type="number" name="filtered[(parseInt(this.app.choice) || 0)].int">
+					</label>
+				</div>
+
+				<pre>{:this.app.stringify(null, '    '):}</pre>
+
 			`, {
 				arr: arr
 			})
