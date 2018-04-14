@@ -166,7 +166,7 @@
 					console.log(this.app.filtered.objectify())
 				:}|{arr.length}| -->
 				<pre data-script="{: 
-					this.innerHTML = this.app.stringify(null, '    ') 
+					void (this.innerHTML = this.app.stringify(null, '    ') )
 				:}"></pre>
 			`, {
 				arr: arr
