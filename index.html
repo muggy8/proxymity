@@ -22,7 +22,11 @@
 				<option value="2">She/Her</option>
 				<option value="3">They/Them</option>
 			</select><br>
-			<div class='{:this.app.user.name.toString() && "test-1":}(:this.app.user.name:) {:parseInt(this.app.user.age) && "test-2":}/* user.age // user.name // user.class */'>
+			<div class='{:this.app.user.name.toString() && "test-1":}(:this.app.user.name:) {:parseInt(this.app.user.age) && "test-2":}|
+				{ user.age } , 
+				{ user.name } , 
+				{ user.class } 
+			|'>
 				<label><input name='user.class' type='radio' value="A"/> A</label>
 				<label><input name='user.class' type='radio' value="B"/> B</label>
 				<label><input name='user.class' type='radio' value="C"/> C</label>
@@ -160,7 +164,7 @@
 						return index < 2
 					})
 					console.log(this.app.filtered.objectify())
-				:}/*arr.length*/ -->
+				:}|{arr.length}| -->
 				<pre>{:this.app.stringify(null, "    "):}</pre>
 			`, {
 				arr: arr

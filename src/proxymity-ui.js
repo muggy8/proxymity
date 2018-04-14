@@ -1,4 +1,4 @@
-var bracketsRegex = /\{\:([\s\S]*?)\:\}(\/\*[\s\S]*?\*\/)?/g
+var bracketsRegex = /\{\:([\s\S]*?)\:\}(\|(\s|\n)*\{[\s\S]*?\}(\s|\n)*\|)?/g
 // should match {:whatever:}(:whatever:)
 function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue){
 	forEach(evalQueue, function(queuedItem){
@@ -22,7 +22,7 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, appPro
 		onRenderEvalQueue.push({
 			drop: wholeMatch,
 			run: evalText,
-			on: dependencyText && dependencyText.substring(2, dependencyText.length - 2).split("//")
+			on: dependencyText && dependencyText.replace(/^\|[\s\n]*\{|\}[\s\n]*\|$/g, "").split(/\}[\s\n]*\,[\s\n]*\{/g)
 		})
 	})
 
