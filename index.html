@@ -172,14 +172,15 @@
 				<label>
 					Option 2 <input type="radio" name="choice" value="1">
 				</label>
+				<!-- {: this.app.chosen = this.app.filtered[parseInt(this.app.choice || 0)] :}|{choice},{filtered}| -->
 
 				<div>
 					<strong>choice {:(parseInt(this.app.choice) || 0) + 1:}</strong>
 					<label class="block">
-						Str 1: <input type="text" name="filtered[(parseInt(this.app.choice) || 0)].str">
+						Str 1: <input type="text" name="chosen.str">
 					</label>
 					<label class="block">
-						Int 1: <input type="number" name="filtered[(parseInt(this.app.choice) || 0)].int">
+						Int 1: <input type="number" name="chosen.int">
 					</label>
 				</div>
 
