@@ -463,7 +463,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			], onDestroyCallbacks)
 
 
-			var changeListeners = ["change", "keyup"]
+			var changeListeners = ["change", "keyup", "click"]
 			var onChange = function(ev){
 				var secretValue = generateId(randomInt(32, 48))
 				safeEval.call(node, "this." + propertyToDefine + (attr.value[0] === "[" ? "" : ".") + attr.value + " = " + secretValue, {
