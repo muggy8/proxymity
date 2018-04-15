@@ -71,7 +71,7 @@ function proxyObj(obj, eventInstance){
 					if (isFunction(emitPropertyMoved)){
 						emitPropertyMoved()
 					}
-					eventInstance.async(eventPrefix + secretProps[property], {
+					!eventInstance.next(eventPrefix + secretProps[property]) && eventInstance.async(eventPrefix + secretProps[property], {
 						p: property
 					})
 				})
