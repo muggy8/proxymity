@@ -123,5 +123,8 @@ Proxymity takes a different approach to both sides where it does not use a pre c
 ## How??
 Proxymity tries to be as small and as out of the way as possible letting you be as close to the native JavaScript and HTML. To accomplish this, Proxymity uses the [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) API in JavaScript. Thats why you must obtain the data object to work with from the proxymity function rather than editing the object you passed to it in most cases. When a property is modified on the data object, the data object will trigger a re-render of relevant components [on the next event cycle](https://developer.mozilla.org/en-US/docs/Web/JavaScript/EventLoop) Thus allowing you to make a large sequence of changes to the data object before the view is finally re-rendered. Do note that each data change only renders the view up to 3 times before it is forcefully stopped, This allows you to modify the data from within your view code but prevents an infinite re-renders.
 
+## docs
+[Docs are work in progress but here you go :)](docs)
+
 ## License
 MIT = free for all yay :D?
