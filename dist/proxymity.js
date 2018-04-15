@@ -153,8 +153,9 @@ function subscribable(){
 	var lastEmitLog = {}
 	var emit = this.emit = function(name, payload = {}){
 		// for optimization we are going to seperate listeners with wiled cards and without wiled cards into their own catagories. when an event is emited, we emit to the named listeners first then we looop through the wiled cards and do them and check for matches. we do this so we can skip alot of named listeners that we know wont match and therefore saving clock cycles
-		for (var i = 0; listenerLibrary[name] && i < listenerLibrary[name].length; i++){
-			listenerLibrary[name][i](payload, name)
+		var waiters = listenerLibrary[name] && listenerLibrary[name].slice()
+		for (var i = 0; waiters && i < waiters.length; i++){
+			waiters[i](payload, name)
 		}
 		// join the callback name and the wiledcard listeners (if they exist) and call the callbacks of both listeners
 		for (var key in listenerWildcards){
@@ -428,8 +429,6 @@ function proxyObj(obj, eventInstance){
 }
 
 // src/proxymity-ui.js
-var bracketsRegex = /\{\:([\s\S]*?)\:\}(\/\*[\s\S]*?\*\/)?/g
-// should match {:whatever:}(:whatever:)
 function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue){
 	forEach(evalQueue, function(queuedItem){
 		originalText = originalText.replace(queuedItem.drop, function(){
@@ -447,12 +446,12 @@ function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue){
 function renderCustomSyntax(textSource, eventInstance, containingElement, appProp, model, destroyCallbacks){
 	var sourceText = textSource.textContent
 	var onRenderEvalQueue = []
-	sourceText.replace(bracketsRegex, function(wholeMatch, evalText, dependencyText){
+	sourceText.replace(/\{\:([\s\S]*?)\:\}(\|(\s|\n)*\{[\s\S]*?\}(\s|\n)*\|)?/g, function(wholeMatch, evalText, dependencyText){
 		// console.log(evalText, dependencyText)
 		onRenderEvalQueue.push({
 			drop: wholeMatch,
 			run: evalText,
-			on: dependencyText && dependencyText.substring(2, dependencyText.length - 2).split("//")
+			on: dependencyText && dependencyText.replace(/^\|[\s\n]*\{|\}[\s\n]*\|$/g, "").split(/\}[\s\n]*\,[\s\n]*\{/g)
 		})
 	})
 
@@ -895,7 +894,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			], onDestroyCallbacks)
 
 
-			var changeListeners = ["change", "keyup"]
+			var changeListeners = ["change", "keyup", "click"]
 			var onChange = function(ev){
 				var secretValue = generateId(randomInt(32, 48))
 				safeEval.call(node, "this." + propertyToDefine + (attr.value[0] === "[" ? "" : ".") + attr.value + " = " + secretValue, {
