@@ -166,6 +166,8 @@
 					console.log(this.app.filtered.objectify())
 				:}|{arr.length}| -->
 
+				<pre>{:this.app.stringify(null, '    '):}</pre>
+
 				<label>
 					Option 1 <input type="radio" name="choice" value="0">
 				</label>
@@ -184,7 +186,6 @@
 					</label>
 				</div>
 
-				<pre>{:this.app.stringify(null, '    '):}</pre>
 
 			`, {
 				arr: arr
