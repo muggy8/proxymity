@@ -8,7 +8,7 @@
 The proxymity() function (all lower case) is the only export and only publicly accessible property that proxymity.min.js provides. The function returns an array of HTML elements. This list of elements is also the list that Proxymity will use to keep track of any repeating elements if there are any on the current level. You are not limited to 1 root element with the template.
 
 ## elementsList.appendTo(selectorOrElement)
-- selectorOrElement: string that can be passed to document.queryselector or a DOM element
+- selectorOrElement (required): string that can be passed to document.queryselector or a DOM element
 
 - returns: elementsList
 
