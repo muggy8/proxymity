@@ -1,7 +1,7 @@
 # Proxymity Data
 The proxymity data object is a [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) of the object or array provided to the (proxymity)[proxymity.md] function. The proxy will augment some behaviors of the object (described below) and provide some additional methods that are useful for working with the proxy data
 
-The proxymity data is used to keep track of when changes to the data object happens and inform the UI to (re)render. For more information, please checkout the render cycle below. When the proxyimityData object is being built, it will convert all objects within the data that are also basic objects or arrays into proxymityData objects, This is only true for objects who's prototype is the Object.prototype or Array.prototype
+The proxymity data is used to keep track of when changes to the data object happens and inform the UI to (re)render. For more information, please checkout [understaning proxymity's render cycle](render-cycle.md). When the proxyimityData object is being built, it will convert all objects within the data that are also basic objects or arrays into proxymityData objects, This is only true for objects who's prototype is the Object.prototype or Array.prototype
 
 ## proxymityData[undefinedPropertyName]
 when you access any undefined property on the proxymityData object, it will initialize the property as a sub instance of the proxymity object and return it. You can still overwrite these objects with whatever data you would need to place at that location. This is to allow you to set any data in any location without having to predefine it earlier, a feature that is used by the UI to bind do a location.
@@ -54,5 +54,3 @@ The stringify method is an extinction of the objectify method. it uses the JSON.
 
 ## proxymityData.toString()
 This method overrides the base toString method by providing the result of stringify without any additional parameters. The only difference is if the stringify method would return something like "{}" or "[]", an empty string is returned instead. so you can use this method to check if a string is empty or not
-
-## understanding proxymity's render cycle
