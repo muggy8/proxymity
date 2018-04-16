@@ -4,14 +4,14 @@ The proxymity data object is a [Proxy](https://developer.mozilla.org/en-US/docs/
 The proxymity data is used to keep track of when changes to the data object happens and inform the UI to (re)render. For more information, please checkout the render cycle below. When the proxyimityData object is being built, it will convert all objects within the data that are also basic objects or arrays into proxymityData objects, This is only true for objects who's prototype is the Object.prototype or Array.prototype
 
 ## proxymityData[undefinedPropertyName]
-when you access any undefined property on the proxymityData object will return a new sub instance of the proxymity object. You can still overwrite these objects with whatever data you would need to place at that location. This is to allow you to set any data in any location without having to predefine it earlier, a feature that is used by the UI to bind do a location.
+when you access any undefined property on the proxymityData object, it will initialize the property as a sub instance of the proxymity object and return it. You can still overwrite these objects with whatever data you would need to place at that location. This is to allow you to set any data in any location without having to predefine it earlier, a feature that is used by the UI to bind do a location.
 
 ```javascript
 var view = proxymity(document.querySelector("body"))
 view.app.foo.bar.baz = 15 // will not error but will create the required nested objects
 ```
 
-This means that trying to access any property to check for truthfulness or falsiness is not possible. However because you can use other methods of checking if something is defined in other ways
+This means that trying to access any property to check for truthfulness or falsiness is not possible. However you can use other methods of checking if something is defined in other ways
 ```javascript
 var view = proxymity(document.querySelector("body"))
 if (view.app.foo.bar.baz){ // will be true because this property will be initialized on access to a proxy object
@@ -25,7 +25,7 @@ if (+view.app.foo.bar.baz){ // will be 0 and therefore falsy and when you actual
 ```
 
 ## proxymityData.objectify()
-because the data object is a proxy the whole way down, it is dificult to debug at times and you may or may not need to change it's implementation for sending data back and forth between servers and other clients potentially. To aid in this. Proxymity comes with a objectify method which will take a snapshot of the current state of the proxymityData object at the specified location and return an object that matches the current state of the proxymity data
+because the data object is a proxy the whole way down, it is difficult to debug at times and you may or may not need to change it's implementation for sending data back and forth between servers and other clients potentially. To aid in this. Proxymity comes with a objectify method which will take a snapshot of the current state of the proxymityData object at the specified location and return an object that matches the current state of the proxymity data
 
 ```JavaScript
 var view = proxymity(document.querySelector("body"))
@@ -53,6 +53,6 @@ console.log(view.app.users, view.app.users.objectify())
 The stringify method is an extinction of the objectify method. it uses the JSON.stringify method where the first parameter is always the object that the function is being called upon. you can pass additional parameters into this method and they be used as the second and third argument and so on parameter that is passed to the JSON.stringify method
 
 ## proxymityData.toString()
-This method overrides the base toString method by providing the result of stringify without any additional parameters. The only difference is if the stringify method would return something like "{}" or "[]", an empty string is returned instead.
+This method overrides the base toString method by providing the result of stringify without any additional parameters. The only difference is if the stringify method would return something like "{}" or "[]", an empty string is returned instead. so you can use this method to check if a string is empty or not
 
 ## understanding proxymity's render cycle
