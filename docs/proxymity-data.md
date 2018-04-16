@@ -49,7 +49,7 @@ view.app = {
 console.log(view.app.users, view.app.users.objectify())
 ```
 
-## proxymityData.stringify()
+## proxymityData.stringify([secondJSONStringifyArguemnt, [thirdJSONStringifyArguemnt]])
 The stringify method is an extinction of the objectify method. it uses the JSON.stringify method where the first parameter is always the object that the function is being called upon. you can pass additional parameters into this method and they be used as the second and third argument and so on parameter that is passed to the JSON.stringify method
 
 ## proxymityData.toString()
