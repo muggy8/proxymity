@@ -20,4 +20,4 @@ The appendTo function will append the current element list to whatever element t
 The detach function tries to detach the elements it's associated with from the dom.
 
 ## elementsList[nameOfDataProperty]
-the element property that you defined for the proxied data is also available under the elementsList as the same property that you defined. see [Proxymity Data]{proxymity-data.md}
+the element property that you defined for the proxied data is also available under the elementsList as the same property that you defined. see [Proxymity Data](proxymity-data.md)
