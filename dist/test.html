@@ -134,6 +134,12 @@
 			})
 			testRepeat.appendTo("body")
 
+			proxymity(`
+				<h3>testing things muahaha</h3>
+				<pre>{:this.app.stringify(null, "    "):}</pre>
+			`, testRepeat.app.arr[3])
+			.appendTo("body")
+
 			// renderedArrData.sort(function(a, b){
 			// 	if (a.int > b.int){
 			// 		return 1

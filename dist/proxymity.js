@@ -285,6 +285,7 @@ forEach(propsIn(proxyObjProto), function(property){
 var getSecretId = generateId(randomInt(32, 48))
 var secretSelfMoved = generateId(randomInt(32, 48))
 var secretSelfDeleted = generateId(randomInt(32, 48))
+var secretGetEvents = generateId(randomInt(32, 48))
 
 function proxyObj(obj, eventInstance){
 	var objProto = Object.getPrototypeOf(obj)
@@ -296,9 +297,15 @@ function proxyObj(obj, eventInstance){
 	){
 		// setting up helper functions and secret stuff. The secret stuff is not seen by anyone other than the internals of the framework and to make it more difficult to access and to avoid collisions, we generate random keys for secret props on every framework boot up.
 		// Object.setPrototypeOf(obj, proxyProto)
-		var secretProps = {}
-		secretProps[getSecretId] = function(property){
-			return secretProps[property]
+		var secretProps = {
+			[getSecretId]: function(property){
+				return secretProps[property]
+			},
+			[secretSelfMoved]: secretSelfEventFn(secretSelfMoved, "remap:"),
+			[secretSelfDeleted]: secretSelfEventFn(secretSelfDeleted, "del:"),
+			[secretGetEvents]: function(){
+				return eventInstance
+			}
 		}
 
 		function secretSelfEventFn(secretProp, eventPrefix){
@@ -314,9 +321,6 @@ function proxyObj(obj, eventInstance){
 				})
 			}
 		}
-
-		secretProps[secretSelfMoved] = secretSelfEventFn(secretSelfMoved, "remap:")
-		secretProps[secretSelfDeleted] = secretSelfEventFn(secretSelfDeleted, "del:")
 
 		// now we create the proxy that actually houses everything
 		var proxied = new Proxy(objToProxy, {
@@ -930,10 +934,19 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 	// ya i'm not a huge fan of pre-compiling but this lets me test indivual parts since this library is very modular and this is the easiest way to just insert it without having to pull in rediculous amounts of dev dependencies that i dont particularly want to learn so ya why not xP
 
 	return function(view, initialData = {}, modelProperty = "app"){
-		var events = new subscribable()
-
+		var events
+		var proxied
+		var getEvents = initialData[secretGetEvents]
+		if (isFunction(getEvents)){
+			events = getEvents()
+			proxied = initialData
+		}
+		else {
+			events = new subscribable()
+			proxied = proxyObj(initialData, events)
+		}
 		events.async("set:")
-		var proxied = proxyObj(initialData, events)
+		
 		var ui = proxyUI(view, proxied, events, modelProperty)
 		Object.defineProperty(ui, modelProperty, {
 			get: function(){
