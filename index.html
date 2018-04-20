@@ -166,7 +166,7 @@
 					console.log(this.app.filtered.objectify())
 				:}|{arr.length}| -->
 
-				<pre>{:this.app.stringify(null, '    '):}</pre>
+				<!-- <pre>{:this.app.stringify(null, '    '):}</pre> -->
 
 				<label>
 					Option 1 <input type="radio" name="choice" value="0">
@@ -191,6 +191,12 @@
 				arr: arr
 			})
 			testRepeat.appendTo("body")
+
+			proxymity(`
+				<h3>testing things muahaha</h3>
+				<pre>{:this.app.stringify(null, "    "):}</pre>
+			`, testRepeat.app.arr[3])
+			.appendTo("body")
 
 			// renderedArrData.sort(function(a, b){
 			// 	if (a.int > b.int){
