@@ -44,10 +44,12 @@ function subscribable(){
 	var lastEmitLog = {}
 	var emit = this.emit = function(name, payload = {}){
 		// for optimization we are going to seperate listeners with wiled cards and without wiled cards into their own catagories. when an event is emited, we emit to the named listeners first then we looop through the wiled cards and do them and check for matches. we do this so we can skip alot of named listeners that we know wont match and therefore saving clock cycles
-		var waiters = listenerLibrary[name] && listenerLibrary[name].slice()
-		for (var i = 0; waiters && i < waiters.length; i++){
-			waiters[i](payload, name)
+		if (listenerLibrary[name]){
+			for(var fn of listenerLibrary[name]){
+				fn(payload, name)
+			}
 		}
+
 		// join the callback name and the wiledcard listeners (if they exist) and call the callbacks of both listeners
 		for (var key in listenerWildcards){
 			var set = listenerWildcards[key]
