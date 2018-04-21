@@ -121,7 +121,12 @@ function proxyObj(obj, eventInstance){
 				return target[property]
 			},
 			set: function(target, property, val){
-				var valProto = Object.getPrototypeOf(val)
+				try{
+					var valProto = Object.getPrototypeOf(val)
+				}
+				catch(o3o){
+					return delete proxied[property]
+				}
                 var selfIsArray = Array.isArray(target)
                 if (selfIsArray){
                     var selfLength = target.length
