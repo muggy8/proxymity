@@ -125,7 +125,8 @@ function proxyObj(obj, eventInstance){
 					var valProto = Object.getPrototypeOf(val)
 				}
 				catch(o3o){
-					return delete proxied[property]
+					delete proxied[property]
+					return true
 				}
                 var selfIsArray = Array.isArray(target)
                 if (selfIsArray){
