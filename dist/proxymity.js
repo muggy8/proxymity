@@ -64,9 +64,11 @@ function softCopy(from, to){
 		to[key] = from[key]
 		toKeys.splice(toKeys.indexOf(key), 1)
 	}
-	forEach(toKeys, function(key){
-		delete to[key]
-	})
+	forEach(toKeys, function(isArray, key){
+		if (!isArray && key !== "length"){
+			delete to[key]
+		}		
+	}.bind(null, Array.isArray(to)))
 	// if (Array.isArray(to)){
 	// 	to.length = to.length // this is to trigger the set:lengthId for this object just in case it is something depends on it (which something does)
 	// }
