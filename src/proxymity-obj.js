@@ -86,8 +86,8 @@ function proxyObj(obj, eventInstance){
 		}
 
 		// now we create the proxy that actually houses everything
-		var handler
-		var proxied = new Proxy(objToProxy, handler = {
+		var traps
+		var proxied = new Proxy(objToProxy, traps = {
 			get: function(target, property){
 				// when we get a property there's 1 of 3 cases,
 				// 1: it's a property that doesn't exist and isn't a secret property, in that case, we create it as an object
@@ -98,7 +98,7 @@ function proxyObj(obj, eventInstance){
 				// console.log("get:" + eventNamespace + property, payload)
 				if (!(property in target) && !(property in secretProps)) {
 					// the case, the property isn't in the dom or the cache or the secret props so we have to create it
-					proxied[property] = {}
+					traps.set(target, property, {})
 				}
 				else if (!(property in target) && (property in secretProps)){
 					return secretProps[property]
@@ -126,7 +126,8 @@ function proxyObj(obj, eventInstance){
 					var valProto = Object.getPrototypeOf(val)
 				}
 				catch(o3o){
-					handler.deleteProperty(target, property)
+					// cannot get val proto means val is either null, undefined or something similar. in that case we just delete the prop
+					traps.deleteProperty(target, property)
 					return true
 				}
                 var selfIsArray = Array.isArray(target)
