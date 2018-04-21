@@ -125,8 +125,7 @@ function proxyObj(obj, eventInstance){
 					var valProto = Object.getPrototypeOf(val)
 				}
 				catch(o3o){
-					delete proxied[property]
-					return true
+					return delete proxied[property]
 				}
                 var selfIsArray = Array.isArray(target)
                 if (selfIsArray){
@@ -189,7 +188,8 @@ function proxyObj(obj, eventInstance){
 					})
 
 					delete secretProps[property] // we know this key MUST exist because we made sure of it when we are setting keys and the only way to set properties is through the set method above
-					return delete target[property]
+					delete target[property]
+					return true
 				}
 				return false
 			}
