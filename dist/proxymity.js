@@ -329,7 +329,8 @@ function proxyObj(obj, eventInstance){
 		}
 
 		// now we create the proxy that actually houses everything
-		var proxied = new Proxy(objToProxy, {
+		var handler
+		var proxied = new Proxy(objToProxy, handler = {
 			get: function(target, property){
 				// when we get a property there's 1 of 3 cases,
 				// 1: it's a property that doesn't exist and isn't a secret property, in that case, we create it as an object
@@ -368,7 +369,7 @@ function proxyObj(obj, eventInstance){
 					var valProto = Object.getPrototypeOf(val)
 				}
 				catch(o3o){
-					return delete proxied[property]
+					return handler.deleteProperty(target, property)
 				}
                 var selfIsArray = Array.isArray(target)
                 if (selfIsArray){
