@@ -282,6 +282,10 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
     		// we're doing this here so we can clean up the body so every element between the end and the start comment are empty s we know that they are next to each other and can set where we want to do our insertions later
     		for(var i = elementList.length - 1; i >= 0; i--){
     			if (elementsToExclude.indexOf(elementList[i]) !== -1){
+					var parentNode = elementList[i].parentNode
+					if (parentNode){
+						parentNode.removeChild(elementList[i])
+					}
     				elementList.splice(i, 1)
     			}
     		}
