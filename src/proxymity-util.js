@@ -19,7 +19,7 @@ function isBool(val){
 }
 
 function isNumber(val){
-	return typeof val === "number"
+	return typeof val === "number" && !isNaN(val)
 }
 
 function isObject(val){

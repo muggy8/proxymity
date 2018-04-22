@@ -403,7 +403,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
                     if (!payload || !isNumber(payload.value)){
                         node.value = null
                     }
-					else if (typeof payload.value == "number" && payload.value !== node.valueAsNumber){
+					else if (isNumber(payload.value) && payload.value !== node.valueAsNumber){
 						node.valueAsNumber = payload.value
 					}
 				}
