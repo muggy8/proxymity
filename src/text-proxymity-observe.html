@@ -1,0 +1,26 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
+		<script src="proxymity-util.js"></script>
+		<script src="on-next-event-cycle.js"></script>
+		<script src="subscribable.js"></script>
+		<script src="proxymity-obj.js"></script>
+		<script src="proxymity-observe.js"></script>
+	</head>
+	<body>
+		<script>
+            var events = new subscribable()
+            var proxy = proxyObj({}, events)
+
+            var stopObserving = observe(proxy, events, function(){
+                return proxy.foo.bar.name
+            }, {
+                get: console.log,
+                set: console.log,
+                del: console.log,
+                change: console.log
+            })
+		</script>
+	</body>
+</html>
