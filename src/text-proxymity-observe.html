@@ -13,13 +13,12 @@
             var events = new subscribable()
             var proxy = proxyObj({}, events)
 
-            var stopObserving = observe(proxy, events, function(){
+            var stopObserving = observe(events, function(){
                 return proxy.foo.bar.name
             }, {
                 get: console.log,
                 set: console.log,
-                del: console.log,
-                change: console.log
+                del: console.log
             })
 		</script>
 	</body>
