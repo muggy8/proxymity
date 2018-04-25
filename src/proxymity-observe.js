@@ -39,7 +39,7 @@ function observe(events, targetFinder, callbackSet, stuffToUnWatch = []){
     }
 
     stuffToUnWatch.push(events.watch("remap:" + targetId, onReMap))
-    stuffToUnWatch.push(events.watch("del:" + targetId, onReMap))
+    stuffToUnWatch.push(events.watch("del:" + targetId, onReMap)) // this makes sure that we always have something to listen to in case it gets re-set in the future
 
     console.log(targetId)
 
