@@ -126,9 +126,7 @@ function proxyObj(obj, eventInstance){
 					var valProto = Object.getPrototypeOf(val)
 				}
 				catch(o3o){
-					// cannot get val proto means val is either null, undefined or something similar. in that case we just delete the prop
-					traps.deleteProperty(target, property)
-					return true
+					// cannot get val proto means val is either null, undefined or something similar. so we just catch it and do nothing with the error cuz its a test anyways
 				}
                 var selfIsArray = Array.isArray(target)
                 if (selfIsArray){
