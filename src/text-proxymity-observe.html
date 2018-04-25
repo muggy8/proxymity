@@ -15,11 +15,20 @@
 
             var stopObserving = observe(events, function(){
                 return proxy.foo.bar.name
-            }, {
-                get: console.log,
-                set: console.log,
-                del: console.log
-            })
+            }, [
+                {
+                    to: "get", 
+                    fn: console.log
+                },
+                {
+                    to: "del", 
+                    fn: console.log
+                },
+                {
+                    to: "set", 
+                    fn: console.log
+                }
+            ])
 		</script>
 	</body>
 </html>
