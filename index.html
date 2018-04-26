@@ -135,7 +135,10 @@
 			// var renderedArrData = renderedArr.data
 
 			var testRepeat = proxymity(`
-				<!-- foreach: key("index").in(this.app.arr) -->
+				<!-- foreach: {
+					this.app.arr = [{}]
+					key("index").in(this.app.arr)
+				} -->
 					<div>
 						<strong>item {:this.index + 1:}</strong>
 						<label class="block">
