@@ -98,9 +98,10 @@ function destroyListeners(elements){
 	})
 
 	// next up we're going to need to detach them from the parent because this is our base template that will be copied to everthing
-	forEach(elements, function(ele){
-		ele.parentNode && ele.parentNode.removeChild(ele)
-	})
+	// nevermind we've changed how things work lol
+	// forEach(elements, function(ele){
+	// 	ele.parentNode && ele.parentNode.removeChild(ele)
+	// })
 }
 
 function groupBy(itemArray, propertyToGroupBy){
@@ -115,8 +116,9 @@ function groupBy(itemArray, propertyToGroupBy){
 
 var destroyEventName = generateId(randomInt(32, 48))
 function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
-	repeatBody.source.length // this is used so we can get the last variable emitted by the proxy object and so we know what were looking to listen to
-	var listenTo = "set:" + eventInstance.last("get").value
+	console.log(repeatBody)
+	// repeatBody.source.length // this is used so we can get the last variable emitted by the proxy object and so we know what were looking to listen to
+	// var listenTo = "set:" + eventInstance.last("get").value
 
 	var lengthSet = function(payload){
 		if (typeof payload === "undefined"){
@@ -175,12 +177,30 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
         }
 	}
 
-	eventInstance.watch("asyncstart", function(emits){
-		if (emits.payload.hasOwnProperty(listenTo)){
-			lengthSet(emits.payload[listenTo])
+	observe(eventInstance, function(){
+		var arrayToWatch
+		var stubKey = function(){
+			return stubKey
 		}
-	})
-	lengthSet(eventInstance.next(listenTo) || eventInstance.last(listenTo))
+		stubKey.in = function(arr){
+			arrayToWatch = arr
+		}
+		stubKey.end = function(){}
+		safeEval.call(repeatBody.insertAfter, repeatBody.insertAfter.textContent, {
+			key: stubKey
+		})
+		
+		if (arrayToWatch){
+			return arrayToWatch.length
+		}
+	}, lengthSet)
+
+	// eventInstance.watch("asyncstart", function(emits){
+	// 	if (emits.payload.hasOwnProperty(listenTo)){
+	// 		lengthSet(emits.payload[listenTo])
+	// 	}
+	// })
+	// lengthSet(eventInstance.next(listenTo) || eventInstance.last(listenTo))
 }
 
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
@@ -304,7 +324,8 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 		// step 2: set up continious rendering for everything that's a text element
 		if (node instanceof CharacterData){
-			onDestroyCallbacks.push(renderCustomSyntax(node, eventInstance, node, propertyToDefine))
+			var stopSyntaxRender = renderCustomSyntax(node, eventInstance, node, propertyToDefine)
+			stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
 		}
 		else {
 			proxyUI(node.childNodes, model, eventInstance, propertyToDefine)
