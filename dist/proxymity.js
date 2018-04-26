@@ -1039,3 +1039,4 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 	}
 	return eval(s)
 })
+typeof module !== "undefined" && (module.exports = proxymity)

@@ -43,3 +43,4 @@ var proxymity = (function(safeEval){
 	}
 	return eval(s)
 })
+typeof module !== "undefined" && (module.exports = proxymity)
