@@ -68,9 +68,23 @@ new Promise(function(accept, reject){
 		o3o && console.log(o3o)
 	})
 
-	fs.writeFile("dist/proxymity.min.js", minified.code, function(o3o){
-		o3o && console.log(o3o)
-	})
+	if (minified.code){
+		// prioritize letters: afunctiolegh
+		var code = minified.code.replace(/\.order([^\(])/g, ".f$1")
+		var code = code.replace(/\.insertBefore([^\(])/g, ".u$1")
+		var code = code.replace(/\.insertAfter([^\(])/g, ".n$1")
+		var code = code.replace(/\.source([^\(])/g, ".c$1")
+		var code = code.replace(/\.outputList([^\(])/g, ".t$1")
+		var code = code.replace(/\.elements([^\(])/g, ".i$1")
+
+		
+		var code = code.replace(/\.onClone([^\(])/g, ".m$1")
+
+		fs.writeFile("dist/proxymity.min.js", code, function(o3o){
+			o3o && console.log(o3o)
+		})
+	}
+	
 }).catch(function(o3o){
 	console.log(o3o)
 })
