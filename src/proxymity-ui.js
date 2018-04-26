@@ -178,35 +178,19 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 	}
 
 	observe(eventInstance, function(){
-		var arrayToWatch
 		var stubKey = function(){
 			return stubKey
 		}
 		stubKey.in = function(arr){
-			arrayToWatch = arr
+			repeatBody.source = arr
 		}
 		stubKey.end = function(){}
 		safeEval.call(repeatBody.insertAfter, repeatBody.insertAfter.textContent, {
 			key: stubKey
 		})
 		
-		if (arrayToWatch){
-			return arrayToWatch.length
-		}
-	}, [
-		{
-			to: "remap",
-			fn: lengthSet
-		},
-		{
-			to: "del",
-			fn: lengthSet
-		},
-		{
-			to: "set",
-			fn: lengthSet
-		}
-	])
+		return repeatBody.source.length
+	}, lengthSet)
 
 	// eventInstance.watch("asyncstart", function(emits){
 	// 	if (emits.payload.hasOwnProperty(listenTo)){
