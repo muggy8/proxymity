@@ -54,3 +54,18 @@ The stringify method is an extinction of the objectify method. it uses the JSON.
 
 ## proxymityData.toString()
 This method overrides the base toString method by providing the result of stringify without any additional parameters. The only difference is if the stringify method would return something like "{}" or "[]", an empty string is returned instead. so you can use this method to check if a string is empty or not
+
+## proxymityData.watch(positionToWatch, callback)
+This method allows you to watch any position on any part of the data object. This is something that will presist on value replace but if a value is changed upon replacement. This creates a dependency on that part of the tree so if you remove a chunk of the tree, the system will go in and re-add the chunk that you removed. because of the mapping procedure, the callback may be called more than once during data replacements.
+
+The watch function will return the unwatch function
+
+```javascript
+var view = proxymity(document.querySelector("body"))
+view.app.watch("user.name", function(name){
+	var trimmed = name.toString().trim()
+	if (view.app.user.name.toString() !== trimmed){
+		view.app.user.name = trimmed
+	}
+})
+```
