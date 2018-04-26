@@ -457,14 +457,30 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			// var unwatchSet = eventInstance.watch("set:" + modelKey, setListener)
 			// var unwatchDel = eventInstance.watch("del:" + modelKey, delListener)
 
-			delListener.to = "del"
-			setListener.to = "set"
-			continiousDataWatch(node, propertyToDefine, eventInstance, model, function(){
-				return attr.value
-			}, [
-				delListener,
-				setListener
-			], onDestroyCallbacks)
+			// delListener.to = "del"
+			// setListener.to = "set"
+
+			onDestroyCallbacks.push(
+				observe(eventInstance, function(){
+					safeEval.call(node, "this." + propertyToDefine + (attr.value[0] === "[" ? "" : ".") + attr.value)
+				}, [
+					{
+						to: "del",
+						fn: setListener
+					},
+					{
+						to: "set",
+						fn: setListener
+					}
+				])
+			)
+
+			// continiousDataWatch(node, propertyToDefine, eventInstance, model, function(){
+			// 	return attr.value
+			// }, [
+			// 	delListener,
+			// 	setListener
+			// ], onDestroyCallbacks)
 
 
 			var changeListeners = ["change", "keyup", "click"]
