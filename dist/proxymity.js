@@ -321,9 +321,15 @@ function proxyObj(obj, eventInstance){
 					if (isFunction(emitPropertyMoved)){
 						emitPropertyMoved()
 					}
-					!eventInstance.next(eventPrefix + secretProps[property]) && eventInstance.async(eventPrefix + secretProps[property], {
+
+					var payload = {
 						p: property
-					})
+					}
+					!eventInstance.next(eventPrefix + secretProps[property]) && eventInstance.async(eventPrefix + secretProps[property], payload)
+
+					if (Array.isArray(proxied) && property === "length"){
+						payload.order = -1
+					}
 				})
 			}
 		}
@@ -369,9 +375,7 @@ function proxyObj(obj, eventInstance){
 					var valProto = Object.getPrototypeOf(val)
 				}
 				catch(o3o){
-					// cannot get val proto means val is either null, undefined or something similar. in that case we just delete the prop
-					traps.deleteProperty(target, property)
-					return true
+					// cannot get val proto means val is either null, undefined or something similar. so we just catch it and do nothing with the error cuz its a test anyways
 				}
                 var selfIsArray = Array.isArray(target)
                 if (selfIsArray){
@@ -415,10 +419,12 @@ function proxyObj(obj, eventInstance){
 					p: property
 				})
                 if (selfIsArray && selfLength !== target.length){
-                    eventInstance.async("set:" + secretProps["length"], {
+					var payload = {
                         value: target.length,
 						p: property
-                    })
+                    }
+					eventInstance.async("set:" + secretProps["length"], payload)
+					payload.order = -2
                 }
 				return true
 			},
@@ -447,6 +453,53 @@ function proxyObj(obj, eventInstance){
 	}
 }
 
+// src/proxymity-observe.js
+function observe(events, targetFinder, callbackSet, stuffToUnWatch = []){
+    targetFinder()
+    var targetId = events.last("get").value
+
+    if (isFunction(callbackSet)){
+        var callback = callbackSet
+        
+        callbackSet = [
+            {
+                to: "del",
+                fn: callback
+            },
+            {
+                to: "set",
+                fn: callback
+            }
+        ]
+    }
+
+    forEach(callbackSet, function(callback){
+        var type = callback.to + ":" + targetId
+        stuffToUnWatch.push(events.watch(type, callback.fn))
+        var lastEvent = events.last(type)
+        if (typeof lastEvent !== 'undefined'){
+            callback.fn(lastEvent)
+        }
+    })
+
+    var clearWatchers = function(){
+        forEach(stuffToUnWatch, function(fn){
+            fn()
+        })
+        stuffToUnWatch.length = 0
+    }
+
+    var onReMap = function(){
+        clearWatchers()
+        observe(events, targetFinder, callbackSet, stuffToUnWatch)
+    }
+
+    stuffToUnWatch.push(events.watch("remap:" + targetId, onReMap))
+    stuffToUnWatch.push(events.watch("del:" + targetId, onReMap)) // this makes sure that we always have something to listen to in case it gets re-set in the future
+
+    return clearWatchers
+}
+
 // src/proxymity-ui.js
 function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue){
 	forEach(evalQueue, function(queuedItem){
@@ -462,7 +515,7 @@ function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue){
 	})
 	return originalText
 }
-function renderCustomSyntax(textSource, eventInstance, containingElement, appProp, model, destroyCallbacks){
+function renderCustomSyntax(textSource, eventInstance, containingElement, appProp){
 	var sourceText = textSource.textContent
 	var onRenderEvalQueue = []
 	sourceText.replace(/\{\:([\s\S]*?)\:\}(\|(\s|\n)*\{[\s\S]*?\}(\s|\n)*\|)?/g, function(wholeMatch, evalText, dependencyText){
@@ -476,6 +529,7 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, appPro
 
 	// we spliced out what we had above that we can use to render the text. if have a render queue then this text is worth parsing and running and re-running on asyncstart or whatever. other wise it's jsut regular text so we ignore it :3
 	if (onRenderEvalQueue.length){
+		var destroyCallbacks = []
 		var renderFn = function(){
 			textSource.textContent = evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue)
 		}
@@ -485,14 +539,17 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, appPro
 				var watchfor = []
 				forEach(queuedItem.on, function(attributeToListenTo){
 					var delFn = renderFn.bind(null)
-					delFn.to = "del"
+					// delFn.to = "del"
 					var setFn = renderFn.bind(null)
-					setFn.to = "set"
-					continiousDataWatch(containingElement, appProp, eventInstance, model, function(){
-						return attributeToListenTo
-					}, [
-						delFn, setFn
-					], destroyCallbacks)
+					// setFn.to = "set"
+					destroyCallbacks.push(observe(eventInstance, function(){
+						safeEval.call(containingElement, "this." + appProp + (attributeToListenTo[0] === "[" ? "" : ".") + attributeToListenTo)
+					}, renderFn))
+					// continiousDataWatch(containingElement, appProp, eventInstance, model, function(){
+					// 	return attributeToListenTo
+					// }, [
+					// 	delFn, setFn
+					// ], destroyCallbacks)
 				})
 			}
 			else {
@@ -503,26 +560,12 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, appPro
 			}
 		})
 		// console.log(onRenderEvalQueue, evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue))
+		return function(){
+			forEach(destroyCallbacks, function(fn){
+				fn()
+			})
+		}
 	}
-
-
-	// if (sourceText.match(bracketsRegex)){
-	// 	var unwatch = eventInstance.watch("asyncstart", function(asyncEvents){
-	// 		var hasSetEvent = false
-	// 		findIfSetEventExists: for(var key in asyncEvents.payload){
-	// 			if (key.substring(0, 4) === "set:"){
-	// 				hasSetEvent = true
-	// 				break findIfSetEventExists
-	// 			}
-	// 		}
-	// 		hasSetEvent && (textSource.textContent = renderBrackets(sourceText, containingElement))
-	// 		// console.log(renderedText)
-	// 	})
-	// }
-	// return function(){
-	// 	textSource.textContent = sourceText
-	// 	unwatch && unwatch()
-	// }
 }
 
 var appendableArrayProto = Object.create(Array.prototype)
@@ -545,37 +588,6 @@ appendableArrayProto.detach = function(){
 	return this
 }
 
-function continiousDataWatch(node, proxyProp, eventInstance, model, attributeToListenTo, listeners, destroyCallbacks){
-	var listenTo = attributeToListenTo()
-	// because we have no idea what the heck is going to be in the attr.value and parsing it is too hard, we let the native javascirpt runtime handle that and as long as it's valid javascript that accesses a property in the data we'll be able to track which was the last accessed property and then we'll store that as the key we track
-	safeEval.call(node, "this." + proxyProp + (listenTo[0] === "[" ? "" : ".") + listenTo)
-	var modelKey = eventInstance.last("get").value
-
-	var unwatch = {}
-	// watch everything
-	for(var key in listeners){
-		var keyToWatch = listeners[key].to + ":" + modelKey
-		destroyCallbacks.push(
-			unwatch[listeners[key].to] = eventInstance.watch(keyToWatch, listeners[key])
-		)
-		listeners[key](eventInstance.next(keyToWatch) || eventInstance.last(keyToWatch))
-	}
-
-	// if an remap event for this item every comes by, we'll run this entire operation again including myself
-	destroyCallbacks.push(
-		unwatch[modelKey] = eventInstance.watch("remap:" + modelKey, function(){
-			for(var key in unwatch){
-				unwatch[key]()
-				var removalIndex = destroyCallbacks.indexOf(unwatch[key])
-				if (removalIndex > -1){
-					destroyCallbacks.splice(removalIndex, 1)
-				}
-			}
-			continiousDataWatch(node, proxyProp, eventInstance, model, attributeToListenTo, listeners, destroyCallbacks)
-		})
-	)
-}
-
 function forEveryElement(source, callback){
 	forEach(source, function(item, index, whole){
 		callback(item)
@@ -589,9 +601,10 @@ function destroyListeners(elements){
 	})
 
 	// next up we're going to need to detach them from the parent because this is our base template that will be copied to everthing
-	forEach(elements, function(ele){
-		ele.parentNode && ele.parentNode.removeChild(ele)
-	})
+	// nevermind we've changed how things work lol
+	// forEach(elements, function(ele){
+	// 	ele.parentNode && ele.parentNode.removeChild(ele)
+	// })
 }
 
 function groupBy(itemArray, propertyToGroupBy){
@@ -606,17 +619,18 @@ function groupBy(itemArray, propertyToGroupBy){
 
 var destroyEventName = generateId(randomInt(32, 48))
 function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
-	repeatBody.source.length // this is used so we can get the last variable emitted by the proxy object and so we know what were looking to listen to
-	var listenTo = "set:" + eventInstance.last("get").value
+	// console.log(repeatBody)
+	// repeatBody.source.length // this is used so we can get the last variable emitted by the proxy object and so we know what were looking to listen to
+	// var listenTo = "set:" + eventInstance.last("get").value
 
 	var lengthSet = function(payload){
 		if (typeof payload === "undefined"){
 			return
 		}
 		// the flow: because we know that the output list is always gonna be here while we dont know the current state of the element and if it has a parent at all, the best that we can do is to build the output list right and then remove all the elements form the parent element if there is one then stick the output list in after.
-		var insertBeforeIndex = repeatBody.outputList.indexOf(repeatBody.insertBefore)
-        var insertAfterIndex = repeatBody.outputList.indexOf(repeatBody.insertAfter)
 		var elementsList = repeatBody.outputList
+		var insertBeforeIndex = elementsList.indexOf(repeatBody.insertBefore)
+        var insertAfterIndex = elementsList.indexOf(repeatBody.insertAfter)
 		var parent = repeatBody.insertBefore.parentNode
         var currentGroups = groupBy(elementsList.slice(insertAfterIndex + 1, insertBeforeIndex), repeatBody.key)
 
@@ -666,12 +680,27 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
         }
 	}
 
-	eventInstance.watch("asyncstart", function(emits){
-		if (emits.payload.hasOwnProperty(listenTo)){
-			lengthSet(emits.payload[listenTo])
+	observe(eventInstance, function(){
+		var stubKey = function(){
+			return stubKey
 		}
-	})
-	lengthSet(eventInstance.next(listenTo) || eventInstance.last(listenTo))
+		stubKey.in = function(arr){
+			repeatBody.source = arr
+		}
+		stubKey.end = function(){}
+		safeEval.call(repeatBody.insertAfter, repeatBody.insertAfter.textContent, {
+			key: stubKey
+		})
+		
+		return repeatBody.source.length
+	}, lengthSet)
+
+	// eventInstance.watch("asyncstart", function(emits){
+	// 	if (emits.payload.hasOwnProperty(listenTo)){
+	// 		lengthSet(emits.payload[listenTo])
+	// 	}
+	// })
+	// lengthSet(eventInstance.next(listenTo) || eventInstance.last(listenTo))
 }
 
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
@@ -686,7 +715,6 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 		return current && node instanceof Node
 	}, true))){
 		// before we get to repeatable sections we're just going to bind things to other things so this step is going to be a bit short
-		var elementsToExclude = []
 		var elementList = arrayFrom(nodeOrNodeListOrHTML)
 		var repeatBody
 		var key = function(property){
@@ -724,7 +752,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				repeatBody.onClone = onClone
 			}
 
-			elementsToExclude.push.apply(elementsToExclude, repeatBody.elements)
+			var elementsToExclude = repeatBody.elements
 
 			// first off, we're going to need to reset everything in these elements to it's default ground state
 			// destroyListeners(repeatBody.elements)
@@ -745,7 +773,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			repeatBody = undefined
 		}
 
-		// we are foreaching 3 times first time we go through and find the comments with our special "foreach: ..." in it and calling the key, key.in and key.end functions. after doing that those functions will extract all of those elements from the list cuz they need a clean template to work with then we can continue with the proper init opperations
+		// first time we go through and find the comments with our special "foreach: ..." in it and calling the key, key.in and key.end functions. after doing that those functions will extract all of those elements from the list cuz they need a clean template to work with then we can continue with the proper init opperations
 		forEach(elementList, function(node){
 			repeatBody && repeatBody.elements && repeatBody.elements.push(node)
 			if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
@@ -755,6 +783,9 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				})
 				if (repeatBody && (!repeatBody.key || !repeatBody.source || !repeatBody.elements)){
 					throw new Error("Improper usage of key(string).in(array): in(array) not called in conjunction with key")
+				}
+				else if (repeatBody && !repeatBody.insertAfter){
+					repeatBody.insertAfter = node
 				}
 			}
 		})
@@ -793,7 +824,8 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 		// step 2: set up continious rendering for everything that's a text element
 		if (node instanceof CharacterData){
-			renderCustomSyntax(node, eventInstance, node, propertyToDefine, model, onDestroyCallbacks)
+			var stopSyntaxRender = renderCustomSyntax(node, eventInstance, node, propertyToDefine)
+			stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
 		}
 		else {
 			proxyUI(node.childNodes, model, eventInstance, propertyToDefine)
@@ -907,14 +939,30 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			// var unwatchSet = eventInstance.watch("set:" + modelKey, setListener)
 			// var unwatchDel = eventInstance.watch("del:" + modelKey, delListener)
 
-			delListener.to = "del"
-			setListener.to = "set"
-			continiousDataWatch(node, propertyToDefine, eventInstance, model, function(){
-				return attr.value
-			}, [
-				delListener,
-				setListener
-			], onDestroyCallbacks)
+			// delListener.to = "del"
+			// setListener.to = "set"
+
+			onDestroyCallbacks.push(
+				observe(eventInstance, function(){
+					safeEval.call(node, "this." + propertyToDefine + (attr.value[0] === "[" ? "" : ".") + attr.value)
+				}, [
+					{
+						to: "del",
+						fn: setListener
+					},
+					{
+						to: "set",
+						fn: setListener
+					}
+				])
+			)
+
+			// continiousDataWatch(node, propertyToDefine, eventInstance, model, function(){
+			// 	return attr.value
+			// }, [
+			// 	delListener,
+			// 	setListener
+			// ], onDestroyCallbacks)
 
 
 			var changeListeners = ["change", "keyup", "click"]
@@ -964,7 +1012,13 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			events = new subscribable()
 			proxied = proxyObj(initialData, events)
 		}
-		events.async("set:")
+		// events.async("set:")
+		// events.watch("asyncstart", function(ev){
+		// 	forEach(ev.order, function(name){
+		// 		console.log(name, ev.payload[name])
+		// 	})
+		// 	console.warn("end block")
+		// })
 		
 		var ui = proxyUI(view, proxied, events, modelProperty)
 		Object.defineProperty(ui, modelProperty, {
