@@ -85,37 +85,6 @@ appendableArrayProto.detach = function(){
 	return this
 }
 
-function continiousDataWatch(node, proxyProp, eventInstance, model, attributeToListenTo, listeners, destroyCallbacks){
-	var listenTo = attributeToListenTo()
-	// because we have no idea what the heck is going to be in the attr.value and parsing it is too hard, we let the native javascirpt runtime handle that and as long as it's valid javascript that accesses a property in the data we'll be able to track which was the last accessed property and then we'll store that as the key we track
-	safeEval.call(node, "this." + proxyProp + (listenTo[0] === "[" ? "" : ".") + listenTo)
-	var modelKey = eventInstance.last("get").value
-
-	var unwatch = {}
-	// watch everything
-	for(var key in listeners){
-		var keyToWatch = listeners[key].to + ":" + modelKey
-		destroyCallbacks.push(
-			unwatch[listeners[key].to] = eventInstance.watch(keyToWatch, listeners[key])
-		)
-		listeners[key](eventInstance.next(keyToWatch) || eventInstance.last(keyToWatch))
-	}
-
-	// if an remap event for this item every comes by, we'll run this entire operation again including myself
-	destroyCallbacks.push(
-		unwatch[modelKey] = eventInstance.watch("remap:" + modelKey, function(){
-			for(var key in unwatch){
-				unwatch[key]()
-				var removalIndex = destroyCallbacks.indexOf(unwatch[key])
-				if (removalIndex > -1){
-					destroyCallbacks.splice(removalIndex, 1)
-				}
-			}
-			continiousDataWatch(node, proxyProp, eventInstance, model, attributeToListenTo, listeners, destroyCallbacks)
-		})
-	)
-}
-
 function forEveryElement(source, callback){
 	forEach(source, function(item, index, whole){
 		callback(item)
