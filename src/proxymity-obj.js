@@ -78,9 +78,15 @@ function proxyObj(obj, eventInstance){
 					if (isFunction(emitPropertyMoved)){
 						emitPropertyMoved()
 					}
-					!eventInstance.next(eventPrefix + secretProps[property]) && eventInstance.async(eventPrefix + secretProps[property], {
+
+					var payload = {
 						p: property
-					})
+					}
+					!eventInstance.next(eventPrefix + secretProps[property]) && eventInstance.async(eventPrefix + secretProps[property], payload)
+
+					if (Array.isArray(proxied) && property === "length"){
+						payload.order = -1
+					}
 				})
 			}
 		}
@@ -170,10 +176,12 @@ function proxyObj(obj, eventInstance){
 					p: property
 				})
                 if (selfIsArray && selfLength !== target.length){
-                    eventInstance.async("set:" + secretProps["length"], {
+					var payload = {
                         value: target.length,
 						p: property
-                    })
+                    }
+					eventInstance.async("set:" + secretProps["length"], payload)
+					payload.order = -2
                 }
 				return true
 			},
