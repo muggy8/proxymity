@@ -76,7 +76,6 @@ new Promise(function(accept, reject){
 		var code = code.replace(/\.source([^\(])/g, ".c$1")
 		var code = code.replace(/\.outputList([^\(])/g, ".t$1")
 		var code = code.replace(/\.elements([^\(])/g, ".i$1")
-
 		
 		var code = code.replace(/\.onClone([^\(])/g, ".m$1")
 

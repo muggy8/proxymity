@@ -508,7 +508,7 @@ function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue){
 				return safeEval.call(sourceEle, queuedItem.run)
 			}
 			catch(o3o){
-				console.error("failed to render expression [" + queuedItem.run + "]", o3o)
+				console.error("failed to render expression [" + queuedItem.run + "]", sourceEle, o3o)
 				return ""
 			}
 		})
@@ -545,11 +545,6 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, appPro
 					destroyCallbacks.push(observe(eventInstance, function(){
 						safeEval.call(containingElement, "this." + appProp + (attributeToListenTo[0] === "[" ? "" : ".") + attributeToListenTo)
 					}, renderFn))
-					// continiousDataWatch(containingElement, appProp, eventInstance, model, function(){
-					// 	return attributeToListenTo
-					// }, [
-					// 	delFn, setFn
-					// ], destroyCallbacks)
 				})
 			}
 			else {
@@ -599,12 +594,6 @@ function destroyListeners(elements){
 	forEveryElement(elements, function(ele){
 		ele.dispatchEvent(new CustomEvent(destroyEventName))
 	})
-
-	// next up we're going to need to detach them from the parent because this is our base template that will be copied to everthing
-	// nevermind we've changed how things work lol
-	// forEach(elements, function(ele){
-	// 	ele.parentNode && ele.parentNode.removeChild(ele)
-	// })
 }
 
 function groupBy(itemArray, propertyToGroupBy){
@@ -620,8 +609,6 @@ function groupBy(itemArray, propertyToGroupBy){
 var destroyEventName = generateId(randomInt(32, 48))
 function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 	// console.log(repeatBody)
-	// repeatBody.source.length // this is used so we can get the last variable emitted by the proxy object and so we know what were looking to listen to
-	// var listenTo = "set:" + eventInstance.last("get").value
 
 	var lengthSet = function(payload){
 		if (typeof payload === "undefined"){
@@ -694,13 +681,6 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 		
 		return repeatBody.source.length
 	}, lengthSet)
-
-	// eventInstance.watch("asyncstart", function(emits){
-	// 	if (emits.payload.hasOwnProperty(listenTo)){
-	// 		lengthSet(emits.payload[listenTo])
-	// 	}
-	// })
-	// lengthSet(eventInstance.next(listenTo) || eventInstance.last(listenTo))
 }
 
 function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
