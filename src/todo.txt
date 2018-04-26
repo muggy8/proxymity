@@ -4,7 +4,7 @@
 [X]	: {{}} -> can watch prop and render instead of render on asyncstart only
 [X]	: name="prop.{{}}" make it support supported (to support checkboxes)
 [X]	: recursive self events need to check if a next for the event it's about to emit has been set already before emitting anything. (circular refs)
-[ ]	: proxyProtoObj.watch -> external watch prop api would be nice
+[x]	: proxyProtoObj.watch -> external watch prop api would be nice
 [-]	: (This can be emulated with conditional {: :}'s and a command to set a certain value in the data object so so it wont be strictly nesesary for now but i'll leave the comment syntax in place and not taken for incase i need to add it later) || expand rebinding name -> remap on key change or on other data change for name attributes would be nice
 [ ]	: nested foreach on the same level would be nice
 [x]	: sharing model objects would be nice

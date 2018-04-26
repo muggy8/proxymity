@@ -271,16 +271,24 @@ var proxyObjProto = {
 			return proxyObjProto.stringify.call(this)
 		}
 		return ""
+	},
+	watch: function(watchThis, callback){
+		var self = this
+		return observe(self[secretGetEvents](), function(){
+			return safeEval.call(self, "this" + (watchThis[0] === "[" ? "" : ".") + watchThis)
+		}, function(payload){
+			payload && callback(payload.value)
+		})
+	},
+	[Symbol.toPrimitive]: function(hint){
+		if (hint == 'number') {
+			return propsIn(this).length;
+		}
+		if (hint == 'string') {
+			return proxyObjProto.toString.call(this)
+		}
+		return !!propsIn(this).length
 	}
-}
-proxyObjProto[Symbol.toPrimitive] = function(hint){
-	if (hint == 'number') {
-		return propsIn(this).length;
-	}
-	if (hint == 'string') {
-		return proxyObjProto.toString.call(this)
-	}
-	return !!propsIn(this).length
 }
 
 var proxyArrayProto = Object.create(Array.prototype)
