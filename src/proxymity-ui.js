@@ -12,7 +12,7 @@ function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue){
 	})
 	return originalText
 }
-function renderCustomSyntax(textSource, eventInstance, containingElement, appProp, model, destroyCallbacks){
+function renderCustomSyntax(textSource, eventInstance, containingElement, appProp){
 	var sourceText = textSource.textContent
 	var onRenderEvalQueue = []
 	sourceText.replace(/\{\:([\s\S]*?)\:\}(\|(\s|\n)*\{[\s\S]*?\}(\s|\n)*\|)?/g, function(wholeMatch, evalText, dependencyText){
@@ -26,6 +26,7 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, appPro
 
 	// we spliced out what we had above that we can use to render the text. if have a render queue then this text is worth parsing and running and re-running on asyncstart or whatever. other wise it's jsut regular text so we ignore it :3
 	if (onRenderEvalQueue.length){
+		var destroyCallbacks = []
 		var renderFn = function(){
 			textSource.textContent = evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue)
 		}
@@ -35,14 +36,17 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, appPro
 				var watchfor = []
 				forEach(queuedItem.on, function(attributeToListenTo){
 					var delFn = renderFn.bind(null)
-					delFn.to = "del"
+					// delFn.to = "del"
 					var setFn = renderFn.bind(null)
-					setFn.to = "set"
-					continiousDataWatch(containingElement, appProp, eventInstance, model, function(){
-						return attributeToListenTo
-					}, [
-						delFn, setFn
-					], destroyCallbacks)
+					// setFn.to = "set"
+					destroyCallbacks.push(observe(eventInstance, function(){
+						safeEval.call(containingElement, "this." + appProp + (attributeToListenTo[0] === "[" ? "" : ".") + attributeToListenTo)
+					}, renderFn))
+					// continiousDataWatch(containingElement, appProp, eventInstance, model, function(){
+					// 	return attributeToListenTo
+					// }, [
+					// 	delFn, setFn
+					// ], destroyCallbacks)
 				})
 			}
 			else {
@@ -53,26 +57,12 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, appPro
 			}
 		})
 		// console.log(onRenderEvalQueue, evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue))
+		return function(){
+			forEach(destroyCallbacks, function(fn){
+				fn()
+			})
+		}
 	}
-
-
-	// if (sourceText.match(bracketsRegex)){
-	// 	var unwatch = eventInstance.watch("asyncstart", function(asyncEvents){
-	// 		var hasSetEvent = false
-	// 		findIfSetEventExists: for(var key in asyncEvents.payload){
-	// 			if (key.substring(0, 4) === "set:"){
-	// 				hasSetEvent = true
-	// 				break findIfSetEventExists
-	// 			}
-	// 		}
-	// 		hasSetEvent && (textSource.textContent = renderBrackets(sourceText, containingElement))
-	// 		// console.log(renderedText)
-	// 	})
-	// }
-	// return function(){
-	// 	textSource.textContent = sourceText
-	// 	unwatch && unwatch()
-	// }
 }
 
 var appendableArrayProto = Object.create(Array.prototype)
@@ -164,9 +154,9 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 			return
 		}
 		// the flow: because we know that the output list is always gonna be here while we dont know the current state of the element and if it has a parent at all, the best that we can do is to build the output list right and then remove all the elements form the parent element if there is one then stick the output list in after.
-		var insertBeforeIndex = repeatBody.outputList.indexOf(repeatBody.insertBefore)
-        var insertAfterIndex = repeatBody.outputList.indexOf(repeatBody.insertAfter)
 		var elementsList = repeatBody.outputList
+		var insertBeforeIndex = elementsList.indexOf(repeatBody.insertBefore)
+        var insertAfterIndex = elementsList.indexOf(repeatBody.insertAfter)
 		var parent = repeatBody.insertBefore.parentNode
         var currentGroups = groupBy(elementsList.slice(insertAfterIndex + 1, insertBeforeIndex), repeatBody.key)
 
@@ -345,7 +335,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 		// step 2: set up continious rendering for everything that's a text element
 		if (node instanceof CharacterData){
-			renderCustomSyntax(node, eventInstance, node, propertyToDefine, model, onDestroyCallbacks)
+			onDestroyCallbacks.push(renderCustomSyntax(node, eventInstance, node, propertyToDefine))
 		}
 		else {
 			proxyUI(node.childNodes, model, eventInstance, propertyToDefine)
