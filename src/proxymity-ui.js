@@ -236,7 +236,6 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 		return current && node instanceof Node
 	}, true))){
 		// before we get to repeatable sections we're just going to bind things to other things so this step is going to be a bit short
-		var elementsToExclude = []
 		var elementList = arrayFrom(nodeOrNodeListOrHTML)
 		var repeatBody
 		var key = function(property){
@@ -274,7 +273,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				repeatBody.onClone = onClone
 			}
 
-			elementsToExclude.push.apply(elementsToExclude, repeatBody.elements)
+			var elementsToExclude = repeatBody.elements
 
 			// first off, we're going to need to reset everything in these elements to it's default ground state
 			// destroyListeners(repeatBody.elements)
@@ -295,7 +294,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			repeatBody = undefined
 		}
 
-		// we are foreaching 3 times first time we go through and find the comments with our special "foreach: ..." in it and calling the key, key.in and key.end functions. after doing that those functions will extract all of those elements from the list cuz they need a clean template to work with then we can continue with the proper init opperations
+		// first time we go through and find the comments with our special "foreach: ..." in it and calling the key, key.in and key.end functions. after doing that those functions will extract all of those elements from the list cuz they need a clean template to work with then we can continue with the proper init opperations
 		forEach(elementList, function(node){
 			repeatBody && repeatBody.elements && repeatBody.elements.push(node)
 			if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
@@ -305,6 +304,9 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				})
 				if (repeatBody && (!repeatBody.key || !repeatBody.source || !repeatBody.elements)){
 					throw new Error("Improper usage of key(string).in(array): in(array) not called in conjunction with key")
+				}
+				else if (repeatBody && !repeatBody.insertAfter){
+					repeatBody.insertAfter = node
 				}
 			}
 		})
