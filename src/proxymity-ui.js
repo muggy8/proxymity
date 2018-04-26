@@ -193,7 +193,20 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 		if (arrayToWatch){
 			return arrayToWatch.length
 		}
-	}, lengthSet)
+	}, [
+		{
+			to: "remap",
+			fn: lengthSet
+		},
+		{
+			to: "del",
+			fn: lengthSet
+		},
+		{
+			to: "set",
+			fn: lengthSet
+		}
+	])
 
 	// eventInstance.watch("asyncstart", function(emits){
 	// 	if (emits.payload.hasOwnProperty(listenTo)){

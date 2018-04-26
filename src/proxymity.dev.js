@@ -17,6 +17,12 @@ var proxymity = (function(safeEval){
 			proxied = proxyObj(initialData, events)
 		}
 		events.async("set:")
+		events.watch("asyncstart", function(ev){
+			forEach(ev.order, function(name){
+				console.log(name, ev.payload[name])
+			})
+			console.warn("end block")
+		})
 		
 		var ui = proxyUI(view, proxied, events, modelProperty)
 		Object.defineProperty(ui, modelProperty, {
