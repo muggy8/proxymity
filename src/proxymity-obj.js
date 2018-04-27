@@ -164,8 +164,6 @@ function proxyObj(obj, eventInstance){
 				else {
 					// now we need to set the actual property
 					target[property] = val
-
-                    // console.log("set", target, property, val)
 				}
 
 				// before we enter into our return procedure, we want to make sure that whatever prop we're setting, we have a secret id for that prop. we keep the secret ids for prop in the parent object because the props might be something we control or it might not be but we do know that we do control this so that's why we're keeping it here
@@ -179,24 +177,33 @@ function proxyObj(obj, eventInstance){
 
 				// before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update. However, because of the nature of updating dom is very slow, we want to limit all set events to fire once and only once each primary call
 				// console.log("set", property)
-				eventInstance.async("set:" + secretProps[property], {
+				var firstPayload = { // first payload,let everyone know i change and if i am an array and this is the length property, elevate this notification
 					value: target[property],
 					p: property
-				})
+				}
+				eventInstance.async("set:" + secretProps[property], firstPayload)
+				if (selfIsArray && property === "length"){
+					firstPayload.order = -2
+				}
                 if (selfIsArray && selfLength !== target.length){
-					var payload = {
+					var secondPayload = { // payload 2: i am an array and my length changed as a ressult of setting something else, I must alert everyone to this news as well
                         value: target.length,
 						p: property
                     }
-					eventInstance.async("set:" + secretProps["length"], payload)
-					payload.order = -2
+					eventInstance.async("set:" + secretProps["length"], secondPayload)
+					secondPayload.order = -2
                 }
+
+				if (Array.isArray(target[property])){
+					target[property].length = target[property].length
+				}
 				return true
 			},
 			deleteProperty: function(target, property){
 				if (property in target) {
 					var emitMoved = target[property][secretSelfMoved]
 					if (isFunction(emitMoved)){
+						// target[property][secretSelfDeleted]()
 						emitMoved()
 					}
 					eventInstance.async("del:" + secretProps[property], {
