@@ -111,6 +111,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 		if (typeof payload === "undefined"){
 			return
 		}
+		console.log(model.objectify())
 		// the flow: because we know that the output list is always gonna be here while we dont know the current state of the element and if it has a parent at all, the best that we can do is to build the output list right and then remove all the elements form the parent element if there is one then stick the output list in after.
 		var elementsList = repeatBody.outputList
 		var insertBeforeIndex = elementsList.indexOf(repeatBody.insertBefore)
@@ -175,7 +176,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 		safeEval.call(repeatBody.insertAfter, repeatBody.insertAfter.textContent, {
 			key: stubKey
 		})
-		
+
 		return repeatBody.source.length
 	}, lengthSet)
 }

@@ -13,14 +13,15 @@
 	<body>
 		<div class="fixed col-2-2 col-1-2-mid col-1-4-big cell" style="bottom: 0; right: 0">
 			<!-- foreach:{
-				this.app.notifications = [{}]
-				key("index").in(this.app.notifications)
+				console.log("setting")
+				this.app.item.notifications = [{}]
+				key("index").in(this.app.item.notifications)
 			}-->
-				<div onclick="this.app.notifications.push({})">
-					{:this.app.notifications[this.index].stringify():}
+				<div onclick="this.app.item.notifications.push({})">
+					{:console.log("rendering"); this.app.item.notifications[this.index].stringify():}
 				</div>
 			<!-- foreach: key.end() -->
-			<button onclick="delete this.app.notifications">reset</button>
+			<button onclick="this.app.item = {}">reset</button>
 		</div>
 		<script>
 			// gonna stub this in here
