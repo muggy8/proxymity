@@ -6,16 +6,21 @@
 		<script src="../src/on-next-event-cycle.js"></script>
 		<script src="../src/subscribable.js"></script>
 		<script src="../src/proxymity-obj.js"></script>
+		<script src="../src/proxymity-observe.js"></script>
 		<script src="../src/proxymity-ui.js"></script>
 		<script src="../src/proxymity.dev.js"></script>
 	</head>
 	<body>
 		<div class="fixed col-2-2 col-1-2-mid col-1-4-big cell" style="bottom: 0; right: 0">
-			<!-- foreach: key("index").in(this.app.notifications) -->
-				<div>
-					{:this.app.notifications[this.index]:}
+			<!-- foreach:{
+				this.app.notifications = [{}]
+				key("index").in(this.app.notifications)
+			}-->
+				<div onclick="this.app.notifications.push({})">
+					{:this.app.notifications[this.index].stringify():}
 				</div>
 			<!-- foreach: key.end() -->
+			<button onclick="delete this.app.notifications">reset</button>
 		</div>
 		<script>
 			// gonna stub this in here
@@ -26,9 +31,7 @@
 				return eval(s)
 			}
 
-			var test = proxymity(document.querySelector(".fixed"), {
-				notifications: []
-			})
+			var test = proxymity(document.querySelector(".fixed"))
 		</script>
 	</body>
 </html>
