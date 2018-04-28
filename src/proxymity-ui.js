@@ -170,6 +170,9 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 			return stubKey
 		}
 		stubKey.in = function(arr){
+			if (!arr || !isFunction(arr[secretGetEvents]) || arr[secretGetEvents]() !== eventInstance){
+				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
+			}
 			repeatBody.source = arr
 		}
 		stubKey.end = function(){}
@@ -212,16 +215,11 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				throw new Error("Improper usage of key(string).in(array): in(array) called before key")
 			}
 
-			console.log(array[secretGetEvents](), eventInstance, array[secretGetEvents]() === eventInstance)
-			if (!array || !isFunction(array[secretGetEvents]) || array[secretGetEvents]() !== eventInstance){
-				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
-			}
-
-			repeatBody.source = array
+			// repeatBody.source = array
 			repeatBody.elements = []
 		}
 		key.end = function(onClone){
-			if (!repeatBody || !repeatBody.key || !repeatBody.source || !repeatBody.elements || !repeatBody.elements.length){
+			if (!repeatBody || !repeatBody.key || !repeatBody.elements || !repeatBody.elements.length){
 				throw new Error("Improper usage of key.end([onClone]): key(string).in(array) is not called properly prior to calling key.end([onClone])")
 			}
 
@@ -260,7 +258,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				safeEval.call(node, node.textContent, {
 					key: key
 				})
-				if (repeatBody && (!repeatBody.key || !repeatBody.source || !repeatBody.elements)){
+				if (repeatBody && (!repeatBody.key || !repeatBody.elements)){
 					throw new Error("Improper usage of key(string).in(array): in(array) not called in conjunction with key")
 				}
 				else if (repeatBody && !repeatBody.insertAfter){
