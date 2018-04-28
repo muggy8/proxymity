@@ -4,7 +4,7 @@ function observe(events, targetFinder, callbackSet, stuffToUnWatch = []){
 
     if (isFunction(callbackSet)){
         var callback = callbackSet
-        
+
         callbackSet = [
             {
                 to: "del",
@@ -20,10 +20,7 @@ function observe(events, targetFinder, callbackSet, stuffToUnWatch = []){
     forEach(callbackSet, function(callback){
         var type = callback.to + ":" + targetId
         stuffToUnWatch.push(events.watch(type, callback.fn))
-        var lastEvent = events.last(type)
-        if (typeof lastEvent !== 'undefined'){
-            callback.fn(lastEvent)
-        }
+        callback.fn(events.last(type))
     })
 
     var clearWatchers = function(){

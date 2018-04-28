@@ -107,20 +107,17 @@ var destroyEventName = generateId(randomInt(32, 48))
 function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 	// console.log(repeatBody)
 
-	var lengthSet = function(payload){
-		if (typeof payload === "undefined"){
-			return
-		}
-		console.log(model.objectify())
+	var lengthSet = function(){
 		// the flow: because we know that the output list is always gonna be here while we dont know the current state of the element and if it has a parent at all, the best that we can do is to build the output list right and then remove all the elements form the parent element if there is one then stick the output list in after.
 		var elementsList = repeatBody.outputList
 		var insertBeforeIndex = elementsList.indexOf(repeatBody.insertBefore)
         var insertAfterIndex = elementsList.indexOf(repeatBody.insertAfter)
 		var parent = repeatBody.insertBefore.parentNode
         var currentGroups = groupBy(elementsList.slice(insertAfterIndex + 1, insertBeforeIndex), repeatBody.key)
+		var targetCount = +repeatBody.source.length
 
-        if (currentGroups.length < repeatBody.source.length){
-            while (currentGroups.length !== repeatBody.source.length){
+        if (currentGroups.length < targetCount){
+            while (currentGroups.length !== targetCount){
                 var bodyClones = repeatBody.elements.map(function(ele){
                     return ele.cloneNode(true)
                 })
@@ -151,8 +148,8 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
                 currentGroups.push(bodyClones)
             }
         }
-        else if (currentGroups.length > repeatBody.source.length){
-            while (currentGroups.length !== repeatBody.source.length){
+        else if (currentGroups.length > targetCount){
+            while (currentGroups.length !== targetCount){
                 var setToRemove = currentGroups.pop()
                 forEach(setToRemove, function(node){
                     elementsList.splice(elementsList.indexOf(node), 1)
