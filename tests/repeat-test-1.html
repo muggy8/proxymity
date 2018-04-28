@@ -14,7 +14,6 @@
 		<div class="fixed col-2-2 col-1-2-mid col-1-4-big cell" style="bottom: 0; right: 0">
 			<!-- foreach:{
 				console.log("setting")
-				this.app.item.notifications = [{}]
 				key("index").in(this.app.item.notifications)
 			}-->
 				<div onclick="this.app.item.notifications.push({})">
@@ -32,7 +31,11 @@
 				return eval(s)
 			}
 
-			var test = proxymity(document.querySelector(".fixed"))
+			var test = proxymity(document.querySelector(".fixed"), {
+				item: {
+					notifications: [{}]
+				}
+			})
 		</script>
 	</body>
 </html>
