@@ -407,8 +407,6 @@ function proxyObj(obj, eventInstance){
 				else {
 					// now we need to set the actual property
 					target[property] = val
-
-                    // console.log("set", target, property, val)
 				}
 
 				// before we enter into our return procedure, we want to make sure that whatever prop we're setting, we have a secret id for that prop. we keep the secret ids for prop in the parent object because the props might be something we control or it might not be but we do know that we do control this so that's why we're keeping it here
@@ -422,24 +420,33 @@ function proxyObj(obj, eventInstance){
 
 				// before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update. However, because of the nature of updating dom is very slow, we want to limit all set events to fire once and only once each primary call
 				// console.log("set", property)
-				eventInstance.async("set:" + secretProps[property], {
+				var firstPayload = { // first payload,let everyone know i change and if i am an array and this is the length property, elevate this notification
 					value: target[property],
 					p: property
-				})
+				}
+				eventInstance.async("set:" + secretProps[property], firstPayload)
+				if (selfIsArray && property === "length"){
+					firstPayload.order = -2
+				}
                 if (selfIsArray && selfLength !== target.length){
-					var payload = {
+					var secondPayload = { // payload 2: i am an array and my length changed as a ressult of setting something else, I must alert everyone to this news as well
                         value: target.length,
 						p: property
                     }
-					eventInstance.async("set:" + secretProps["length"], payload)
-					payload.order = -2
+					eventInstance.async("set:" + secretProps["length"], secondPayload)
+					secondPayload.order = -2
                 }
+
+				if (Array.isArray(target[property])){
+					target[property].length = target[property].length
+				}
 				return true
 			},
 			deleteProperty: function(target, property){
 				if (property in target) {
 					var emitMoved = target[property][secretSelfMoved]
 					if (isFunction(emitMoved)){
+						// target[property][secretSelfDeleted]()
 						emitMoved()
 					}
 					eventInstance.async("del:" + secretProps[property], {
@@ -468,7 +475,7 @@ function observe(events, targetFinder, callbackSet, stuffToUnWatch = []){
 
     if (isFunction(callbackSet)){
         var callback = callbackSet
-        
+
         callbackSet = [
             {
                 to: "del",
@@ -484,10 +491,7 @@ function observe(events, targetFinder, callbackSet, stuffToUnWatch = []){
     forEach(callbackSet, function(callback){
         var type = callback.to + ":" + targetId
         stuffToUnWatch.push(events.watch(type, callback.fn))
-        var lastEvent = events.last(type)
-        if (typeof lastEvent !== 'undefined'){
-            callback.fn(lastEvent)
-        }
+        callback.fn(events.last(type))
     })
 
     var clearWatchers = function(){
@@ -618,19 +622,17 @@ var destroyEventName = generateId(randomInt(32, 48))
 function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 	// console.log(repeatBody)
 
-	var lengthSet = function(payload){
-		if (typeof payload === "undefined"){
-			return
-		}
+	var lengthSet = function(){
 		// the flow: because we know that the output list is always gonna be here while we dont know the current state of the element and if it has a parent at all, the best that we can do is to build the output list right and then remove all the elements form the parent element if there is one then stick the output list in after.
 		var elementsList = repeatBody.outputList
 		var insertBeforeIndex = elementsList.indexOf(repeatBody.insertBefore)
         var insertAfterIndex = elementsList.indexOf(repeatBody.insertAfter)
 		var parent = repeatBody.insertBefore.parentNode
         var currentGroups = groupBy(elementsList.slice(insertAfterIndex + 1, insertBeforeIndex), repeatBody.key)
+		var targetCount = +repeatBody.source.length
 
-        if (currentGroups.length < repeatBody.source.length){
-            while (currentGroups.length !== repeatBody.source.length){
+        if (currentGroups.length < targetCount){
+            while (currentGroups.length !== targetCount){
                 var bodyClones = repeatBody.elements.map(function(ele){
                     return ele.cloneNode(true)
                 })
@@ -661,8 +663,8 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
                 currentGroups.push(bodyClones)
             }
         }
-        else if (currentGroups.length > repeatBody.source.length){
-            while (currentGroups.length !== repeatBody.source.length){
+        else if (currentGroups.length > targetCount){
+            while (currentGroups.length !== targetCount){
                 var setToRemove = currentGroups.pop()
                 forEach(setToRemove, function(node){
                     elementsList.splice(elementsList.indexOf(node), 1)
@@ -680,13 +682,16 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 			return stubKey
 		}
 		stubKey.in = function(arr){
+			if (!arr || !isFunction(arr[secretGetEvents]) || arr[secretGetEvents]() !== eventInstance){
+				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
+			}
 			repeatBody.source = arr
 		}
 		stubKey.end = function(){}
 		safeEval.call(repeatBody.insertAfter, repeatBody.insertAfter.textContent, {
 			key: stubKey
 		})
-		
+
 		return repeatBody.source.length
 	}, lengthSet)
 }
@@ -722,15 +727,11 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				throw new Error("Improper usage of key(string).in(array): in(array) called before key")
 			}
 
-			if (!Array.isArray(array) || !array[getSecretId]){
-				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified array")
-			}
-
-			repeatBody.source = array
+			// repeatBody.source = array
 			repeatBody.elements = []
 		}
 		key.end = function(onClone){
-			if (!repeatBody || !repeatBody.key || !repeatBody.source || !repeatBody.elements || !repeatBody.elements.length){
+			if (!repeatBody || !repeatBody.key || !repeatBody.elements || !repeatBody.elements.length){
 				throw new Error("Improper usage of key.end([onClone]): key(string).in(array) is not called properly prior to calling key.end([onClone])")
 			}
 
@@ -769,7 +770,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				safeEval.call(node, node.textContent, {
 					key: key
 				})
-				if (repeatBody && (!repeatBody.key || !repeatBody.source || !repeatBody.elements)){
+				if (repeatBody && (!repeatBody.key || !repeatBody.elements)){
 					throw new Error("Improper usage of key(string).in(array): in(array) not called in conjunction with key")
 				}
 				else if (repeatBody && !repeatBody.insertAfter){
@@ -1000,14 +1001,18 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 			events = new subscribable()
 			proxied = proxyObj(initialData, events)
 		}
-		// events.async("set:")
+		events.async("set:")
 		// events.watch("asyncstart", function(ev){
+		// 	console.log(proxied.objectify())
 		// 	forEach(ev.order, function(name){
 		// 		console.log(name, ev.payload[name])
 		// 	})
+		// })
+		// events.watch("asyncend", function(){
+		// 	console.log(proxied.objectify())
 		// 	console.warn("end block")
 		// })
-		
+
 		var ui = proxyUI(view, proxied, events, modelProperty)
 		Object.defineProperty(ui, modelProperty, {
 			get: function(){
