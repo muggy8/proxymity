@@ -212,8 +212,9 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				throw new Error("Improper usage of key(string).in(array): in(array) called before key")
 			}
 
-			if (!Array.isArray(array) || !array[getSecretId]){
-				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified array")
+			console.log(array[secretGetEvents](), eventInstance, array[secretGetEvents]() === eventInstance)
+			if (!array || !isFunction(array[secretGetEvents]) || array[secretGetEvents]() !== eventInstance){
+				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
 			}
 
 			repeatBody.source = array
