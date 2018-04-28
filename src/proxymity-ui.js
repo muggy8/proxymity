@@ -307,7 +307,9 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 		// step 3: set up continious rendering for element properties but also link the names of items to the model
 		forEach(node.attributes, function(attr){
-			renderCustomSyntax(attr, eventInstance, node, propertyToDefine) // we do this for everything because we want this to also be the case for stuff inside name
+			// we do this for everything because we want this to also be the case for stuff inside name
+			var stopPropertyRendering = renderCustomSyntax(attr, eventInstance, node, propertyToDefine)
+			stopPropertyRendering && onDestroyCallbacks.push(stopPropertyRendering)
 
 			if (
 				attr.name !== "name" || (
