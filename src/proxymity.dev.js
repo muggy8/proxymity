@@ -5,16 +5,13 @@ var proxymity = (function(safeEval){
 	// ya i'm not a huge fan of pre-compiling but this lets me test indivual parts since this library is very modular and this is the easiest way to just insert it without having to pull in rediculous amounts of dev dependencies that i dont particularly want to learn so ya why not xP
 
 	return function(view, initialData = {}, modelProperty = "app"){
-		var events
 		var proxied
-		var getEvents = initialData[secretGetEvents]
-		if (isFunction(getEvents)){
-			events = getEvents()
+		var dataHasSecretId = initialData[getSecretId]
+		if (isFunction(dataHasSecretId)){
 			proxied = initialData
 		}
 		else {
-			events = new subscribable()
-			proxied = proxyObj(initialData, events)
+			proxied = proxyObj(initialData)
 		}
 		events.async("set:")
 		// events.watch("asyncstart", function(ev){
@@ -28,7 +25,7 @@ var proxymity = (function(safeEval){
 		// 	console.warn("end block")
 		// })
 
-		var ui = proxyUI(view, proxied, events, modelProperty)
+		var ui = proxyUI(view, proxied, modelProperty)
 		Object.defineProperty(ui, modelProperty, {
 			get: function(){
 				return proxied
