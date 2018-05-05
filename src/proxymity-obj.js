@@ -56,9 +56,8 @@ forEach(propsIn(proxyObjProto), function(property){
 var getSecretId = generateId(randomInt(32, 48))
 var secretSelfMoved = generateId(randomInt(32, 48))
 var secretSelfDeleted = generateId(randomInt(32, 48))
-var secretGetEvents = generateId(randomInt(32, 48))
 
-function proxyObj(obj, eventInstance){
+function proxyObj(obj){
 	var objProto = Object.getPrototypeOf(obj)
 	var objToProxy
 	if (isObject(obj) && (
@@ -73,10 +72,7 @@ function proxyObj(obj, eventInstance){
 				return secretProps[property]
 			},
 			[secretSelfMoved]: secretSelfEventFn(secretSelfMoved, "remap:"),
-			[secretSelfDeleted]: secretSelfEventFn(secretSelfDeleted, "del:"),
-			[secretGetEvents]: function(){
-				return eventInstance
-			}
+			[secretSelfDeleted]: secretSelfEventFn(secretSelfDeleted, "del:")
 		}
 
 		function secretSelfEventFn(secretProp, eventPrefix){
@@ -90,7 +86,7 @@ function proxyObj(obj, eventInstance){
 					var payload = {
 						p: property
 					}
-					!eventInstance.next(eventPrefix + secretProps[property]) && eventInstance.async(eventPrefix + secretProps[property], payload)
+					!events.next(eventPrefix + secretProps[property]) && events.async(eventPrefix + secretProps[property], payload)
 
 					if (Array.isArray(proxied) && property === "length"){
 						payload.order = -1
@@ -124,7 +120,7 @@ function proxyObj(obj, eventInstance){
 					// we also want to fill in secret props for things that dont have them because they were there in the beginning (like the length property for arrays for example)
 					secretProps[property] = generateId(randomInt(32, 48))
 				}
-				eventInstance.emit("get", {
+				events.emit("get", {
 					value: secretProps[property]
 				})
 
@@ -158,7 +154,7 @@ function proxyObj(obj, eventInstance){
 
 				if (val && isObject(val) && (valProto === Object.prototype || valProto === Array.prototype)){
 					//console.log("1", target[property])
-					target[property] = proxyObj(val, eventInstance)
+					target[property] = proxyObj(val, events)
 				}
 				// this is our degenerate case where we just set the value on the data
 				else {
@@ -181,7 +177,7 @@ function proxyObj(obj, eventInstance){
 					value: target[property],
 					p: property
 				}
-				eventInstance.async("set:" + secretProps[property], firstPayload)
+				events.async("set:" + secretProps[property], firstPayload)
 				if (selfIsArray && property === "length"){
 					firstPayload.order = -2
 				}
@@ -190,7 +186,7 @@ function proxyObj(obj, eventInstance){
                         value: target.length,
 						p: property
                     }
-					eventInstance.async("set:" + secretProps["length"], secondPayload)
+					events.async("set:" + secretProps["length"], secondPayload)
 					secondPayload.order = -2
                 }
 
@@ -206,7 +202,7 @@ function proxyObj(obj, eventInstance){
 						// target[property][secretSelfDeleted]()
 						emitMoved()
 					}
-					eventInstance.async("del:" + secretProps[property], {
+					events.async("del:" + secretProps[property], {
 						value: target[property],
 						p: property
 					})
