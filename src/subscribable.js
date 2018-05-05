@@ -1,8 +1,9 @@
 var events = (function(){
 	var listenerLibrary = {}
 	var listenerWildcards = {}
+	var output = {}
 
-	var watch = this.watch = function(nameOrCallback, callbackOrOptions, options){
+	var watch = output.watch = function(nameOrCallback, callbackOrOptions, options){
 		var name, callback
 		if (isFunction(callbackOrOptions)){
 			name = nameOrCallback
@@ -42,7 +43,7 @@ var events = (function(){
 	}
 
 	var lastEmitLog = {}
-	var emit = this.emit = function(name, payload = {}){
+	var emit = output.emit = function(name, payload = {}){
 		// for optimization we are going to seperate listeners with wiled cards and without wiled cards into their own catagories. when an event is emited, we emit to the named listeners first then we looop through the wiled cards and do them and check for matches. we do this so we can skip alot of named listeners that we know wont match and therefore saving clock cycles
 		var waiters = listenerLibrary[name] && listenerLibrary[name].slice()
 		for (var i = 0; waiters && i < waiters.length; i++){
@@ -72,7 +73,7 @@ var events = (function(){
 
 	var nextEvent = generateId(randomInt(32, 48))
 	var nextEventSet = false
-	var async = this.async = function(name, payload = {}){
+	var async = output.async = function(name, payload = {}){
 		if (!nextEventSet){
 			window.postMessage(nextEvent, '*')
 			nextEventSet = true
@@ -132,13 +133,15 @@ var events = (function(){
 		}
 	})
 
-	var last = this.last = function(name){
+	var last = output.last = function(name){
 		// console.log("last", name, lastEmitLog[name])
 		return lastEmitLog[name]
 	}
 
-	var next = this.next = function(name){
+	var next = output.next = function(name){
 		// console.log("last", name, lastEmitLog[name])
 		return queue[name]
 	}
+
+	return output
 })()
