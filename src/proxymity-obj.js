@@ -31,7 +31,7 @@ var proxyObjProto = {
 	},
 	watch: function(watchThis, callback){
 		var self = this
-		return observe(self[secretGetEvents](), function(){
+		return observe(function(){
 			return safeEval.call(self, "this" + (watchThis[0] === "[" ? "" : ".") + watchThis)
 		}, function(payload){
 			payload && callback(payload.value)
@@ -154,7 +154,7 @@ function proxyObj(obj){
 
 				if (val && isObject(val) && (valProto === Object.prototype || valProto === Array.prototype)){
 					//console.log("1", target[property])
-					target[property] = proxyObj(val, events)
+					target[property] = proxyObj(val)
 				}
 				// this is our degenerate case where we just set the value on the data
 				else {
