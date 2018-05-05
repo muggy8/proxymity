@@ -1,4 +1,4 @@
-function observe(events, targetFinder, callbackSet, stuffToUnWatch = []){
+function observe(targetFinder, callbackSet, stuffToUnWatch = []){
     targetFinder()
     var targetId = events.last("get").value
 
