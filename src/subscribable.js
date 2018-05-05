@@ -1,4 +1,4 @@
-function subscribable(){
+var events = (function(){
 	var listenerLibrary = {}
 	var listenerWildcards = {}
 
@@ -70,53 +70,67 @@ function subscribable(){
 	var currentAsyncLoop = 0
 	var maxAsyncLoop = 3
 
+	var nextEvent = generateId(randomInt(32, 48))
 	var nextEventSet = false
 	var async = this.async = function(name, payload = {}){
 		if (!nextEventSet){
-			onNextEventCycle(function(){
-				var workingQueue = queue
-				nextEventSet = false
-				queue = {}
-				order = 0
-				currentAsyncLoop++
-				if (currentAsyncLoop > maxAsyncLoop){
-					currentAsyncLoop = 0
-					return
-				}
-
-				var emitOrder = propsIn(workingQueue)
-				emitOrder.sort(function(a, b){
-					if (workingQueue[a].order > workingQueue[b].order){
-						return 1
-					}
-					else if (workingQueue[a].order < workingQueue[b].order){
-						return -1
-					}
-					return 0
-				})
-
-				emit("asyncstart", {
-					payload: workingQueue,
-					order: emitOrder
-				})
-
-				forEach(emitOrder, function(name){
-					// console.log(name, workingQueue[name])
-					emit(name, workingQueue[name])
-				})
-
-				emit("asyncend", workingQueue)
-
-				if (!nextEventSet){
-					currentAsyncLoop = 0
-				}
-			})
+			window.postMessage(nextEvent, '*')
 			nextEventSet = true
 		}
 
 		queue[name] = payload
 		payload.order = order = order + 1
 	}
+
+	// this is how we get the queue to resolve on the next event cycle instead of immediately
+	window.addEventListener("message", function(ev){
+        if (ev.data !== nextEvent){
+            return
+        }
+
+		ev.stopPropagation()
+
+		// create a reference to the queue and reset the current queue in the system so we can prep for future events that may result from resolving the current queue
+		var workingQueue = queue
+		nextEventSet = false
+		queue = {}
+		order = 0
+
+		// now we check how many times the loops has ran and if the loop ran too many times, we'll exit without resolving the queue
+		currentAsyncLoop++
+		if (currentAsyncLoop > maxAsyncLoop){
+			currentAsyncLoop = 0
+			return
+		}
+
+		var emitOrder = propsIn(workingQueue)
+		emitOrder.sort(function(a, b){
+			if (workingQueue[a].order > workingQueue[b].order){
+				return 1
+			}
+			else if (workingQueue[a].order < workingQueue[b].order){
+				return -1
+			}
+			return 0
+		})
+
+		emit("asyncstart", {
+			payload: workingQueue,
+			order: emitOrder
+		})
+
+		forEach(emitOrder, function(name){
+			// console.log(name, workingQueue[name])
+			emit(name, workingQueue[name])
+		})
+
+		emit("asyncend", workingQueue)
+
+		// finally we can check to see if resolving this queue triggered any new events and if it didn't then we can safely reset the loop count to prep for the next render/re-render cycle to be triggered
+		if (!nextEventSet){
+			currentAsyncLoop = 0
+		}
+	})
 
 	var last = this.last = function(name){
 		// console.log("last", name, lastEmitLog[name])
@@ -127,4 +141,4 @@ function subscribable(){
 		// console.log("last", name, lastEmitLog[name])
 		return queue[name]
 	}
-}
+})()
