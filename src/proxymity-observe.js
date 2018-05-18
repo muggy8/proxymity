@@ -1,4 +1,4 @@
-function observe(events, targetFinder, callbackSet, stuffToUnWatch = []){
+function observe(targetFinder, callbackSet, stuffToUnWatch = []){
     targetFinder()
     var targetId = events.last("get").value
 
@@ -32,7 +32,7 @@ function observe(events, targetFinder, callbackSet, stuffToUnWatch = []){
 
     var onReMap = function(){
         clearWatchers()
-        observe(events, targetFinder, callbackSet, stuffToUnWatch)
+        observe(targetFinder, callbackSet, stuffToUnWatch)
     }
 
     stuffToUnWatch.push(events.watch("remap:" + targetId, onReMap))

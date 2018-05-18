@@ -12,7 +12,7 @@ function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue){
 	})
 	return originalText
 }
-function renderCustomSyntax(textSource, eventInstance, containingElement, appProp){
+function renderCustomSyntax(textSource, containingElement, appProp){
 	var sourceText = textSource.textContent
 	var onRenderEvalQueue = []
 	sourceText.replace(/\{\:([\s\S]*?)\:\}(\|(\s|\n)*\{[\s\S]*?\}(\s|\n)*\|)?/g, function(wholeMatch, evalText, dependencyText){
@@ -39,14 +39,14 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, appPro
 					// delFn.to = "del"
 					var setFn = renderFn.bind(null)
 					// setFn.to = "set"
-					destroyCallbacks.push(observe(eventInstance, function(){
+					destroyCallbacks.push(observe(function(){
 						safeEval.call(containingElement, "this." + appProp + (attributeToListenTo[0] === "[" ? "" : ".") + attributeToListenTo)
 					}, renderFn))
 				})
 			}
 			else {
 				destroyCallbacks.push(
-					eventInstance.watch("asyncstart", renderFn)
+					events.watch("asyncstart", renderFn)
 				)
 				renderFn() // render immediately first
 			}
@@ -107,7 +107,7 @@ function groupBy(itemArray, propertyToGroupBy){
 }
 
 var destroyEventName = generateId(randomInt(32, 48))
-function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
+function initializeRepeater(model, mainModelVar, repeatBody){
 	// console.log(repeatBody)
 
 	var lengthSet = function(){
@@ -135,7 +135,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 					})
 				})
 
-                proxyUI(bodyClones, model, eventInstance, mainModelVar)
+                proxyUI(bodyClones, model, mainModelVar)
                 if (parent){
                     forEach(bodyClones, function(clone){
     					parent.insertBefore(clone, repeatBody.insertBefore)
@@ -165,12 +165,12 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
         }
 	}
 
-	observe(eventInstance, function(){
+	observe(function(){
 		var stubKey = function(){
 			return stubKey
 		}
 		stubKey.in = function(arr){
-			if (!arr || !isFunction(arr[secretGetEvents]) || arr[secretGetEvents]() !== eventInstance){
+			if (!arr || !isFunction(arr[getSecretId])){
 				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
 			}
 			repeatBody.source = arr
@@ -184,12 +184,12 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 	}, lengthSet)
 }
 
-function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
+function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine){
 	if (isString(nodeOrNodeListOrHTML)){
 		var template = document.createElement("template")
 		template.innerHTML = nodeOrNodeListOrHTML.trim()
 		var parsedList = template.content.childNodes
-		return proxyUI(parsedList, model, eventInstance, propertyToDefine)
+		return proxyUI(parsedList, model, propertyToDefine)
 	}
 
 	if (nodeOrNodeListOrHTML instanceof NodeList || (nodeOrNodeListOrHTML instanceof Array && nodeOrNodeListOrHTML.reduce(function(current, node){
@@ -246,7 +246,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
     		}
             repeatBody.insertAfter = repeatBody.insertBefore.previousSibling
 
-			initializeRepeater(eventInstance, model, propertyToDefine, repeatBody)
+			initializeRepeater(model, propertyToDefine, repeatBody)
 			repeatBody = undefined
 		}
 
@@ -254,7 +254,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 		forEach(elementList, function(node){
 			repeatBody && repeatBody.elements && repeatBody.elements.push(node)
 			if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
-				proxyUI(node, model, eventInstance, propertyToDefine)
+				proxyUI(node, model, propertyToDefine)
 				safeEval.call(node, node.textContent, {
 					key: key
 				})
@@ -270,7 +270,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 		// By the time we get here, the elementList already has what it needs to slice off sliced off. so we can get strait to inserting variables that we need to insert
 		forEach(elementList, function(node){
 			if (node[propertyToDefine] !== model){ // we use this if because some elements have it defined already (above) so we save more clock cycles :3
-				proxyUI(node, model, eventInstance, propertyToDefine)
+				proxyUI(node, model, propertyToDefine)
 			}
 		})
 		return Object.setPrototypeOf(
@@ -301,17 +301,17 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 		// step 2: set up continious rendering for everything that's a text element
 		if (node instanceof CharacterData){
-			var stopSyntaxRender = renderCustomSyntax(node, eventInstance, node, propertyToDefine)
+			var stopSyntaxRender = renderCustomSyntax(node, node, propertyToDefine)
 			stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
 		}
 		else {
-			proxyUI(node.childNodes, model, eventInstance, propertyToDefine)
+			proxyUI(node.childNodes, model, propertyToDefine)
 		}
 
 		// step 3: set up continious rendering for element properties but also link the names of items to the model
 		forEach(node.attributes, function(attr){
 			// we do this for everything because we want this to also be the case for stuff inside name
-			var stopPropertyRendering = renderCustomSyntax(attr, eventInstance, node, propertyToDefine)
+			var stopPropertyRendering = renderCustomSyntax(attr, node, propertyToDefine)
 			stopPropertyRendering && onDestroyCallbacks.push(stopPropertyRendering)
 
 			if (
@@ -414,15 +414,11 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				}
 			}
 
-			// var modelKey = obtainModelSecretId(model, attr.value, eventInstance)
-			// var unwatchSet = eventInstance.watch("set:" + modelKey, setListener)
-			// var unwatchDel = eventInstance.watch("del:" + modelKey, delListener)
-
 			// delListener.to = "del"
 			// setListener.to = "set"
 
 			onDestroyCallbacks.push(
-				observe(eventInstance, function(){
+				observe(function(){
 					safeEval.call(node, "this." + propertyToDefine + (attr.value[0] === "[" ? "" : ".") + attr.value)
 				}, [
 					{
@@ -435,14 +431,6 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 					}
 				])
 			)
-
-			// continiousDataWatch(node, propertyToDefine, eventInstance, model, function(){
-			// 	return attr.value
-			// }, [
-			// 	delListener,
-			// 	setListener
-			// ], onDestroyCallbacks)
-
 
 			var changeListeners = ["change", "keyup", "click"]
 			var onChange = function(ev){

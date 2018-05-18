@@ -74,46 +74,13 @@ function softCopy(from, to){
 	// }
 }
 
-// src/on-next-event-cycle.js
-var onNextEventCycle = (function(){ // we are doing this here because this function leaves a TON of artifacts that only it uses
-    var nextEvent = generateId(randomInt(32, 48))
-    var emitted = false
-    var queue = []
-    function onNextEventCycle(fn){
-        if (!emitted){
-            window.postMessage(nextEvent, '*');
-            emitted = true
-        }
-
-        queue.push(fn)
-    }
-
-    window.addEventListener("message", function(ev){
-        if (ev.data !== nextEvent){
-            return
-        }
-
-        ev.stopPropagation()
-
-        var workingQueue = queue
-		nextEvent = generateId(randomInt(32, 48)) // we really dont want someone else outside triggering this on accident or on purpose. this way when we recieve a message, we're going to expect a different message next time which means even if there are eves droppers on the message channel, we'll be fine
-        emitted = false
-        queue = []
-
-        forEach(workingQueue, function(fn){
-            fn()
-        })
-    })
-
-    return onNextEventCycle
-})()
-
 // src/subscribable.js
-function subscribable(){
+var events = (function(){
 	var listenerLibrary = {}
 	var listenerWildcards = {}
+	var output = {}
 
-	var watch = this.watch = function(nameOrCallback, callbackOrOptions, options){
+	var watch = output.watch = function(nameOrCallback, callbackOrOptions, options){
 		var name, callback
 		if (isFunction(callbackOrOptions)){
 			name = nameOrCallback
@@ -153,7 +120,7 @@ function subscribable(){
 	}
 
 	var lastEmitLog = {}
-	var emit = this.emit = function(name, payload = {}){
+	var emit = output.emit = function(name, payload = {}){
 		// for optimization we are going to seperate listeners with wiled cards and without wiled cards into their own catagories. when an event is emited, we emit to the named listeners first then we looop through the wiled cards and do them and check for matches. we do this so we can skip alot of named listeners that we know wont match and therefore saving clock cycles
 		var waiters = listenerLibrary[name] && listenerLibrary[name].slice()
 		for (var i = 0; waiters && i < waiters.length; i++){
@@ -181,47 +148,11 @@ function subscribable(){
 	var currentAsyncLoop = 0
 	var maxAsyncLoop = 3
 
+	var nextEvent = generateId(randomInt(32, 48))
 	var nextEventSet = false
-	var async = this.async = function(name, payload = {}){
+	var async = output.async = function(name, payload = {}){
 		if (!nextEventSet){
-			onNextEventCycle(function(){
-				var workingQueue = queue
-				nextEventSet = false
-				queue = {}
-				order = 0
-				currentAsyncLoop++
-				if (currentAsyncLoop > maxAsyncLoop){
-					currentAsyncLoop = 0
-					return
-				}
-
-				var emitOrder = propsIn(workingQueue)
-				emitOrder.sort(function(a, b){
-					if (workingQueue[a].order > workingQueue[b].order){
-						return 1
-					}
-					else if (workingQueue[a].order < workingQueue[b].order){
-						return -1
-					}
-					return 0
-				})
-
-				emit("asyncstart", {
-					payload: workingQueue,
-					order: emitOrder
-				})
-
-				forEach(emitOrder, function(name){
-					// console.log(name, workingQueue[name])
-					emit(name, workingQueue[name])
-				})
-
-				emit("asyncend", workingQueue)
-
-				if (!nextEventSet){
-					currentAsyncLoop = 0
-				}
-			})
+			window.postMessage(nextEvent, '*')
 			nextEventSet = true
 		}
 
@@ -229,17 +160,68 @@ function subscribable(){
 		payload.order = order = order + 1
 	}
 
-	var last = this.last = function(name){
+	// this is how we get the queue to resolve on the next event cycle instead of immediately
+	window.addEventListener("message", function(ev){
+        if (ev.data !== nextEvent){
+            return
+        }
+
+		ev.stopPropagation()
+
+		// create a reference to the queue and reset the current queue in the system so we can prep for future events that may result from resolving the current queue
+		var workingQueue = queue
+		nextEventSet = false
+		queue = {}
+		order = 0
+
+		// now we check how many times the loops has ran and if the loop ran too many times, we'll exit without resolving the queue
+		currentAsyncLoop++
+		if (currentAsyncLoop > maxAsyncLoop){
+			currentAsyncLoop = 0
+			return
+		}
+
+		var emitOrder = propsIn(workingQueue)
+		emitOrder.sort(function(a, b){
+			if (workingQueue[a].order > workingQueue[b].order){
+				return 1
+			}
+			else if (workingQueue[a].order < workingQueue[b].order){
+				return -1
+			}
+			return 0
+		})
+
+		emit("asyncstart", {
+			payload: workingQueue,
+			order: emitOrder
+		})
+
+		forEach(emitOrder, function(name){
+			// console.log(name, workingQueue[name])
+			emit(name, workingQueue[name])
+		})
+
+		emit("asyncend", workingQueue)
+
+		// finally we can check to see if resolving this queue triggered any new events and if it didn't then we can safely reset the loop count to prep for the next render/re-render cycle to be triggered
+		if (!nextEventSet){
+			currentAsyncLoop = 0
+		}
+	})
+
+	var last = output.last = function(name){
 		// console.log("last", name, lastEmitLog[name])
 		return lastEmitLog[name]
 	}
 
-	var next = this.next = function(name){
+	var next = output.next = function(name){
 		// console.log("last", name, lastEmitLog[name])
 		return queue[name]
 	}
-}
 
+	return output
+})()
 // src/proxymity-obj.js
 var proxyObjProto = {
 	objectify: function(){
@@ -274,7 +256,7 @@ var proxyObjProto = {
 	},
 	watch: function(watchThis, callback){
 		var self = this
-		return observe(self[secretGetEvents](), function(){
+		return observe(function(){
 			return safeEval.call(self, "this" + (watchThis[0] === "[" ? "" : ".") + watchThis)
 		}, function(payload){
 			payload && callback(payload.value)
@@ -299,9 +281,8 @@ forEach(propsIn(proxyObjProto), function(property){
 var getSecretId = generateId(randomInt(32, 48))
 var secretSelfMoved = generateId(randomInt(32, 48))
 var secretSelfDeleted = generateId(randomInt(32, 48))
-var secretGetEvents = generateId(randomInt(32, 48))
 
-function proxyObj(obj, eventInstance){
+function proxyObj(obj){
 	var objProto = Object.getPrototypeOf(obj)
 	var objToProxy
 	if (isObject(obj) && (
@@ -316,10 +297,7 @@ function proxyObj(obj, eventInstance){
 				return secretProps[property]
 			},
 			[secretSelfMoved]: secretSelfEventFn(secretSelfMoved, "remap:"),
-			[secretSelfDeleted]: secretSelfEventFn(secretSelfDeleted, "del:"),
-			[secretGetEvents]: function(){
-				return eventInstance
-			}
+			[secretSelfDeleted]: secretSelfEventFn(secretSelfDeleted, "del:")
 		}
 
 		function secretSelfEventFn(secretProp, eventPrefix){
@@ -333,7 +311,7 @@ function proxyObj(obj, eventInstance){
 					var payload = {
 						p: property
 					}
-					!eventInstance.next(eventPrefix + secretProps[property]) && eventInstance.async(eventPrefix + secretProps[property], payload)
+					!events.next(eventPrefix + secretProps[property]) && events.async(eventPrefix + secretProps[property], payload)
 
 					if (Array.isArray(proxied) && property === "length"){
 						payload.order = -1
@@ -367,7 +345,7 @@ function proxyObj(obj, eventInstance){
 					// we also want to fill in secret props for things that dont have them because they were there in the beginning (like the length property for arrays for example)
 					secretProps[property] = generateId(randomInt(32, 48))
 				}
-				eventInstance.emit("get", {
+				events.emit("get", {
 					value: secretProps[property]
 				})
 
@@ -401,7 +379,7 @@ function proxyObj(obj, eventInstance){
 
 				if (val && isObject(val) && (valProto === Object.prototype || valProto === Array.prototype)){
 					//console.log("1", target[property])
-					target[property] = proxyObj(val, eventInstance)
+					target[property] = proxyObj(val)
 				}
 				// this is our degenerate case where we just set the value on the data
 				else {
@@ -424,7 +402,7 @@ function proxyObj(obj, eventInstance){
 					value: target[property],
 					p: property
 				}
-				eventInstance.async("set:" + secretProps[property], firstPayload)
+				events.async("set:" + secretProps[property], firstPayload)
 				if (selfIsArray && property === "length"){
 					firstPayload.order = -2
 				}
@@ -433,7 +411,7 @@ function proxyObj(obj, eventInstance){
                         value: target.length,
 						p: property
                     }
-					eventInstance.async("set:" + secretProps["length"], secondPayload)
+					events.async("set:" + secretProps["length"], secondPayload)
 					secondPayload.order = -2
                 }
 
@@ -449,7 +427,7 @@ function proxyObj(obj, eventInstance){
 						// target[property][secretSelfDeleted]()
 						emitMoved()
 					}
-					eventInstance.async("del:" + secretProps[property], {
+					events.async("del:" + secretProps[property], {
 						value: target[property],
 						p: property
 					})
@@ -469,7 +447,7 @@ function proxyObj(obj, eventInstance){
 }
 
 // src/proxymity-observe.js
-function observe(events, targetFinder, callbackSet, stuffToUnWatch = []){
+function observe(targetFinder, callbackSet, stuffToUnWatch = []){
     targetFinder()
     var targetId = events.last("get").value
 
@@ -503,7 +481,7 @@ function observe(events, targetFinder, callbackSet, stuffToUnWatch = []){
 
     var onReMap = function(){
         clearWatchers()
-        observe(events, targetFinder, callbackSet, stuffToUnWatch)
+        observe(targetFinder, callbackSet, stuffToUnWatch)
     }
 
     stuffToUnWatch.push(events.watch("remap:" + targetId, onReMap))
@@ -527,7 +505,7 @@ function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue){
 	})
 	return originalText
 }
-function renderCustomSyntax(textSource, eventInstance, containingElement, appProp){
+function renderCustomSyntax(textSource, containingElement, appProp){
 	var sourceText = textSource.textContent
 	var onRenderEvalQueue = []
 	sourceText.replace(/\{\:([\s\S]*?)\:\}(\|(\s|\n)*\{[\s\S]*?\}(\s|\n)*\|)?/g, function(wholeMatch, evalText, dependencyText){
@@ -554,14 +532,14 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, appPro
 					// delFn.to = "del"
 					var setFn = renderFn.bind(null)
 					// setFn.to = "set"
-					destroyCallbacks.push(observe(eventInstance, function(){
+					destroyCallbacks.push(observe(function(){
 						safeEval.call(containingElement, "this." + appProp + (attributeToListenTo[0] === "[" ? "" : ".") + attributeToListenTo)
 					}, renderFn))
 				})
 			}
 			else {
 				destroyCallbacks.push(
-					eventInstance.watch("asyncstart", renderFn)
+					events.watch("asyncstart", renderFn)
 				)
 				renderFn() // render immediately first
 			}
@@ -619,7 +597,7 @@ function groupBy(itemArray, propertyToGroupBy){
 }
 
 var destroyEventName = generateId(randomInt(32, 48))
-function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
+function initializeRepeater(model, mainModelVar, repeatBody){
 	// console.log(repeatBody)
 
 	var lengthSet = function(){
@@ -647,7 +625,7 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 					})
 				})
 
-                proxyUI(bodyClones, model, eventInstance, mainModelVar)
+                proxyUI(bodyClones, model, mainModelVar)
                 if (parent){
                     forEach(bodyClones, function(clone){
     					parent.insertBefore(clone, repeatBody.insertBefore)
@@ -677,12 +655,12 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
         }
 	}
 
-	observe(eventInstance, function(){
+	observe(function(){
 		var stubKey = function(){
 			return stubKey
 		}
 		stubKey.in = function(arr){
-			if (!arr || !isFunction(arr[secretGetEvents]) || arr[secretGetEvents]() !== eventInstance){
+			if (!arr || !isFunction(arr[getSecretId])){
 				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
 			}
 			repeatBody.source = arr
@@ -696,12 +674,12 @@ function initializeRepeater(eventInstance, model, mainModelVar, repeatBody){
 	}, lengthSet)
 }
 
-function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
+function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine){
 	if (isString(nodeOrNodeListOrHTML)){
 		var template = document.createElement("template")
 		template.innerHTML = nodeOrNodeListOrHTML.trim()
 		var parsedList = template.content.childNodes
-		return proxyUI(parsedList, model, eventInstance, propertyToDefine)
+		return proxyUI(parsedList, model, propertyToDefine)
 	}
 
 	if (nodeOrNodeListOrHTML instanceof NodeList || (nodeOrNodeListOrHTML instanceof Array && nodeOrNodeListOrHTML.reduce(function(current, node){
@@ -758,7 +736,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
     		}
             repeatBody.insertAfter = repeatBody.insertBefore.previousSibling
 
-			initializeRepeater(eventInstance, model, propertyToDefine, repeatBody)
+			initializeRepeater(model, propertyToDefine, repeatBody)
 			repeatBody = undefined
 		}
 
@@ -766,7 +744,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 		forEach(elementList, function(node){
 			repeatBody && repeatBody.elements && repeatBody.elements.push(node)
 			if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
-				proxyUI(node, model, eventInstance, propertyToDefine)
+				proxyUI(node, model, propertyToDefine)
 				safeEval.call(node, node.textContent, {
 					key: key
 				})
@@ -782,7 +760,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 		// By the time we get here, the elementList already has what it needs to slice off sliced off. so we can get strait to inserting variables that we need to insert
 		forEach(elementList, function(node){
 			if (node[propertyToDefine] !== model){ // we use this if because some elements have it defined already (above) so we save more clock cycles :3
-				proxyUI(node, model, eventInstance, propertyToDefine)
+				proxyUI(node, model, propertyToDefine)
 			}
 		})
 		return Object.setPrototypeOf(
@@ -813,17 +791,17 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 
 		// step 2: set up continious rendering for everything that's a text element
 		if (node instanceof CharacterData){
-			var stopSyntaxRender = renderCustomSyntax(node, eventInstance, node, propertyToDefine)
+			var stopSyntaxRender = renderCustomSyntax(node, node, propertyToDefine)
 			stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
 		}
 		else {
-			proxyUI(node.childNodes, model, eventInstance, propertyToDefine)
+			proxyUI(node.childNodes, model, propertyToDefine)
 		}
 
 		// step 3: set up continious rendering for element properties but also link the names of items to the model
 		forEach(node.attributes, function(attr){
 			// we do this for everything because we want this to also be the case for stuff inside name
-			var stopPropertyRendering = renderCustomSyntax(attr, eventInstance, node, propertyToDefine)
+			var stopPropertyRendering = renderCustomSyntax(attr, node, propertyToDefine)
 			stopPropertyRendering && onDestroyCallbacks.push(stopPropertyRendering)
 
 			if (
@@ -926,15 +904,11 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 				}
 			}
 
-			// var modelKey = obtainModelSecretId(model, attr.value, eventInstance)
-			// var unwatchSet = eventInstance.watch("set:" + modelKey, setListener)
-			// var unwatchDel = eventInstance.watch("del:" + modelKey, delListener)
-
 			// delListener.to = "del"
 			// setListener.to = "set"
 
 			onDestroyCallbacks.push(
-				observe(eventInstance, function(){
+				observe(function(){
 					safeEval.call(node, "this." + propertyToDefine + (attr.value[0] === "[" ? "" : ".") + attr.value)
 				}, [
 					{
@@ -947,14 +921,6 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 					}
 				])
 			)
-
-			// continiousDataWatch(node, propertyToDefine, eventInstance, model, function(){
-			// 	return attr.value
-			// }, [
-			// 	delListener,
-			// 	setListener
-			// ], onDestroyCallbacks)
-
 
 			var changeListeners = ["change", "keyup", "click"]
 			var onChange = function(ev){
@@ -992,16 +958,13 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 	// ya i'm not a huge fan of pre-compiling but this lets me test indivual parts since this library is very modular and this is the easiest way to just insert it without having to pull in rediculous amounts of dev dependencies that i dont particularly want to learn so ya why not xP
 
 	return function(view, initialData = {}, modelProperty = "app"){
-		var events
 		var proxied
-		var getEvents = initialData[secretGetEvents]
-		if (isFunction(getEvents)){
-			events = getEvents()
+		var dataHasSecretId = initialData[getSecretId]
+		if (isFunction(dataHasSecretId)){
 			proxied = initialData
 		}
 		else {
-			events = new subscribable()
-			proxied = proxyObj(initialData, events)
+			proxied = proxyObj(initialData)
 		}
 		events.async("set:")
 		// events.watch("asyncstart", function(ev){
@@ -1015,7 +978,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, eventInstance, propertyToDefine){
 		// 	console.warn("end block")
 		// })
 
-		var ui = proxyUI(view, proxied, events, modelProperty)
+		var ui = proxyUI(view, proxied, modelProperty)
 		Object.defineProperty(ui, modelProperty, {
 			get: function(){
 				return proxied

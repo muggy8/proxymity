@@ -1,8 +1,9 @@
-function subscribable(){
+var events = (function(){
 	var listenerLibrary = {}
 	var listenerWildcards = {}
+	var output = {}
 
-	var watch = this.watch = function(nameOrCallback, callbackOrOptions, options){
+	var watch = output.watch = function(nameOrCallback, callbackOrOptions, options){
 		var name, callback
 		if (isFunction(callbackOrOptions)){
 			name = nameOrCallback
@@ -42,7 +43,7 @@ function subscribable(){
 	}
 
 	var lastEmitLog = {}
-	var emit = this.emit = function(name, payload = {}){
+	var emit = output.emit = function(name, payload = {}){
 		// for optimization we are going to seperate listeners with wiled cards and without wiled cards into their own catagories. when an event is emited, we emit to the named listeners first then we looop through the wiled cards and do them and check for matches. we do this so we can skip alot of named listeners that we know wont match and therefore saving clock cycles
 		var waiters = listenerLibrary[name] && listenerLibrary[name].slice()
 		for (var i = 0; waiters && i < waiters.length; i++){
@@ -70,47 +71,11 @@ function subscribable(){
 	var currentAsyncLoop = 0
 	var maxAsyncLoop = 3
 
+	var nextEvent = generateId(randomInt(32, 48))
 	var nextEventSet = false
-	var async = this.async = function(name, payload = {}){
+	var async = output.async = function(name, payload = {}){
 		if (!nextEventSet){
-			onNextEventCycle(function(){
-				var workingQueue = queue
-				nextEventSet = false
-				queue = {}
-				order = 0
-				currentAsyncLoop++
-				if (currentAsyncLoop > maxAsyncLoop){
-					currentAsyncLoop = 0
-					return
-				}
-
-				var emitOrder = propsIn(workingQueue)
-				emitOrder.sort(function(a, b){
-					if (workingQueue[a].order > workingQueue[b].order){
-						return 1
-					}
-					else if (workingQueue[a].order < workingQueue[b].order){
-						return -1
-					}
-					return 0
-				})
-
-				emit("asyncstart", {
-					payload: workingQueue,
-					order: emitOrder
-				})
-
-				forEach(emitOrder, function(name){
-					// console.log(name, workingQueue[name])
-					emit(name, workingQueue[name])
-				})
-
-				emit("asyncend", workingQueue)
-
-				if (!nextEventSet){
-					currentAsyncLoop = 0
-				}
-			})
+			window.postMessage(nextEvent, '*')
 			nextEventSet = true
 		}
 
@@ -118,13 +83,65 @@ function subscribable(){
 		payload.order = order = order + 1
 	}
 
-	var last = this.last = function(name){
+	// this is how we get the queue to resolve on the next event cycle instead of immediately
+	window.addEventListener("message", function(ev){
+        if (ev.data !== nextEvent){
+            return
+        }
+
+		ev.stopPropagation()
+
+		// create a reference to the queue and reset the current queue in the system so we can prep for future events that may result from resolving the current queue
+		var workingQueue = queue
+		nextEventSet = false
+		queue = {}
+		order = 0
+
+		// now we check how many times the loops has ran and if the loop ran too many times, we'll exit without resolving the queue
+		currentAsyncLoop++
+		if (currentAsyncLoop > maxAsyncLoop){
+			currentAsyncLoop = 0
+			return
+		}
+
+		var emitOrder = propsIn(workingQueue)
+		emitOrder.sort(function(a, b){
+			if (workingQueue[a].order > workingQueue[b].order){
+				return 1
+			}
+			else if (workingQueue[a].order < workingQueue[b].order){
+				return -1
+			}
+			return 0
+		})
+
+		emit("asyncstart", {
+			payload: workingQueue,
+			order: emitOrder
+		})
+
+		forEach(emitOrder, function(name){
+			// console.log(name, workingQueue[name])
+			emit(name, workingQueue[name])
+		})
+
+		emit("asyncend", workingQueue)
+
+		// finally we can check to see if resolving this queue triggered any new events and if it didn't then we can safely reset the loop count to prep for the next render/re-render cycle to be triggered
+		if (!nextEventSet){
+			currentAsyncLoop = 0
+		}
+	})
+
+	var last = output.last = function(name){
 		// console.log("last", name, lastEmitLog[name])
 		return lastEmitLog[name]
 	}
 
-	var next = this.next = function(name){
+	var next = output.next = function(name){
 		// console.log("last", name, lastEmitLog[name])
 		return queue[name]
 	}
-}
+
+	return output
+})()
