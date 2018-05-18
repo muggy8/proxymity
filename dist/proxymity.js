@@ -598,6 +598,7 @@ define(appendableArrayProto, "detach", function(){
 })
 define(appendableArrayProto, "unlink", function(){
 	destroyListeners(this)
+	return this
 })
 
 function forEveryElement(source, callback){
