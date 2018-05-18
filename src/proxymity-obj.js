@@ -1,5 +1,21 @@
 var proxyObjProto = {
-	objectify: function(){
+	[Symbol.toPrimitive]: function(hint){
+		if (hint == 'number') {
+			return propsIn(this).length;
+		}
+		if (hint == 'string') {
+			return proxyObjProto.toString.call(this)
+		}
+		return !!propsIn(this).length
+	}
+}
+var proxyArrayProto = Object.create(Array.prototype)
+
+var tempProp
+define(
+	proxyArrayProto,
+	tempProp = "objectify",
+	define(proxyObjProto, tempProp, function(){
 		if (Array.isArray(this)){
 			var raw = []
 		}
@@ -17,41 +33,42 @@ var proxyObjProto = {
 			}
 		}
 		return raw
-	},
-	stringify: function(){
+	})
+)
+
+define(
+	proxyArrayProto,
+	tempProp = "stringify",
+	define(proxyObjProto, tempProp, function(){
 		var args = arrayFrom(arguments)
 		args.unshift(proxyObjProto.objectify.call(this))
 		return JSON.stringify.apply(JSON, args)
-	},
-	toString: function(){
+	})
+)
+
+define(
+	proxyArrayProto,
+	tempProp = "toString",
+	define(proxyObjProto, tempProp, function(){
 		if (propsIn(this).length){
 			return proxyObjProto.stringify.call(this)
 		}
 		return ""
-	},
-	watch: function(watchThis, callback){
+	})
+)
+
+define(
+	proxyArrayProto,
+	tempProp = "watch",
+	define(proxyObjProto, tempProp, function(watchThis, callback){
 		var self = this
 		return observe(self[secretGetEvents](), function(){
 			return safeEval.call(self, "this" + (watchThis[0] === "[" ? "" : ".") + watchThis)
 		}, function(payload){
 			payload && callback(payload.value)
 		})
-	},
-	[Symbol.toPrimitive]: function(hint){
-		if (hint == 'number') {
-			return propsIn(this).length;
-		}
-		if (hint == 'string') {
-			return proxyObjProto.toString.call(this)
-		}
-		return !!propsIn(this).length
-	}
-}
-
-var proxyArrayProto = Object.create(Array.prototype)
-forEach(propsIn(proxyObjProto), function(property){
-	proxyArrayProto[property] = proxyObjProto[property]
-})
+	})
+)
 
 var getSecretId = generateId(randomInt(32, 48))
 var secretSelfMoved = generateId(randomInt(32, 48))
