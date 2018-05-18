@@ -61,7 +61,7 @@ function renderCustomSyntax(textSource, eventInstance, containingElement, appPro
 }
 
 var appendableArrayProto = Object.create(Array.prototype)
-appendableArrayProto.appendTo = function(selectorOrElement) {
+define(appendableArrayProto, "appendTo", function(selectorOrElement) {
 	if (isString(selectorOrElement)){
 		return appendableArrayProto.appendTo.call(this, document.querySelector(selectorOrElement))
 	}
@@ -70,15 +70,18 @@ appendableArrayProto.appendTo = function(selectorOrElement) {
 		target.appendChild(node)
 	})
 	return this
-}
-appendableArrayProto.detach = function(){
+})
+define(appendableArrayProto, "detach", function(){
 	forEach(this, function(node){
 		var parent = node.parentElement
 		parent && parent.removeChild(node)
 	})
 
 	return this
-}
+})
+define(appendableArrayProto, "destroy", function(){
+	destroyListeners(this)
+})
 
 function forEveryElement(source, callback){
 	forEach(source, function(item, index, whole){
