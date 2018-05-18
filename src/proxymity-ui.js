@@ -79,7 +79,7 @@ define(appendableArrayProto, "detach", function(){
 
 	return this
 })
-define(appendableArrayProto, "destroy", function(){
+define(appendableArrayProto, "unlink", function(){
 	destroyListeners(this)
 })
 
