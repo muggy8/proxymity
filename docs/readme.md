@@ -6,18 +6,18 @@ Welcome to the Proxymity Documentations where you will find out how to use the v
 - [proxymity render cycle](render-cycle.md)
 
 ## Philosophy
-The primary guiding princlple of Poxymity is to to be minimalistic and easy to learn and use. Currently, the front end landscape is filled with large and complex frameworks and libraries that do a mind blowing amount of things and requires a sizeable bandwidth to deliver. Not only that, they also have speciallized ways of doing things and the learning curve for some of them is so steep that being able to use them is a marketable skill in and of itself. This, I feel, defeats the purpose of frameworks and libraries.
+The primary guiding principle of Poxymity is to be minimalistic and easy to learn and use. Currently, the front end landscape is filled with large and complex frameworks and libraries that do a mind blowing amount of things and requires a sizeable bandwidth to deliver. Not only that, they also have specialized ways of doing things and the learning curve for some of them is so steep that being able to use them is a marketable skill in and of itself. This, I feel, defeats the purpose of frameworks and libraries.
 
-To accomplish the goal of making everything simple and small, Proxymit attmeptes to
+To accomplish the goal of making everything simple and small, Proxymity attempts to
 - focus on one thing
-- parse and change as little code as possiable
-- rely on native js as much as possiable
-- expose as small of a public api as possiable
+- parse and change as little code as possible
+- rely on native js as much as possible
+- expose as small of a public api as possible
 - has no other dependencies
 
-## Shortcommings
-Because of the design philosophy driven goals, this results in proxymity having some shortcomings that you must be aware of when using it. 
+## Short commings
+Because of the design philosophy driven goals, this results in proxymity having some shortcomings that you must be aware of when using it.
 
 First off support, it requires the native implementation of the Proxy API which is a new addition in ES6 and isn't fully supported across all browsers. Additionally, this is also an api that cannot be polyfilled as it is both functional and adds syntactic sugar.
 
-The second is security, because Proxymity uses native js where possiable and parses as little as it can, you cannot expect it to assist you in preventing XXS or other injections. Because of that, you must be more cautious that you are not leaving a backdoor in your app for potential attackers because of poorly written logic. 
+The second is security, because Proxymity uses native js where possible and parses as little as it can, you cannot expect it to assist you in preventing XXS or other injections. Because of that, you must be more cautious that you are not leaving a backdoor in your app for potential attackers because of poorly written logic. 
