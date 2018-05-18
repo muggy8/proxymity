@@ -67,11 +67,18 @@ function softCopy(from, to){
 	forEach(toKeys, function(isArray, key){
 		if (!isArray && key !== "length"){
 			delete to[key]
-		}		
+		}
 	}.bind(null, Array.isArray(to)))
 	// if (Array.isArray(to)){
 	// 	to.length = to.length // this is to trigger the set:lengthId for this object just in case it is something depends on it (which something does)
 	// }
+}
+
+function define(obj, key, val){
+	Object.defineProperty(obj, key, {
+		value: val
+	})
+	return val
 }
 
 // src/subscribable.js
@@ -224,7 +231,23 @@ var events = (function(){
 })()
 // src/proxymity-obj.js
 var proxyObjProto = {
-	objectify: function(){
+	[Symbol.toPrimitive]: function(hint){
+		if (hint == 'number') {
+			return propsIn(this).length;
+		}
+		if (hint == 'string') {
+			return proxyObjProto.toString.call(this)
+		}
+		return !!propsIn(this).length
+	}
+}
+var proxyArrayProto = Object.create(Array.prototype)
+
+var tempProp
+define(
+	proxyArrayProto,
+	tempProp = "objectify",
+	define(proxyObjProto, tempProp, function(){
 		if (Array.isArray(this)){
 			var raw = []
 		}
@@ -242,41 +265,42 @@ var proxyObjProto = {
 			}
 		}
 		return raw
-	},
-	stringify: function(){
+	})
+)
+
+define(
+	proxyArrayProto,
+	tempProp = "stringify",
+	define(proxyObjProto, tempProp, function(){
 		var args = arrayFrom(arguments)
 		args.unshift(proxyObjProto.objectify.call(this))
 		return JSON.stringify.apply(JSON, args)
-	},
-	toString: function(){
+	})
+)
+
+define(
+	proxyArrayProto,
+	tempProp = "toString",
+	define(proxyObjProto, tempProp, function(){
 		if (propsIn(this).length){
 			return proxyObjProto.stringify.call(this)
 		}
 		return ""
-	},
-	watch: function(watchThis, callback){
+	})
+)
+
+define(
+	proxyArrayProto,
+	tempProp = "watch",
+	define(proxyObjProto, tempProp, function(watchThis, callback){
 		var self = this
 		return observe(function(){
 			return safeEval.call(self, "this" + (watchThis[0] === "[" ? "" : ".") + watchThis)
 		}, function(payload){
 			payload && callback(payload.value)
 		})
-	},
-	[Symbol.toPrimitive]: function(hint){
-		if (hint == 'number') {
-			return propsIn(this).length;
-		}
-		if (hint == 'string') {
-			return proxyObjProto.toString.call(this)
-		}
-		return !!propsIn(this).length
-	}
-}
-
-var proxyArrayProto = Object.create(Array.prototype)
-forEach(propsIn(proxyObjProto), function(property){
-	proxyArrayProto[property] = proxyObjProto[property]
-})
+	})
+)
 
 var getSecretId = generateId(randomInt(32, 48))
 var secretSelfMoved = generateId(randomInt(32, 48))
@@ -554,7 +578,7 @@ function renderCustomSyntax(textSource, containingElement, appProp){
 }
 
 var appendableArrayProto = Object.create(Array.prototype)
-appendableArrayProto.appendTo = function(selectorOrElement) {
+define(appendableArrayProto, "appendTo", function(selectorOrElement) {
 	if (isString(selectorOrElement)){
 		return appendableArrayProto.appendTo.call(this, document.querySelector(selectorOrElement))
 	}
@@ -563,15 +587,18 @@ appendableArrayProto.appendTo = function(selectorOrElement) {
 		target.appendChild(node)
 	})
 	return this
-}
-appendableArrayProto.detach = function(){
+})
+define(appendableArrayProto, "detach", function(){
 	forEach(this, function(node){
 		var parent = node.parentElement
 		parent && parent.removeChild(node)
 	})
 
 	return this
-}
+})
+define(appendableArrayProto, "unlink", function(){
+	destroyListeners(this)
+})
 
 function forEveryElement(source, callback){
 	forEach(source, function(item, index, whole){
@@ -957,7 +984,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine){
 	// ^INSERT^
 	// ya i'm not a huge fan of pre-compiling but this lets me test indivual parts since this library is very modular and this is the easiest way to just insert it without having to pull in rediculous amounts of dev dependencies that i dont particularly want to learn so ya why not xP
 
-	return function(view, initialData = {}, modelProperty = "app"){
+	var publicUse = function(view, initialData = {}, modelProperty = "app"){
 		var proxied
 		var dataHasSecretId = initialData[getSecretId]
 		if (isFunction(dataHasSecretId)){
@@ -991,6 +1018,8 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine){
 		})
 		return ui
 	}
+	define(publicUse, "convert", proxyObj)
+	return publicUse
 })(function(s, sv = {}){
 	for(var k in sv){
 		s = "var " + k + " = sv." + k + ";\n" + s
