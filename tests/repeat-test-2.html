@@ -1,0 +1,51 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
+		<script src="../src/proxymity-util.js"></script>
+		<script src="../src/on-next-event-cycle.js"></script>
+		<script src="../src/subscribable.js"></script>
+		<script src="../src/proxymity-obj.js"></script>
+		<script src="../src/proxymity-observe.js"></script>
+		<script src="../src/proxymity-ui.js"></script>
+		<script src="../src/proxymity.dev.js"></script>
+	</head>
+	<body>
+		<div class="fixed col-2-2 col-1-2-mid col-1-4-big cell" style="bottom: 0; right: 0">
+			<!-- foreach:{
+				this.app.item.notifications = [[], [], [], [], []]
+				key("index1").in(this.app.item.notifications)
+			}-->
+				{:console.log("outer", this.index1, this.index2):}|{item.notifications[this.index1]}|
+				<div>
+					<!-- foreach: {
+						console.warn(this.index1)
+						this.app.item.notifications[this.index1].push({})
+						key("index2").in(this.app.item.notifications[this.index1])
+					} -->
+					{:console.log("inner", this.index1, this.index2):}|{item.notifications[this.index1][this.index2]}|
+					<br>
+					<!-- foreach: key.end() -->
+					<button onclick="console.log(this.index1, this.app.item.notifications.objectify(), this.app.item.notifications[this.index1]); this.app.item.notifications[this.index1].push({})">add Inner</button>
+				</div>
+			<!-- foreach: key.end() -->
+			<button  onclick="this.app.item.notifications.push([])">add outer</button>
+			<button onclick="this.app.item = {}">reset</button>
+		</div>
+		<script>
+			// gonna stub this in here
+			var safeEval = function(s, sv = {}){
+				for(var k in sv){
+					s = "var " + k + " = sv." + k + ";\n" + s
+				}
+				return eval(s)
+			}
+
+			var test = proxymity(document.querySelector(".fixed"), {
+				item: {
+					notifications: [{}]
+				}
+			})
+		</script>
+	</body>
+</html>

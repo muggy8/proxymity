@@ -108,7 +108,7 @@ function groupBy(itemArray, propertyToGroupBy){
 }
 
 var destroyEventName = generateId(randomInt(32, 48))
-function initializeRepeater(model, mainModelVar, repeatBody){
+function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner){
 	// console.log(repeatBody)
 
 	var lengthSet = function(){
@@ -126,17 +126,22 @@ function initializeRepeater(model, mainModelVar, repeatBody){
                     return ele.cloneNode(true)
                 })
 
-                forEveryElement(bodyClones, function(cloneEle){
-					Object.defineProperty(cloneEle, repeatBody.key, {
-						configurable: true,
-						enumerable: false,
-						get: function(index){
-							return index
-						}.bind(cloneEle, currentGroups.length)
+				var defineIndexKey = function(index, cloneEles) {
+					parentIndexDefiner(cloneEles)
+					forEveryElement(cloneEles, function(cloneEle){
+						Object.defineProperty(cloneEle, repeatBody.key, {
+							configurable: true,
+							enumerable: false,
+							get: function(){
+								return index
+							}
+						})
 					})
-				})
+				}.bind(this, currentGroups.length)
+				defineIndexKey(bodyClones)
 
-                proxyUI(bodyClones, model, mainModelVar)
+
+                proxyUI(bodyClones, model, mainModelVar, defineIndexKey)
                 if (parent){
                     forEach(bodyClones, function(clone){
     					parent.insertBefore(clone, repeatBody.insertBefore)
@@ -185,12 +190,12 @@ function initializeRepeater(model, mainModelVar, repeatBody){
 	}, lengthSet)
 }
 
-function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine){
+function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatIndexDefiner = function(){}){
 	if (isString(nodeOrNodeListOrHTML)){
 		var template = document.createElement("template")
 		template.innerHTML = nodeOrNodeListOrHTML.trim()
 		var parsedList = template.content.childNodes
-		return proxyUI(parsedList, model, propertyToDefine)
+		return proxyUI(parsedList, model, propertyToDefine, parentRepeatIndexDefiner)
 	}
 
 	if (nodeOrNodeListOrHTML instanceof NodeList || (nodeOrNodeListOrHTML instanceof Array && nodeOrNodeListOrHTML.reduce(function(current, node){
@@ -247,7 +252,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine){
     		}
             repeatBody.insertAfter = repeatBody.insertBefore.previousSibling
 
-			initializeRepeater(model, propertyToDefine, repeatBody)
+			initializeRepeater(model, propertyToDefine, repeatBody, parentRepeatIndexDefiner)
 			repeatBody = undefined
 		}
 
@@ -255,7 +260,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine){
 		forEach(elementList, function(node){
 			repeatBody && repeatBody.elements && repeatBody.elements.push(node)
 			if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
-				proxyUI(node, model, propertyToDefine)
+				proxyUI(node, model, propertyToDefine, parentRepeatIndexDefiner)
 				safeEval.call(node, node.textContent, {
 					key: key
 				})
@@ -271,7 +276,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine){
 		// By the time we get here, the elementList already has what it needs to slice off sliced off. so we can get strait to inserting variables that we need to insert
 		forEach(elementList, function(node){
 			if (node[propertyToDefine] !== model){ // we use this if because some elements have it defined already (above) so we save more clock cycles :3
-				proxyUI(node, model, propertyToDefine)
+				proxyUI(node, model, propertyToDefine, parentRepeatIndexDefiner)
 			}
 		})
 		return Object.setPrototypeOf(
@@ -306,7 +311,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine){
 			stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
 		}
 		else {
-			proxyUI(node.childNodes, model, propertyToDefine)
+			proxyUI(node.childNodes, model, propertyToDefine, parentRepeatIndexDefiner)
 		}
 
 		// step 3: set up continious rendering for element properties but also link the names of items to the model
