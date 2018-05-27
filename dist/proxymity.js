@@ -518,13 +518,7 @@ function observe(targetFinder, callbackSet, stuffToUnWatch = []){
 function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue){
 	forEach(evalQueue, function(queuedItem){
 		originalText = originalText.replace(queuedItem.drop, function(){
-			try {
-				return safeEval.call(sourceEle, queuedItem.run)
-			}
-			catch(o3o){
-				console.error("failed to render expression [" + queuedItem.run + "]", sourceEle, o3o)
-				return ""
-			}
+			return safeEval.call(sourceEle, queuedItem.run)
 		})
 	})
 	return originalText
@@ -1027,9 +1021,16 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 	define(publicUse, "convert", proxyObj)
 	return publicUse
 })(function(s, sv = {}){
-	for(var k in sv){
+	var os = s
+	for(let k in sv){
 		s = "var " + k + " = sv." + k + ";\n" + s
 	}
-	return eval(s)
+	try {
+		return eval(s)
+	}
+	catch(o3o){
+		console.error("failed to evaluate expression [" + os + "]", this, o3o)
+		return ""
+	}
 })
 typeof module !== "undefined" && (module.exports = proxymity)
