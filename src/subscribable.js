@@ -101,6 +101,7 @@ var events = (function(){
 		currentAsyncLoop++
 		if (currentAsyncLoop > maxAsyncLoop){
 			currentAsyncLoop = 0
+			emit("renderend")
 			return
 		}
 
@@ -130,6 +131,7 @@ var events = (function(){
 		// finally we can check to see if resolving this queue triggered any new events and if it didn't then we can safely reset the loop count to prep for the next render/re-render cycle to be triggered
 		if (!nextEventSet){
 			currentAsyncLoop = 0
+			emit("renderend")
 		}
 	})
 

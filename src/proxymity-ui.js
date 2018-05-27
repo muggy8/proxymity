@@ -77,6 +77,18 @@ define(appendableArrayProto, "unlink", function(){
 	destroyListeners(this)
 	return this
 })
+var whitelistedWhen = ["renderend"]
+define(appendableArrayProto, "when", function(whatHappens){
+	if (whitelistedWhen.indexOf(whatHappens) === -1){
+		throw new Error("Cannot subscribe to " + whatHappens)
+	}
+	return new Promise(function(accept){
+		var once = events.watch(whatHappens, function(){
+			once()
+			accept()
+		})
+	})
+})
 
 function forEveryElement(source, callback){
 	forEach(source, function(item, index, whole){
