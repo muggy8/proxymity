@@ -41,9 +41,16 @@ var proxymity = (function(safeEval){
 	define(publicUse, "convert", proxyObj)
 	return publicUse
 })(function(s, sv = {}){
-	for(var k in sv){
+	var os = s
+	for(let k in sv){
 		s = "var " + k + " = sv." + k + ";\n" + s
 	}
-	return eval(s)
+	try {
+		return eval(s)
+	}
+	catch(o3o){
+		console.error("failed to evaluate expression [" + os + "]", this, o3o)
+		return ""
+	}
 })
 typeof module !== "undefined" && (module.exports = proxymity)

@@ -1,13 +1,7 @@
 function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue){
 	forEach(evalQueue, function(queuedItem){
 		originalText = originalText.replace(queuedItem.drop, function(){
-			try {
-				return safeEval.call(sourceEle, queuedItem.run)
-			}
-			catch(o3o){
-				console.error("failed to render expression [" + queuedItem.run + "]", sourceEle, o3o)
-				return ""
-			}
+			return safeEval.call(sourceEle, queuedItem.run)
 		})
 	})
 	return originalText
