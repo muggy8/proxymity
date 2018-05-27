@@ -28,5 +28,10 @@ The detach function tries to detach the elements it's associated with from the d
 
 The unlink method is used to detach the view template from the proxied object. This will not destroy the current state of the object nor will it revert the template to the previous state. this is especially useful for pre-rendering any component that is used in alot of places that has the same data everywhere (EG: a select option list. that is in alot of places). This is also useful for live reloading of modules / components as it allows you to detach a view and get rid of it from memory as well as get rid of any reference proxymity is keeping internally on the object.
 
+## elementsList.when(someEventToWatchFor)
+- returns: a promise
+
+The when method is to watch for any special internal events that are triggered and sharable. the current events that you can listen to is renderend and the promis will resolve when renderend is reached.
+
 ## elementsList[nameOfDataProperty]
 the element property that you defined for the proxied data is also available under the elementsList as the same property that you defined. see [Proxymity Data](proxymity-data.md)
