@@ -772,17 +772,17 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
     				elementList.splice(i, 1)
     			}
     		}
-            repeatBody.insertAfter = repeatBody.insertBefore.previousSibling
+            var beginningComment = repeatBody.insertAfter = repeatBody.insertBefore.previousSibling
 
 			var callbackDestroyer = createDestroylistenerCallback([
 				initializeRepeater(model, propertyToDefine, repeatBody, parentRepeatIndexDefiner),
 				function(){
-					repeatBody.insertAfter.removeEventListener(destroyEventName, callbackDestroyer)
+					beginningComment.removeEventListener(destroyEventName, callbackDestroyer)
 				}
 			])
-			repeatBody.insertAfter.addEventListener(destroyEventName, callbackDestroyer)
+			beginningComment.addEventListener(destroyEventName, callbackDestroyer)
 
-			repeatBody = undefined
+			repeatBody = undefined // this is for back to back repeats in the same lare
 		}
 
 		// first time we go through and find the comments with our special "foreach: ..." in it and calling the key, key.in and key.end functions. after doing that those functions will extract all of those elements from the list cuz they need a clean template to work with then we can continue with the proper init opperations
