@@ -13,13 +13,14 @@
 	<body>
 		<div class="fixed col-2-2 col-1-2-mid col-1-4-big cell" style="bottom: 0; right: 0">
 			<!-- foreach:{
+				console.warn("setting up notif array")
 				this.app.item.notifications = [[], [], [], [], []]
 				key("index1").in(this.app.item.notifications)
 			}-->
 				{:console.log("outer", this.index1, this.index2):}|{item.notifications[this.index1]}|
 				<div>
 					<!-- foreach: {
-						console.warn(this.index1)
+						console.warn(this.index1, this.app.item.notifications.objectify())
 						this.app.item.notifications[this.index1].push({})
 						key("index2").in(this.app.item.notifications[this.index1])
 					} -->
@@ -30,7 +31,7 @@
 				</div>
 			<!-- foreach: key.end() -->
 			<button  onclick="this.app.item.notifications.push([])">add outer</button>
-			<button onclick="this.app.item = {}">reset</button>
+			<button onclick="this.app.item.notifications = []">reset</button>
 		</div>
 		<script>
 			// gonna stub this in here

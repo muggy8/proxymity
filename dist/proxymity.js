@@ -229,6 +229,7 @@ var events = (function(){
 
 	return output
 })()
+
 // src/proxymity-obj.js
 var proxyObjProto = {
 	[Symbol.toPrimitive]: function(hint){
@@ -682,7 +683,7 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
         }
 	}
 
-	observe(function(){
+	return observe(function(){
 		var stubKey = function(){
 			return stubKey
 		}
@@ -699,6 +700,16 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 
 		return repeatBody.source.length
 	}, lengthSet)
+}
+
+function createDestroylistenerCallback(arrayOfFunctions){
+	var repeaterDestroyer = function(ev){
+		ev.stopPropagation()
+		forEach(arrayOfFunctions, function(fn){
+			fn()
+		})
+	}
+	return repeaterDestroyer
 }
 
 function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatIndexDefiner = function(){}){
@@ -763,7 +774,14 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
     		}
             repeatBody.insertAfter = repeatBody.insertBefore.previousSibling
 
-			initializeRepeater(model, propertyToDefine, repeatBody, parentRepeatIndexDefiner)
+			var callbackDestroyer = createDestroylistenerCallback([
+				initializeRepeater(model, propertyToDefine, repeatBody, parentRepeatIndexDefiner),
+				function(){
+					repeatBody.insertAfter.removeEventListener(destroyEventName, callbackDestroyer)
+				}
+			])
+			repeatBody.insertAfter.addEventListener(destroyEventName, callbackDestroyer)
+
 			repeatBody = undefined
 		}
 
@@ -966,16 +984,19 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 				})
 			})
 		})
-		var destroyListener = function(ev){
-			ev.stopPropagation()
-			forEach(onDestroyCallbacks, function(fn){
-				fn()
-			})
-		}
-		node.addEventListener(destroyEventName, destroyListener)
+
 		onDestroyCallbacks.push(function(){
 			node.removeEventListener(destroyEventName, destroyListener)
 		})
+		var destroyListener = createDestroylistenerCallback(onDestroyCallbacks)
+		// var destroyListener = function(ev){
+		// 	ev.stopPropagation()
+		// 	forEach(onDestroyCallbacks, function(fn){
+		// 		fn()
+		// 	})
+		// }
+		node.addEventListener(destroyEventName, destroyListener)
+
 
 		return Object.setPrototypeOf([node], appendableArrayProto)
 	}
