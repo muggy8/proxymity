@@ -8,7 +8,10 @@
 [-]	: (this can be done with a watcher on a different item that can be reset manually) manually triggering renders (incase we need to bind to non proxied objects)
 [ ] : make sure the watch function isn't called when the value didn't change
 [ ] : Investigate if garbage collector has cleaned up removed nodes and make it so it dose
+	[ ]	: create clean up last even at every render end
+	[ ]	: make watching updates not rely on being passed the value to update
 [ ] : make repeaters use document.createDocumentFragment() then inserting the fragment into the dom for better creation efficency
+[ ]	: rework how inline experssions work ({::} executes once and the result replaces the experssion | {::}|{}| gets executed when the value is updated | no more max re-render loops)
 [x]	: add callback for on render complete
 [-]	: (This can be emulated with conditional {: :}'s and a command to set a certain value in the data object so so it wont be strictly nesesary for now but i'll leave the comment syntax in place and not taken for incase i need to add it later) || expand rebinding name -> remap on key change or on other data change for name attributes would be nice
 [ ]	: nested foreach on the same level would be nice
