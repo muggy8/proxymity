@@ -12,7 +12,7 @@ function keyCopier(context, keySource){
         })
     }
 }
-function dataProto(dataTypeProto){
+function DataProto(dataTypeProto){
     var context = {}
 
     var getKeysFrom = dataTypeProto
@@ -24,13 +24,16 @@ function dataProto(dataTypeProto){
     Object.setPrototypeOf(context, Object.getPrototypeOf(this))
     return context
 }
-dataProto.prototype = new Proxy({}, {
-    get: function(target, prop, receiver) {
-        console.log(arguments)
-        Reflect.get(target, prop, receiver)
+DataProto.prototype = new Proxy({}, {
+    get: function(target, prop, calledOn) {
+        console.log.apply(console, arguments)
+        Reflect.get(target, prop, calledOn)
     },
-    set: function(obj, prop, value){
-        console.log(arguments)
-        Reflect.set(obj, prop, value)
+    set: function(target, prop, value, calledOn){
+        console.log.apply(console, arguments)
+        Reflect.set(target, prop, value, calledOn)
     }
 })
+
+var protoArrayProxy = new DataProto(Array.prototype)
+var protoObjectProxy = new DataProto(Object.prototype)
