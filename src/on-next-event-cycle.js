@@ -8,7 +8,9 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
             emitted = true
         }
 
-        queue.push(fn)
+		if (!queue.indexOf(fn)){
+			queue.push(fn)
+		}
     }
 
     window.addEventListener("message", function(ev){

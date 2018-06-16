@@ -18,12 +18,37 @@ function proxify(value){
     }
     return value
 }
+var watchMode = false
+function notifyWatchersIn(watcherList){
+	var resolutionQueue = watcherList.map(function(fn){
+		fn.called = false
+		return fn
+	})
+	for(var index = 0; index < resolutionQueue.length; i++){
+		if (!resolutionQueue[index].called){
+			var callback = resolutionQueue[index]
+			callback()
+			if (resolutionQueue[index] !== callback){
+				index = 0
+			}
+			callback.called = true
+		}
+	}
+}
 function defineAsGetSet(to, key, value, enumerable = false){
     // we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
     if (to.hasOwnProperty(key)){
         return
     }
     value = proxify(value)
+	var watchers = {}
+
+	function notifyWatchers(){
+		forEach(Object.getOwnPropertyNames(watchers), function(name){
+			notifyWatchersIn(watchers[name])
+		})
+	}
+
 
     // right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
     Object.defineProperty(to, key, {
@@ -36,10 +61,11 @@ function defineAsGetSet(to, key, value, enumerable = false){
             if (input === value){
                 return value
             }
-            return value = proxify(input)
+			return value = proxify(input)
         }
     })
 }
+
 function copyKey(to, from, key){
     return defineAsGetSet(to, key, from[key], from.propertyIsEnumerable(key))
 }
@@ -86,7 +112,7 @@ function augmentProto(originalProto){
 
 	// we also need to set up our public api for this thing too so we can do stuff with it
 	defineAsGetSet(replacementProto, "watch", function(prop){
-
+		// logic here
 	})
 
     // afterwards we want to set the prototype of the replacement prototype object to a proxy so when we set any new properties, we can catch that and create a getter/setter combo on the main object.
