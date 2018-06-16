@@ -13,6 +13,15 @@
             var arr = proxyArray([
                 1,2,3
             ])
+
+            Array.prototype.foo = "bar"
+
+            if (arr.foo === "bar") {
+                console.log("test 1 ok")
+            }
+            else {
+                console.warn("test 1 failed")
+            }
 		</script>
 	</body>
 </html>

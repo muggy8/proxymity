@@ -1,17 +1,20 @@
-function copyKey(to, from, key){
+function defineAsGetSet(to, key, value, enumerable = false){
     if (to.hasOwnProperty(key)){
         return
     }
     Object.defineProperty(to, key, {
-        enumerable: from.propertyIsEnumerable(key),
+        enumerable: enumerable,
         configurable: true,
         get: function(){
-            return from[key]
+            return value
         },
         set: function(val){
-            return from[key] = val
+            return value = val
         }
     })
+}
+function copyKey(to, from, key){
+    return defineAsGetSet(to, key, from[key], from.propertyIsEnumerable(key))
 }
 var trapGetBlacklist = ["constructor"]
 var proxyTraps = {
@@ -39,6 +42,7 @@ var proxyTraps = {
     set: function(dataStash, prop, value, calledOn){
         console.log("set")
         console.log.apply(console, arguments)
+
         Reflect.set(dataStash, prop, value, calledOn)
         return true
     }
