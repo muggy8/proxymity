@@ -7,6 +7,18 @@
 	</head>
 	<body>
 		<script>
+
+			var safeEval = function(s, sv = {}){
+				try {
+					with(sv){
+						return eval(s)
+					}
+				}
+				catch(o3o){
+					console.error("failed to evaluate expression [" + s + "]", this, o3o)
+					return ""
+				}
+			}
             var obj = proxyObject({
                 foo: "bar"
             })

@@ -84,6 +84,11 @@ function augmentProto(originalProto){
         getKeysFrom = Object.getPrototypeOf(getKeysFrom)
     }
 
+	// we also need to set up our public api for this thing too so we can do stuff with it
+	defineAsGetSet(replacementProto, "watch", function(prop){
+
+	})
+
     // afterwards we want to set the prototype of the replacement prototype object to a proxy so when we set any new properties, we can catch that and create a getter/setter combo on the main object.
     // we want to still retain the original proto in the proxy because in case something changes on the prototype because someone is loading in a utils library that modifies the prototype after we are done (for example, a library that adds methods to array.prototype), we are able to also reflect that and stick it into the proto layer above
     Object.setPrototypeOf(replacementProto, new Proxy(originalProto, proxyTraps))
