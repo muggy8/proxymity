@@ -13,16 +13,33 @@ function copyKey(to, from, key){
         }
     })
 }
+var trapGetBlacklist = ["constructor"]
 var proxyTraps = {
-    get: function(target, prop, calledOn) {
-        Reflect.get(target, prop, calledOn)
+    get: function(dataStash, prop, calledOn) {
+        if (trapGetBlacklist.indexOf(prop) !== -1){
+            return
+        }
         console.log("get")
         console.log.apply(console, arguments)
+        if (prop in dataStash){
+            // someone modified the prototype of this object D: time to take the procedure of finding the object that's just above the current object
+            var stashProto = Object.getPrototypeOf(dataStash)
+            var currentStack = calledOn
+            var previousStack = calledOn
+            var nextStack = Object.getPrototypeOf(currentStack)
+            while (nextStack !== stashProto){
+                previousStack = currentStack
+                currentStack = nextStack
+                nextStack = Object.getPrototypeOf(currentStack)
+            }
+            copyKey(previousStack, dataStash, prop)
+        }
+        return Reflect.get(dataStash, prop, calledOn)
     },
-    set: function(target, prop, value, calledOn){
-        Reflect.set(target, prop, value, calledOn)
+    set: function(dataStash, prop, value, calledOn){
         console.log("set")
         console.log.apply(console, arguments)
+        Reflect.set(dataStash, prop, value, calledOn)
         return true
     }
 }
