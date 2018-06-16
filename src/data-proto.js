@@ -18,7 +18,7 @@ function proxify(value){
     }
     return value
 }
-var watchMode = false
+
 function notifyWatchersIn(watcherList){
 	var resolutionQueue = watcherList.map(function(fn){
 		fn.called = false
@@ -41,12 +41,17 @@ function defineAsGetSet(to, key, value, enumerable = false){
         return
     }
     value = proxify(value)
-	var watchers = {}
 
 	function notifyWatchers(){
-		forEach(Object.getOwnPropertyNames(watchers), function(name){
-			notifyWatchersIn(watchers[name])
-		})
+		var primitiveGetter = value[Symbol.toPrimitive]
+		if (primitiveGetter){
+			var watchers = primitiveGetter(getWatchers)
+			if (watchers && typeof watchers === "object"){
+				forEach(Object.getOwnPropertyNames(watchers), function(name){
+					notifyWatchersIn(watchers[name])
+				})
+			}
+		}
 	}
 
 
@@ -121,6 +126,9 @@ function augmentProto(originalProto){
     return replacementProto
 }
 
+
+var watchKey = generateId(randomInt(32, 48))
+var getWatchers = generateId(randomInt(32, 48))
 function migrateData(protoObj, input){
 	input[Symbol.toPrimitive] = function(hint){
 		var watcherList = {}
