@@ -93,16 +93,15 @@ function proxify(originalProto){
 var protoArrayProxy = new proxify(Array.prototype)
 var protoObjectProxy = new proxify(Object.prototype)
 
-function proxyArray(normalArray){
-    var proxyArr = Object.setPrototypeOf([], protoArrayProxy)
-    // moar logix here
-    forEach(Object.getOwnPropertyNames(normalArray), copyKey.bind(this, proxyArr, normalArray))
-
-    return proxyArr
+function migrateData(protoObj, input){
+	forEach(Object.getOwnPropertyNames(input), function(key){
+		var propVal = input[key]
+		var enumerable = input.propertyIsEnumerable(key)
+		if (delete input[key]){
+			defineAsGetSet(input, key, propVal, enumerable)
+		}
+	})
+	return Object.setPrototypeOf(input, protoObj)
 }
-function proxyObject(regularObj){
-    var proxyObj = Object.create(protoObjectProxy)
-    // some magic logic here
-    forEach(Object.getOwnPropertyNames(regularObj), copyKey.bind(this, proxyObj, regularObj))
-    return proxyObj
-}
+var proxyArray = migrateData.bind(this, protoArrayProxy)
+var proxyObject = migrateData.bind(this, protoObjectProxy)
