@@ -1,7 +1,17 @@
+function transformValue(value){
+    if (value && Object.getPrototypeOf(value) === Object.prototype){
+        value = proxyObject(value)
+    }
+    else if (value && Object.getPrototypeOf(value) === Array.prototype){
+        value = proxyArray(value)
+    }
+    return value
+}
 function defineAsGetSet(to, key, value, enumerable = false){
     if (to.hasOwnProperty(key)){
         return
     }
+    value = transformValue(value)
     Object.defineProperty(to, key, {
         enumerable: enumerable,
         configurable: true,
@@ -12,7 +22,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
             if (input === value){
                 return value
             }
-            return value = input
+            return value = transformValue(input)
         }
     })
 }
@@ -48,8 +58,6 @@ var proxyTraps = {
 
         defineAsGetSet(calledOn, prop, value, true)
         return true
-        Reflect.set(dataStash, prop, value, calledOn)
-        return true
     }
 }
 function proxify(originalProto){
@@ -72,12 +80,15 @@ var protoArrayProxy = new proxify(Array.prototype)
 var protoObjectProxy = new proxify(Object.prototype)
 
 function proxyArray(normalArray){
-    var arr = Object.setPrototypeOf([], protoArrayProxy)
+    var proxyArr = Object.setPrototypeOf([], protoArrayProxy)
     // moar logix here
-    return arr
+    forEach(Object.getOwnPropertyNames(normalArray), copyKey.bind(this, proxyArr, normalArray))
+
+    return proxyArr
 }
 function proxyObject(regularObj){
-    var obj = Object.create(protoObjectProxy)
+    var proxyObj = Object.create(protoObjectProxy)
     // some magic logic here
-    return obj
+    forEach(Object.getOwnPropertyNames(regularObj), copyKey.bind(this, proxyObj, regularObj))
+    return proxyObj
 }
