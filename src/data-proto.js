@@ -16,7 +16,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 function copyKey(to, from, key){
     return defineAsGetSet(to, key, from[key], from.propertyIsEnumerable(key))
 }
-var trapGetBlacklist = ["constructor"]
+var trapGetBlacklist = ["constructor", "toJSON"]
 var proxyTraps = {
     get: function(dataStash, prop, calledOn) {
         if (trapGetBlacklist.indexOf(prop) !== -1){
@@ -43,6 +43,8 @@ var proxyTraps = {
         console.log("set")
         console.log.apply(console, arguments)
 
+        defineAsGetSet(calledOn, prop, value, true)
+        return true
         Reflect.set(dataStash, prop, value, calledOn)
         return true
     }
