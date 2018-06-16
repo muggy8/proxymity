@@ -101,7 +101,5 @@ function migrateData(protoObj, input){
 	return Object.setPrototypeOf(input, protoObj)
 }
 
-var protoArrayProxy = augmentProto(Array.prototype)
-var protoObjectProxy = augmentProto(Object.prototype)
-var proxyArray = migrateData.bind(this, protoArrayProxy)
-var proxyObject = migrateData.bind(this, protoObjectProxy)
+var proxyArray = migrateData.bind(this, augmentProto(Array.prototype))
+var proxyObject = migrateData.bind(this, augmentProto(Object.prototype))
