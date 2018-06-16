@@ -11,10 +11,10 @@
 
 function proxify(value){
     if (value && Object.getPrototypeOf(value) === Object.prototype){
-        value = proxyObject(value) // defined below
+        proxyObject(value) // defined below
     }
     else if (value && Object.getPrototypeOf(value) === Array.prototype){
-        value = proxyArray(value) // defined below
+        proxyArray(value) // defined below
     }
     return value
 }
@@ -122,6 +122,32 @@ function augmentProto(originalProto){
 }
 
 function migrateData(protoObj, input){
+	input[Symbol.toPrimitive] = function(hint){
+		var watcherList = {}
+		var output = false
+		switch(hint){
+			case "number":
+				output = Object.getOwnPropertyNames(this).length
+				break
+			case "string":
+				if (Object.getOwnPropertyNames(this)){
+					output = JSON.stringify(this)
+				}
+				else {
+					output = ""
+				}
+				break
+			case watchKey:
+				output = function(where, callback){
+					console.log(where, callback)
+				}
+				break
+			case getWatchers:
+				output = watcherList
+				break
+		}
+		return output
+	}
 	forEach(Object.getOwnPropertyNames(input), function(key){
 		var propVal = input[key]
 		var enumerable = input.propertyIsEnumerable(key)
@@ -130,6 +156,7 @@ function migrateData(protoObj, input){
 		}
 	})
 	return Object.setPrototypeOf(input, protoObj)
+	// return input
 }
 
 var proxyArray = migrateData.bind(this, augmentProto(Array.prototype))
