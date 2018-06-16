@@ -8,8 +8,11 @@ function defineAsGetSet(to, key, value, enumerable = false){
         get: function(){
             return value
         },
-        set: function(val){
-            return value = val
+        set: function(input){
+            if (input === value){
+                return value
+            }
+            return value = input
         }
     })
 }
