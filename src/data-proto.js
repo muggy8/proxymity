@@ -1,4 +1,7 @@
 function copyKey(to, from, key){
+    if (to.hasOwnProperty(key)){
+        return
+    }
     Object.defineProperty(to, key, {
         enumerable: from.propertyIsEnumerable(key),
         configurable: true,
