@@ -1,17 +1,31 @@
+/*
+    Hierarchically we want to create a chain of prototypes that will reduce how often the proxy is used since it's slow. to do this we create a prototype chain that would make the proxy the last item to be accessed by the javascript run time and therefore speeding up the process of getting and setting properties. because we still need to be able to know when properties change, we'll need to to wrap everything with a getter and a setter which is much faster and should prevent the proxy from being used when accessing and updating already existing properties
+
+    the desired hierarchically is
+    [many of Data Object where we put our data] - everything in here is the "model" of the app
+        > [1 of Original Prototype mask] - this is an object that contains a property for each the original data's prototype and maps to it directly. this will make sure that even if we call a prototype method, it bypasses the proxy
+            > [1 of proxy of Original data's Prototype] - this is here incase the original data's prototype is modified and it will add that method to the mask object but it will also be able to add getters and setters to the data object. this will ensure we catch any new properties to be defined as getters and setters but also not be called that often to maximize on speed
+                > [1 prototype of the original data's prototype] - ya we likely wont be getting here but it's possible xP
+
+*/
+
 function transformValue(value){
     if (value && Object.getPrototypeOf(value) === Object.prototype){
-        value = proxyObject(value)
+        value = proxyObject(value) // defined below
     }
     else if (value && Object.getPrototypeOf(value) === Array.prototype){
-        value = proxyArray(value)
+        value = proxyArray(value) // defined below
     }
     return value
 }
 function defineAsGetSet(to, key, value, enumerable = false){
+    // we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
     if (to.hasOwnProperty(key)){
         return
     }
     value = transformValue(value)
+
+    // right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
     Object.defineProperty(to, key, {
         enumerable: enumerable,
         configurable: true,
