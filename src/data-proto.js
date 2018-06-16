@@ -1,16 +1,14 @@
-function keyCopier(context, keySource){
-    return function(key){
-        Object.defineProperty(context, key, {
-            enumerable: keySource.propertyIsEnumerable(key),
-            configurable: true,
-            get: function(){
-                return keySource[key]
-            },
-            set: function(val){
-                return keySource[key] = val
-            }
-        })
-    }
+function copyKey(to, from, key){
+    Object.defineProperty(to, key, {
+        enumerable: from.propertyIsEnumerable(key),
+        configurable: true,
+        get: function(){
+            return from[key]
+        },
+        set: function(val){
+            return from[key] = val
+        }
+    })
 }
 var proxyTraps = {
     get: function(target, prop, calledOn) {
@@ -31,8 +29,7 @@ function proxify(originalProto){
     // first we copy everything over to the new proto object that will sit everywhere so this object will catch any calls to the existing object and all parent objects to bypass and avoid the need to reach the proxy when using anything
     var getKeysFrom = originalProto
     while (getKeysFrom){
-        var copyIntoReplacement = keyCopier(replacementProto, getKeysFrom)
-        forEach(Object.getOwnPropertyNames(getKeysFrom), copyIntoReplacement)
+        forEach(Object.getOwnPropertyNames(getKeysFrom), copyKey.bind(this, replacementProto, getKeysFrom))
         getKeysFrom = Object.getPrototypeOf(getKeysFrom)
     }
 
