@@ -9,7 +9,7 @@
 
 */
 
-function transformValue(value){
+function proxify(value){
     if (value && Object.getPrototypeOf(value) === Object.prototype){
         value = proxyObject(value) // defined below
     }
@@ -23,7 +23,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
     if (to.hasOwnProperty(key)){
         return
     }
-    value = transformValue(value)
+    value = proxify(value)
 
     // right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
     Object.defineProperty(to, key, {
@@ -36,7 +36,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
             if (input === value){
                 return value
             }
-            return value = transformValue(input)
+            return value = proxify(input)
         }
     })
 }
@@ -74,7 +74,7 @@ var proxyTraps = {
         return true
     }
 }
-function proxify(originalProto){
+function augmentProto(originalProto){
     var replacementProto = {}
 
     // first we copy everything over to the new proto object that will sit above the proxy object. this object will catch any calls to the existing that would normally have to drill down the prototype chain so we can bypass the need to use the proxy since proxy is slow af
@@ -90,9 +90,6 @@ function proxify(originalProto){
     return replacementProto
 }
 
-var protoArrayProxy = new proxify(Array.prototype)
-var protoObjectProxy = new proxify(Object.prototype)
-
 function migrateData(protoObj, input){
 	forEach(Object.getOwnPropertyNames(input), function(key){
 		var propVal = input[key]
@@ -103,5 +100,8 @@ function migrateData(protoObj, input){
 	})
 	return Object.setPrototypeOf(input, protoObj)
 }
+
+var protoArrayProxy = augmentProto(Array.prototype)
+var protoObjectProxy = augmentProto(Object.prototype)
 var proxyArray = migrateData.bind(this, protoArrayProxy)
 var proxyObject = migrateData.bind(this, protoObjectProxy)
