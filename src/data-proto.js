@@ -29,7 +29,7 @@ var proxyTraps = {
 function proxify(originalProto){
     var replacementProto = {}
 
-    // first we copy everything over to the new proto object that will sit everywhere so this object will catch any calls to the existing object and all parent objects to bypass and avoid the need to reach the proxy when using anything
+    // first we copy everything over to the new proto object that will sit above the proxy object. this object will catch any calls to the existing that would normally have to drill down the prototype chain so we can bypass the need to use the proxy since proxy is slow af
     var getKeysFrom = originalProto
     while (getKeysFrom){
         forEach(Object.getOwnPropertyNames(getKeysFrom), copyKey.bind(this, replacementProto, getKeysFrom))
@@ -37,7 +37,7 @@ function proxify(originalProto){
     }
 
     // afterwards we want to set the prototype of the replacement prototype object to a proxy so when we set any new properties, we can catch that and create a getter/setter combo on the main object.
-    // we want to still retain the original proto in the proxy because in case something changes on the prototype because someone is loading in a utils library (for example, a library that adds methos to modifies array.prototype) after we are done, we are able to also reflect that and stick it into the proto layer
+    // we want to still retain the original proto in the proxy because in case something changes on the prototype because someone is loading in a utils library that modifies the prototype after we are done (for example, a library that adds methods to array.prototype), we are able to also reflect that and stick it into the proto layer above
     Object.setPrototypeOf(replacementProto, new Proxy(originalProto, proxyTraps))
     return replacementProto
 }
