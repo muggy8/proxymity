@@ -19,39 +19,14 @@ function proxify(value){
     return value
 }
 
-function notifyWatchersIn(watcherList){
-	var resolutionQueue = watcherList.map(function(fn){
-		fn.called = false
-		return fn
-	})
-	for(var index = 0; index < resolutionQueue.length; i++){
-		if (!resolutionQueue[index].called){
-			var callback = resolutionQueue[index]
-			callback()
-			if (resolutionQueue[index] !== callback){
-				index = 0
-			}
-			callback.called = true
-		}
-	}
-}
-var watchMode = false
+var emitMode = false
 function defineAsGetSet(to, key, value, enumerable = false){
     // we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
     if (to.hasOwnProperty(key)){
         return
     }
 
-	var watcherList = {}
-
     value = proxify(value)
-
-	function notifyWatchers(){
-		forEach(Object.getOwnPropertyNames(watcherList), function(name){
-			notifyWatchersIn(watcherList[name])
-		})
-	}
-
 
     // right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
     Object.defineProperty(to, key, {
@@ -64,14 +39,14 @@ function defineAsGetSet(to, key, value, enumerable = false){
             if (input === value){
                 return value
             }
-			else if (watchMode){
-				if (value.ev && (!watcherList[value.ev] || watcherList[value.ev].indexOf(value) === -1)){
-					watcherList[value.ev] = watcherList[value.ev] || []
-					watcherList.push(value)
+			else if (emitMode){
+				// do something here
+				if (value === "remap"){
+					remapEmitter()
 				}
-				watchMode = false
 				return true
 			}
+
 			return value = proxify(input)
         }
     })
@@ -104,9 +79,8 @@ var proxyTraps = {
         }
 		if (createMode) {
 			// create mode is at this time, our internal flag for when we just want to create anything so we can add listeners to it
-			var creation = {}
-			proxyTraps.set(dataStash, prop, creation, calledOn)
-			return creation
+			proxyTraps.set(dataStash, prop, {}, calledOn)
+			return calledOn[prop]
 		}
         return Reflect.get(dataStash, prop, calledOn)
     },
@@ -121,30 +95,8 @@ var proxyTraps = {
 
 function watchChange(prop, callback){
 	// logic here
-	var context = this
-	createMode = true
-	var accessProp = "this" + (prop[0].match(/\w/) ? "." : "") + prop
-	safeEval.call(context, accessProp)
-	createMode = false
-	var onChange = function(){
-		callback(safeEval.call(context, accessProp))
-	}
-	onChange.ev = "change"
-	var onRemap = function(){
-		watchChange.call(context, callback)
-	}
-	onRemap.ev = "remap"
 
-	watchMode = true
-	safeEval.call(this, accessProp + " = cb", {
-		cb: onChange
-	})
-	watchMode = true
-	safeEval.call(this, accessProp + " = cb", {
-		cb: onRemap
-	})
 }
-
 
 function augmentProto(originalProto){
     var replacementProto = {}
