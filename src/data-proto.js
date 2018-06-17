@@ -44,7 +44,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
             }
 			else if (emitMode){
 				// do something here
-				if (value === "remap"){
+				if (input === "remap"){
 					if (valueProto === Array.prototype || valueProto === Object.prototype){
 						forEach(Object.getOwnPropertyNames(value), function(name){
 							value[name] = "remap"
@@ -55,8 +55,10 @@ function defineAsGetSet(to, key, value, enumerable = false){
 				return true
 			}
 
+			console.log("checking remap", valueProto, value)
 			if (valueProto === Array.prototype || valueProto === Object.prototype){
 				emitMode = true
+				console.log(Object.getOwnPropertyNames(value))
 				forEach(Object.getOwnPropertyNames(value), function(name){
 					value[name] = "remap"
 				})
