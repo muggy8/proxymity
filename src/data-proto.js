@@ -118,12 +118,38 @@ var proxyTraps = {
         return true
     }
 }
+
+function watchChange(prop, callback){
+	// logic here
+	var context = this
+	createMode = true
+	var accessProp = "this" + (prop[0].match(/\w/) ? "." : "") + prop
+	safeEval.call(context, accessProp)
+	createMode = false
+	var onChange = function(){
+		callback(safeEval.call(context, accessProp))
+	}
+	onChange.ev = "change"
+	var onRemap = function(){
+		watchChange.call(context, callback)
+	}
+	onRemap.ev = "remap"
+
+	watchMode = true
+	safeEval.call(this, accessProp + " = cb", {
+		cb: onChange
+	})
+	watchMode = true
+	safeEval.call(this, accessProp + " = cb", {
+		cb: onRemap
+	})
+}
+
+
 function augmentProto(originalProto){
     var replacementProto = {}
 	// before we go nuts we need to set up our public api for methods on objects and what not
-	defineAsGetSet(replacementProto, "watch", function(ev, prop){
-		// logic here
-	})
+    defineAsGetSet(replacementProto, "watch", watchChange)
 
 
     // first we copy everything over to the new proto object that will sit above the proxy object. this object will catch any calls to the existing that would normally have to drill down the prototype chain so we can bypass the need to use the proxy since proxy is slow af
