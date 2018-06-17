@@ -20,6 +20,9 @@
 					return ""
 				}
 			}
+
+			events.watch(console.log)
+
             var obj = proxyObject({
                 foo: "bar",
 				bleh: "meh"
@@ -36,6 +39,11 @@
             else {
                 console.warn("test 1 failed")
             }
+
+			createMode = true
+			obj.test.test1.test2
+			createMode = false
+
 		</script>
 	</body>
 </html>
