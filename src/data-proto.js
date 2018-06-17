@@ -80,6 +80,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 function copyKey(to, from, key){
     return defineAsGetSet(to, key, from[key], from.propertyIsEnumerable(key))
 }
+var createMode = false
 var trapGetBlacklist = ["constructor", "toJSON"]
 var proxyTraps = {
     get: function(dataStash, prop, calledOn) {
@@ -101,6 +102,12 @@ var proxyTraps = {
             }
             copyKey(previousStack, dataStash, prop)
         }
+		if (createMode) {
+			// create mode is at this time, our internal flag for when we just want to create anything so we can add listeners to it
+			var creation = {}
+			proxyTraps.set(dataStash, prop, creation, calledOn)
+			return creation
+		}
         return Reflect.get(dataStash, prop, calledOn)
     },
     set: function(dataStash, prop, value, calledOn){
@@ -123,8 +130,9 @@ function augmentProto(originalProto){
     var getKeysFrom = originalProto
     while (getKeysFrom){
         forEach(Object.getOwnPropertyNames(getKeysFrom), copyKey.bind(this, replacementProto, getKeysFrom))
-        getKeysFrom = Object.getPrototypeOf(getKeysFrom)
+        getKeysFrom = Object.getPrototypeOf(getKeysFrom) // setup for next while loop iteration
     }
+
 
     // afterwards we want to set the prototype of the replacement prototype object to a proxy so when we set any new properties, we can catch that and create a getter/setter combo on the main object.
     // we want to still retain the original proto in the proxy because in case something changes on the prototype because someone is loading in a utils library that modifies the prototype after we are done (for example, a library that adds methods to array.prototype), we are able to also reflect that and stick it into the proto layer above
