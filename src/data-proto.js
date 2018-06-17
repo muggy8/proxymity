@@ -35,23 +35,21 @@ function notifyWatchersIn(watcherList){
 		}
 	}
 }
+var watchMode = false
 function defineAsGetSet(to, key, value, enumerable = false){
     // we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
     if (to.hasOwnProperty(key)){
         return
     }
+
+	var watcherList = {}
+
     value = proxify(value)
 
 	function notifyWatchers(){
-		var primitiveGetter = value[Symbol.toPrimitive]
-		if (primitiveGetter){
-			var watchers = primitiveGetter(getWatchers)
-			if (watchers && typeof watchers === "object"){
-				forEach(Object.getOwnPropertyNames(watchers), function(name){
-					notifyWatchersIn(watchers[name])
-				})
-			}
-		}
+		forEach(Object.getOwnPropertyNames(watcherList), function(name){
+			notifyWatchersIn(watcherList[name])
+		})
 	}
 
 
@@ -66,6 +64,14 @@ function defineAsGetSet(to, key, value, enumerable = false){
             if (input === value){
                 return value
             }
+			else if (watchmode){
+				if (value.ev && (!watcherList[value.ev] || watcherList[value.ev].indexOf(value) === -1)){
+					watcherList[value.ev] = watcherList[value.ev] || []
+					watcherList.push(value)
+				}
+				watchMode = false
+				return true
+			}
 			return value = proxify(input)
         }
     })
@@ -107,6 +113,11 @@ var proxyTraps = {
 }
 function augmentProto(originalProto){
     var replacementProto = {}
+	// before we go nuts we need to set up our public api for methods on objects and what not
+	defineAsGetSet(replacementProto, "watch", function(ev, prop){
+		// logic here
+	})
+
 
     // first we copy everything over to the new proto object that will sit above the proxy object. this object will catch any calls to the existing that would normally have to drill down the prototype chain so we can bypass the need to use the proxy since proxy is slow af
     var getKeysFrom = originalProto
@@ -115,47 +126,13 @@ function augmentProto(originalProto){
         getKeysFrom = Object.getPrototypeOf(getKeysFrom)
     }
 
-	// we also need to set up our public api for this thing too so we can do stuff with it
-	defineAsGetSet(replacementProto, "watch", function(prop){
-		// logic here
-	})
-
     // afterwards we want to set the prototype of the replacement prototype object to a proxy so when we set any new properties, we can catch that and create a getter/setter combo on the main object.
     // we want to still retain the original proto in the proxy because in case something changes on the prototype because someone is loading in a utils library that modifies the prototype after we are done (for example, a library that adds methods to array.prototype), we are able to also reflect that and stick it into the proto layer above
     Object.setPrototypeOf(replacementProto, new Proxy(originalProto, proxyTraps))
     return replacementProto
 }
 
-
-var watchKey = generateId(randomInt(32, 48))
-var getWatchers = generateId(randomInt(32, 48))
 function migrateData(protoObj, input){
-	input[Symbol.toPrimitive] = function(hint){
-		var watcherList = {}
-		var output = false
-		switch(hint){
-			case "number":
-				output = Object.getOwnPropertyNames(this).length
-				break
-			case "string":
-				if (Object.getOwnPropertyNames(this)){
-					output = JSON.stringify(this)
-				}
-				else {
-					output = ""
-				}
-				break
-			case watchKey:
-				output = function(where, callback){
-					console.log(where, callback)
-				}
-				break
-			case getWatchers:
-				output = watcherList
-				break
-		}
-		return output
-	}
 	forEach(Object.getOwnPropertyNames(input), function(key){
 		var propVal = input[key]
 		var enumerable = input.propertyIsEnumerable(key)
