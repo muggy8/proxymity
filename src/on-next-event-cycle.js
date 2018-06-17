@@ -8,7 +8,7 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
             emitted = true
         }
 
-		if (!queue.indexOf(fn)){
+		if (queue.indexOf(fn) === -1){
 			queue.push(fn)
 		}
     }
