@@ -26,13 +26,16 @@ function defineAsGetSet(to, key, value, enumerable = false){
         return
     }
 
-    value = proxify(value)
+	var valueProto = value && Object.getPrototypeOf(value)
+	var secretId = generateId(randomInt(32, 48))
+    proxify(value)
 
     // right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
     Object.defineProperty(to, key, {
         enumerable: enumerable,
         configurable: true,
         get: function(){
+			events.emit("get:" + secretId)
             return value
         },
         set: function(input){
@@ -42,11 +45,25 @@ function defineAsGetSet(to, key, value, enumerable = false){
 			else if (emitMode){
 				// do something here
 				if (value === "remap"){
-					remapEmitter()
+					if (valueProto === Array.prototype || valueProto === Object.prototype){
+						forEach(Object.getOwnPropertyNames(value), function(name){
+							value[name] = "remap"
+						})
+					}
+					events.async("remap:" + secretId)
 				}
 				return true
 			}
 
+			if (valueProto === Array.prototype || valueProto === Object.prototype){
+				emitMode = true
+				forEach(Object.getOwnPropertyNames(value), function(name){
+					value[name] = "remap"
+				})
+				emitMode = false
+			}
+			events.async("set:" + secretId)
+			valueProto = Object.getPrototypeOf(input)
 			return value = proxify(input)
         }
     })
