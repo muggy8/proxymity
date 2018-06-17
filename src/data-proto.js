@@ -64,7 +64,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
             if (input === value){
                 return value
             }
-			else if (watchmode){
+			else if (watchMode){
 				if (value.ev && (!watcherList[value.ev] || watcherList[value.ev].indexOf(value) === -1)){
 					watcherList[value.ev] = watcherList[value.ev] || []
 					watcherList.push(value)
