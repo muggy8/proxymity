@@ -5,7 +5,8 @@
 		<!-- <script src="proxy-bind.js"></script> -->
 		<script src="proxymity-util.js"></script>
 		<script src="subscribable.js"></script>
-		<script src="data-proto.js.js"></script>
+		<script src="data-proto.js"></script>
+		<script src="proxymity-observe.js"></script>
 		<script src="proxymity-ui.js"></script>
 	</head>
 	<body>
@@ -60,7 +61,7 @@
 				.block {
 					display: block
 				}
-			</style>`, {})
+			</style>`, proxify({}))
 			events.async("set:")
 			console.log(appendable.appendTo("body"))
 			console.log(document.querySelector("input").attributes)
