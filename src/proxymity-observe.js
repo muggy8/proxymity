@@ -1,6 +1,6 @@
 function observe(targetFinder, callbackSet, stuffToUnWatch = []){
     targetFinder()
-    var targetId = events.last("get").value
+    var targetId = events.last("get")
 
     if (isFunction(callbackSet)){
         var callback = callbackSet
