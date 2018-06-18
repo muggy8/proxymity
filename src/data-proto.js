@@ -43,19 +43,16 @@ function defineAsGetSet(to, key, value, enumerable = false){
                 return value
             }
 			else if (emitMode){
-				// do something here
-				if (input === "remap"){
-					if (valueProto === Array.prototype || valueProto === Object.prototype){
-						forEach(Object.getOwnPropertyNames(value), function(name){
-							value[name] = "remap"
-						})
-					}
-					events.async("remap:" + secretId)
+				if (valueProto === Array.prototype || valueProto === Object.prototype){
+					forEach(Object.getOwnPropertyNames(value), function(name){
+						value[name] = input
+					})
 				}
+				events.async(input + ":" + secretId)
 				return true
 			}
 
-			console.log("checking remap", valueProto, value)
+			// tell the current object in the data to be remapped if needed
 			if (valueProto === Array.prototype || valueProto === Object.prototype){
 				emitMode = true
 				console.log(Object.getOwnPropertyNames(value))
@@ -64,10 +61,18 @@ function defineAsGetSet(to, key, value, enumerable = false){
 				})
 				emitMode = false
 			}
+
+			// the remap call must happen to the current prop value if the current prop is an object of some kind and after we can check if the delete procuedure is triggered. this is because we cannot hook into the delete key word with getters and setters so we just tell users to set a value as undefined effectively delete it and thus we'll be able to do any required deletion procedure before doing the regular delete.
+			if (typeof input === "undefined"){
+				events.async("del:" + secretId)
+				return delete to[key]
+			}
+
+			// if it's not a delete opperation, well update the value of the current property and we set it, this still lets us use NULL as a empty since we're effectively overriding undefined
 			events.async("set:" + secretId)
-			valueProto = Object.getPrototypeOf(input)
+			valueProto = input && Object.getPrototypeOf(input)
 			return value = proxify(input)
-        }
+		}
     })
 }
 
@@ -112,15 +117,15 @@ var proxyTraps = {
     }
 }
 
-function watchChange(prop, callback){
-	// logic here
-
-}
+// function watchChange(prop, callback){
+// 	// logic here
+//
+// }
 
 function augmentProto(originalProto){
     var replacementProto = {}
 	// before we go nuts we need to set up our public api for methods on objects and what not
-    defineAsGetSet(replacementProto, "watch", watchChange)
+    // defineAsGetSet(replacementProto, "watch", watchChange)
 
 
     // first we copy everything over to the new proto object that will sit above the proxy object. this object will catch any calls to the existing that would normally have to drill down the prototype chain so we can bypass the need to use the proxy since proxy is slow af
