@@ -35,7 +35,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
         enumerable: enumerable,
         configurable: true,
         get: function(){
-			events.emit("get:" + secretId)
+			events.emit("get", secretId)
             return value
         },
         set: function(input){
