@@ -54,6 +54,7 @@
 					font-family: <input name="fontFace" />
 				</label>
 			</div>
+            <pre>{:JSON.stringify(this.app, null, "    "):}</pre>
 			<style>
 				pre {
 					background-color: {:this.app.background.toString() || 'initial':};
