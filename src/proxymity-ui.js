@@ -34,7 +34,9 @@ function renderCustomSyntax(textSource, containingElement, appProp){
 					var setFn = renderFn.bind(null)
 					// setFn.to = "set"
 					destroyCallbacks.push(observe(function(){
+                        createMode = true
 						safeEval.call(containingElement, "this." + appProp + (attributeToListenTo[0] === "[" ? "" : ".") + attributeToListenTo)
+                        createMode = false
 					}, renderFn))
 				})
 			}
