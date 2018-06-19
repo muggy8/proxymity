@@ -126,7 +126,12 @@ function augmentProto(originalProto){
     var replacementProto = {}
 	// before we go nuts we need to set up our public api for methods on objects and what not
     // defineAsGetSet(replacementProto, "watch", watchChange)
-
+    defineAsGetSet(replacementProto, "toString", function(){
+        if (Object.getOwnPropertyNames(this).length){
+            return JSON.stringify(this)
+        }
+        return ''
+    })
 
     // first we copy everything over to the new proto object that will sit above the proxy object. this object will catch any calls to the existing that would normally have to drill down the prototype chain so we can bypass the need to use the proxy since proxy is slow af
     var getKeysFrom = originalProto
@@ -145,6 +150,7 @@ function augmentProto(originalProto){
 function migrateData(protoObj, input){
     Object.defineProperty(input, Symbol.toPrimitive, {
         value: function(hint){
+            console.log(hint)
             if (hint === 'string'){
                 if (Object.getOwnPropertyNames(this).length){
                     return JSON.stringify(this)
