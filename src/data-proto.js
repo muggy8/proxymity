@@ -143,6 +143,20 @@ function augmentProto(originalProto){
 }
 
 function migrateData(protoObj, input){
+    Object.defineProperty(input, Symbol.toPrimitive, {
+        value: function(hint){
+            if (hint === 'string'){
+                if (Object.getOwnPropertyNames(this).length){
+                    return JSON.stringify(this)
+                }
+                return ''
+            }
+            else if (hint === 'number'){
+                return Object.getOwnPropertyNames(this).length
+            }
+            return !!Object.getOwnPropertyNames(this).length
+        }
+    })
 	forEach(Object.getOwnPropertyNames(input), function(key){
 		var propVal = input[key]
 		var enumerable = input.propertyIsEnumerable(key)
