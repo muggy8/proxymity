@@ -150,12 +150,8 @@ function augmentProto(originalProto){
 function migrateData(protoObj, input){
     Object.defineProperty(input, Symbol.toPrimitive, {
         value: function(hint){
-            console.log(hint)
             if (hint === 'string'){
-                if (Object.getOwnPropertyNames(this).length){
-                    return JSON.stringify(this)
-                }
-                return ''
+                return this.toString()
             }
             else if (hint === 'number'){
                 return Object.getOwnPropertyNames(this).length
