@@ -19,6 +19,7 @@ function renderCustomSyntax(textSource, containingElement, appProp){
 	})
 
 	// we spliced out what we had above that we can use to render the text. if have a render queue then this text is worth parsing and running and re-running on asyncstart or whatever. other wise it's jsut regular text so we ignore it :3
+    console.log(onRenderEvalQueue, sourceText)
 	if (onRenderEvalQueue.length){
 		var destroyCallbacks = []
 		var renderFn = function(){
@@ -29,13 +30,9 @@ function renderCustomSyntax(textSource, containingElement, appProp){
 			if (queuedItem.on){
 				var watchfor = []
 				forEach(queuedItem.on, function(attributeToListenTo){
-					var delFn = renderFn.bind(null)
-					// delFn.to = "del"
-					var setFn = renderFn.bind(null)
-					// setFn.to = "set"
 					destroyCallbacks.push(observe(function(){
                         createMode = true
-						safeEval.call(containingElement, "this." + appProp + (attributeToListenTo[0] === "[" ? "" : ".") + attributeToListenTo)
+						safeEval.call(containingElement, "this." + appProp + evalScriptConcatinator(attributeToListenTo) + attributeToListenTo)
                         createMode = false
 					}, renderFn))
 				})
@@ -370,7 +367,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 				// toString is for incase we get an object here for some reason which will happen when we initialize the whole process and when we do that at least the toString method of proxied objects is going to return "" if it's empty
 				try {
                     createMode = true
-					var payloadString = safeEval.call(node, "this." + propertyToDefine + (attr.value[0].match(/\w/) ? '.' : '') + attr.value, {}, true)
+					var payloadString = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
                     createMode = false
 					if (payloadString !== node.value){
 						node.value = payloadString
@@ -392,7 +389,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 				setListener = function(){
                     try{
                         createMode = true
-                        var payloadNum = safeEval.call(node, "this." + propertyToDefine + (attr.value[0].match(/\w/) ? '.' : '') + attr.value, {}, true)
+                        var payloadNum = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
                         createMode = false
     					if (isNumber(payloadNum) && payloadNum !== node.valueAsNumber){
     						node.valueAsNumber = payloadNum
@@ -412,7 +409,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 				setListener = function(){
                     try{
                         createMode = true
-                        var payloadBool = safeEval.call(node, "this." + propertyToDefine + (attr.value[0].match(/\w/) ? '.' : '') + attr.value, {}, true)
+                        var payloadBool = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
                         createMode = false
 
                         if (isBool(payloadBool) && payloadBool !== node.checked){
@@ -432,7 +429,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 				setListener = function(){
 					try{
                         createMode = true
-    					var payloadString = safeEval.call(node, "this." + propertyToDefine + (attr.value[0].match(/\w/) ? '.' : '') + attr.value, {}, true)
+    					var payloadString = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
                         createMode = false
                         payloadString = payload.value.toString()
 
@@ -460,7 +457,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 				setListener = function(payload){
                     try{
                         createMode = true
-                        var payloadDate = safeEval.call(node, "this." + propertyToDefine + (attr.value[0].match(/\w/) ? '.' : '') + attr.value, {}, true)
+                        var payloadDate = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
                         createMode = false
 
                         if (payloadDate instanceof Date && payloadDate.getTime() !== node.valueAsDate.getTime()){
@@ -483,7 +480,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 			onDestroyCallbacks.push(
 				observe(function(){
                     createMode = true
-					safeEval.call(node, "this." + propertyToDefine + (attr.value[0].match(/\w/) ? "." : "") + attr.value)
+					safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value)
                     createMode = false
 				}, [
 					{
@@ -500,7 +497,7 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 			var changeListeners = ["change", "keyup", "click"]
 			var onChange = function(ev){
 				var secretValue = generateId(randomInt(32, 48))
-				safeEval.call(node, "this." + propertyToDefine + (attr.value[0] === "[" ? "" : ".") + attr.value + " = " + secretValue, {
+				safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value + " = " + secretValue, {
 					[secretValue]: node[uiDataVal]
 				})
 			}

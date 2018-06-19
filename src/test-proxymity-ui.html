@@ -30,7 +30,7 @@
 			}
 
 			var appendable = proxyUI(`
-			<!-- This is a comment with a {:this.app.color.toString()}} -->
+			<!-- This is a comment with a {:this.app.color.toString():} -->
 			<div>
 				<label class="block">
 					color: <input name="color" />
@@ -56,12 +56,12 @@
 			</div>
 			<style>
 				pre {
-					background-color: {:this.app.background.toString() || 'initial'}};
-					color: {:this.app.color.toString() || 'initial'}};
-					padding: {:this.app.padding.toString() || 'initial'}};
-					border: {:this.app.border.toString() || 'initial'}};
-					font-size: {:this.app.fontSize.toString() || 'inherit'}};
-					font-family: {:this.app.fontFace.toString() || 'sans-serif'}}, sans-serif;
+					background-color: {:this.app.background.toString() || 'initial':};
+					color: {:this.app.color.toString() || 'initial':};
+					padding: {:this.app.padding.toString() || 'initial':};
+					border: {:this.app.border.toString() || 'initial':};
+					font-size: {:this.app.fontSize.toString() || 'inherit':};
+					font-family: {:this.app.fontFace.toString() || 'sans-serif':}, sans-serif;
 				}
 				.block {
 					display: block

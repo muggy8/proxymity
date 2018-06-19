@@ -76,3 +76,10 @@ function define(obj, key, val){
 	})
 	return val
 }
+
+function evalScriptConcatinator(targetLocation){
+    if (targetLocation[0].match(/[\w\_\$]/)){
+        return "."
+    }
+    return ""
+}
