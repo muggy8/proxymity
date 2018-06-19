@@ -364,21 +364,19 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 			// (rework below)
 
 			// this is the default setter and deleter for this property that we'll use if it's not overwritten in the if statements below
-			var setListener = function(payload){
+			var setListener = function(){
 				// toString is for incase we get an object here for some reason which will happen when we initialize the whole process and when we do that at least the toString method of proxied objects is going to return "" if it's empty
 				try {
-					var payloadString = payload.value.toString()
+                    createMode = true
+					var payloadString = safeEval.call(node, "this." + propertyToDefine + (attr.value[0].match(/\w/) ? '.' : '') + attr.value, {}, true)
+                    createMode = false
 					if (payloadString !== node.value){
 						node.value = payloadString
 					}
 				}
 				catch(o3o){ // this means the payload must be undefined or null
 					node.value = null
-				}
-			}
-			var delListener = function(payload){
-				if (isObject(payload)){
-					node.value = null
+                    createMode = false
 				}
 			}
 			var uiDataVal = "value"
@@ -389,39 +387,63 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 				nodeTypeLowercase === "range"
 			){
 				uiDataVal = "valueAsNumber"
-				setListener = function(payload){
-                    if (!payload || !isNumber(payload.value)){
-                        node.value = null
+				setListener = function(){
+                    try{
+                        createMode = true
+                        var payloadNum = safeEval.call(node, "this." + propertyToDefine + (attr.value[0].match(/\w/) ? '.' : '') + attr.value, {}, true)
+                        createMode = false
+    					if (isNumber(payloadNum) && payloadNum !== node.valueAsNumber){
+    						node.valueAsNumber = payloadNum
+    					}
+                        else if (payloadNum !== node.valueAsNumber){
+                            node.value = null
+                        }
                     }
-					else if (isNumber(payload.value) && payload.value !== node.valueAsNumber){
-						node.valueAsNumber = payload.value
-					}
+                    catch(o3o){
+                        node.value = null
+                        createMode = false
+                    }
 				}
 			}
 			else if (nodeTypeLowercase === "checkbox"){
 				uiDataVal = "checked"
-				setListener = function(payload){
-                    if (!payload || isBool(payload.value)){
-                        node.checked = false
+				setListener = function(){
+                    try{
+                        createMode = true
+                        var payloadBool = safeEval.call(node, "this." + propertyToDefine + (attr.value[0].match(/\w/) ? '.' : '') + attr.value, {}, true)
+                        createMode = false
+
+                        if (isBool(payloadBool) && payloadBool !== node.checked){
+                            node.checked = payloadBool
+                        }
+                        else if (payloadBool !== node.checked) {
+                            node.checked = false
+                        }
                     }
-					else if (isBool(payload.value) && payload.value !== node.checked){
-						node.checked = payload.value
-					}
+                    catch(o3o){
+                        node.checked = false
+                        createMode = false
+                    }
 				}
 			}
 			else if (nodeTypeLowercase === "radio"){
-				setListener = function(payload){
+				setListener = function(){
 					try{
-						var payloadString = payload.value.toString()
-						if (payload && node.value === payloadString && node.checked !== true) {
+                        createMode = true
+    					var payloadString = safeEval.call(node, "this." + propertyToDefine + (attr.value[0].match(/\w/) ? '.' : '') + attr.value, {}, true)
+                        createMode = false
+                        payloadString = payload.value.toString()
+
+						if (node.value === payloadString && !node.checked) {
 							node.checked = true
 						}
-						else if (payload && node.value !== payloadString && node.checked === true){
+						else if (node.value !== payloadString && node.checked){
 							node.checked = false
 						}
 					}
 					catch(o3o){
 						node.checked = false
+                        createMode = false
 					}
 				}
 			}
@@ -434,12 +456,22 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 			){
 				uiDataVal = "valueAsDate"
 				setListener = function(payload){
-                    if (!payload || !(payload.value instanceof Date)){
-                        node.value = null
+                    try{
+                        createMode = true
+                        var payloadDate = safeEval.call(node, "this." + propertyToDefine + (attr.value[0].match(/\w/) ? '.' : '') + attr.value, {}, true)
+                        createMode = false
+
+                        if (payloadDate instanceof Date && payloadDate.getTime() !== node.valueAsDate.getTime()){
+                            node.valueAsDate = payloadDate
+                        }
+                        else if (!(payloadDate instanceof Date)) {
+                            node.value = null
+                        }
                     }
-					else if (payload.value instanceof Date && payload.value.getTime() !== node.valueAsDate.getTime()) {
-						node.valueAsDate = payload.value
-					}
+                    catch(o3o){
+                        node.value = null
+                        createMode = false
+                    }
 				}
 			}
 
@@ -448,7 +480,9 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 
 			onDestroyCallbacks.push(
 				observe(function(){
-					safeEval.call(node, "this." + propertyToDefine + (attr.value[0] === "[" ? "" : ".") + attr.value)
+                    createMode = true
+					safeEval.call(node, "this." + propertyToDefine + (attr.value[0].match(/\w/) ? "." : "") + attr.value)
+                    createMode = false
 				}, [
 					{
 						to: "del",
