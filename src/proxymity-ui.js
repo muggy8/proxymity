@@ -23,7 +23,9 @@ function renderCustomSyntax(textSource, containingElement, appProp){
 	if (onRenderEvalQueue.length){
 		var destroyCallbacks = []
 		var renderFn = function(){
+            createMode = true
 			textSource.textContent = evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue)
+            createMode = false
 		}
 		forEach(onRenderEvalQueue, function(queuedItem){
 			var dataVar = generateId(randomInt(32, 48))
