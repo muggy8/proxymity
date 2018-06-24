@@ -107,9 +107,6 @@ function defineAsGetSet(to, key, value, enumerable = false){
 
 			// if it's not a delete opperation, well update the value of the current property and we set it, this still lets us use NULL as a empty since we're effectively overriding undefined
 			events.async("set:" + secretId)
-
-			Array.isArray(to) && events.async("set:" + to[Symbol.toPrimitive](objectId) + ".length")
-
 			valueProto = input && Object.getPrototypeOf(input)
 			attachSecretMethods(input)
 			return value = proxify(input)
@@ -118,7 +115,26 @@ function defineAsGetSet(to, key, value, enumerable = false){
 }
 
 function copyKey(to, from, key){
-    return defineAsGetSet(to, key, from[key], from.propertyIsEnumerable(key))
+	var toDefine = from[key]
+	if (isFunction(from[key])){
+		toDefine = function(){
+			// since we are overriding all the default methods we might as well overrid the default array methods to inform us that the length has changed when they're called
+
+			if (Array.isArray(this)){
+				var preCallLength = this.length
+			}
+
+			var output = from[key].call(this, Array.from(arguments))
+
+			if (isNumber(preCallLength) && preCallLength !== this.length){
+				var payload = {}
+				events.async("set:" + this[Symbol.toPrimitive](objectId) + ".length", payload)
+				payload.order = -1
+			}
+			return output
+		}
+	}
+    return defineAsGetSet(to, key, toDefine, from.propertyIsEnumerable(key))
 }
 var createMode = false
 var trapGetBlacklist = ["constructor", "toJSON"]
