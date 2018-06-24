@@ -84,6 +84,13 @@ var events = (function(){
 	}
 
 	// this is how we get the queue to resolve on the next event cycle instead of immediately
+	function renderEndProcedure(){
+		currentAsyncLoop = 0
+		emit("renderend")
+		for(var key in lastEmitLog){ // this is going to be how we make sure that we dont get a memory leak hopefully
+			delete lastEmitLog[key]
+		}
+	}
 	window.addEventListener("message", function(ev){
         if (ev.data !== nextEvent){
             return
@@ -100,9 +107,7 @@ var events = (function(){
 		// now we check how many times the loops has ran and if the loop ran too many times, we'll exit without resolving the queue
 		currentAsyncLoop++
 		if (currentAsyncLoop > maxAsyncLoop){
-			currentAsyncLoop = 0
-			emit("renderend")
-			return
+			return renderEndProcedure()
 		}
 
 		var emitOrder = propsIn(workingQueue)
@@ -130,8 +135,7 @@ var events = (function(){
 
 		// finally we can check to see if resolving this queue triggered any new events and if it didn't then we can safely reset the loop count to prep for the next render/re-render cycle to be triggered
 		if (!nextEventSet){
-			currentAsyncLoop = 0
-			emit("renderend")
+			renderEndProcedure()
 		}
 	})
 
