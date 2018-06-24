@@ -23,11 +23,11 @@
 
 			events.watch(console.log)
 
-            var obj = proxyObject({
+            var obj = proxify({
                 foo: "bar",
 				bleh: "meh"
             })
-            var arr = proxyArray([
+            var arr = proxify([
                 1,2,3
             ])
 

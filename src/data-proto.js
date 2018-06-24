@@ -12,12 +12,15 @@
 function proxify(value){
     if (value && Object.getPrototypeOf(value) === Object.prototype){
 		if (!value[Symbol.toPrimitive]){
-			toPrimitiveDefiner(value, )
+			toPrimitiveDefiner(value, generateId(randomInt(32, 48)))
 		}
         proxyObject(value) // defined below
     }
     else if (value && Object.getPrototypeOf(value) === Array.prototype){
-        proxyArray(value) // defined below
+		if (!value[Symbol.toPrimitive]){
+			toPrimitiveDefiner(value, generateId(randomInt(32, 48)))
+		}
+		proxyArray(value) // defined below
     }
     return value
 }
