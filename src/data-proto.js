@@ -28,6 +28,24 @@ function defineAsGetSet(to, key, value, enumerable = false){
 
 	var valueProto = value && Object.getPrototypeOf(value)
 	var secretId = generateId(randomInt(32, 48))
+	var attachSecretMethods = function(input, objProto){
+		if (Array.prototype !== objProto && Object.prototype !== objProto){
+			return
+		}
+
+		Object.defineProperty(input, Symbol.toPrimitive, {
+			value: function(hint){
+				if (hint === 'string'){
+					return this.toString()
+				}
+				else if (hint === 'number'){
+					return Object.getOwnPropertyNames(this).length
+				}
+				return !!Object.getOwnPropertyNames(this).length
+			}
+		})
+	}
+	attachSecretMethods(value, valueProto)
     proxify(value)
 
     // right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
@@ -71,6 +89,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 			// if it's not a delete opperation, well update the value of the current property and we set it, this still lets us use NULL as a empty since we're effectively overriding undefined
 			events.async("set:" + secretId)
 			valueProto = input && Object.getPrototypeOf(input)
+			attachSecretMethods(input, valueProto)
 			return value = proxify(input)
 		}
     })
@@ -148,17 +167,6 @@ function augmentProto(originalProto){
 }
 
 function migrateData(protoObj, input){
-    Object.defineProperty(input, Symbol.toPrimitive, {
-        value: function(hint){
-            if (hint === 'string'){
-                return this.toString()
-            }
-            else if (hint === 'number'){
-                return Object.getOwnPropertyNames(this).length
-            }
-            return !!Object.getOwnPropertyNames(this).length
-        }
-    })
 	forEach(Object.getOwnPropertyNames(input), function(key){
 		var propVal = input[key]
 		var enumerable = input.propertyIsEnumerable(key)
