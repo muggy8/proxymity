@@ -20,6 +20,8 @@ function proxify(value){
 }
 
 var emitMode = false
+var recursiveEmitter = generateId(randomInt(32, 48))
+var objectId = generateId(randomInt(32, 48))
 function defineAsGetSet(to, key, value, enumerable = false){
     // we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
     if (to.hasOwnProperty(key)){
@@ -35,13 +37,12 @@ function defineAsGetSet(to, key, value, enumerable = false){
 
 		Object.defineProperty(input, Symbol.toPrimitive, {
 			value: function(hint){
-				if (hint === 'string'){
-					return this.toString()
+				switch(hint){
+					// this switch doesn't need breaks cuz we're returning stuff and return acts as a break anyways
+					case "string": return this.toString()
+					case "number": return Object.getOwnPropertyNames(this).length
+					default: return !!Object.getOwnPropertyNames(this).length
 				}
-				else if (hint === 'number'){
-					return Object.getOwnPropertyNames(this).length
-				}
-				return !!Object.getOwnPropertyNames(this).length
 			}
 		})
 	}
