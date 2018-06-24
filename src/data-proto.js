@@ -11,6 +11,9 @@
 
 function proxify(value){
     if (value && Object.getPrototypeOf(value) === Object.prototype){
+		if (!value[Symbol.toPrimitive]){
+			toPrimitiveDefiner(value, )
+		}
         proxyObject(value) // defined below
     }
     else if (value && Object.getPrototypeOf(value) === Array.prototype){
@@ -29,6 +32,32 @@ function isArrayOrObject(obj){
 	}
 	return false
 }
+function toPrimitiveDefiner(onto, secretId){
+	var emitEventRecursively = function(eventName, emitSelf = true){
+		if (!isArrayOrObject(onto)){
+			return
+		}
+		var selfProps = propsIn(onto)
+		forEach(selfProps, function(prop){
+			var childsToPrimitive = onto[prop][Symbol.toPrimitive]
+			var childEmitter = childsToPrimitive && childsToPrimitive(recursiveEmitter)
+			isFunction(childEmitter) && childEmitter(eventName)
+		})
+		emitSelf && events.async(eventName + ":" + secretId)
+	}
+	Object.defineProperty(onto, Symbol.toPrimitive, {
+		value: function(hint){
+			switch(hint){
+				// this switch doesn't need breaks cuz we're returning stuff and return acts as a break anyways
+				case "string": return this.toString()
+				case "number": return Object.getOwnPropertyNames(this).length
+				case objectId: return secretId
+				case recursiveEmitter: return emitEventRecursively
+				default: return !!Object.getOwnPropertyNames(this).length
+			}
+		}
+	})
+}
 function defineAsGetSet(to, key, value, enumerable = false){
     // we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
     if (to.hasOwnProperty(key)){
@@ -38,35 +67,11 @@ function defineAsGetSet(to, key, value, enumerable = false){
 	// before we get onto the actual code we want to set up all of our internal methods and what not.
 	var valueProto = value && Object.getPrototypeOf(value)
 	var secretId = generateId(randomInt(32, 48))
-	var emitEventRecursively = function(eventName, emitSelf = true){
-		if (!isArrayOrObject(value)){
-			return
-		}
-		var selfProps = propsIn(value)
-		forEach(selfProps, function(prop){
-			var childsToPrimitive = value[prop][Symbol.toPrimitive]
-			var childEmitter = childsToPrimitive && childsToPrimitive(recursiveEmitter)
-			isFunction(childEmitter) && childEmitter(eventName)
-		})
-		emitSelf && events.async(eventName + ":" + secretId)
-	}
 	var attachSecretMethods = function(input){
 		if (!isArrayOrObject(input)){
 			return
 		}
-
-		Object.defineProperty(input, Symbol.toPrimitive, {
-			value: function(hint){
-				switch(hint){
-					// this switch doesn't need breaks cuz we're returning stuff and return acts as a break anyways
-					case "string": return this.toString()
-					case "number": return Object.getOwnPropertyNames(this).length
-					case objectId: return secretId
-					case recursiveEmitter: return emitEventRecursively
-					default: return !!Object.getOwnPropertyNames(this).length
-				}
-			}
-		})
+		toPrimitiveDefiner(input, secretId)
 	}
 	attachSecretMethods(value)
     proxify(value)
@@ -84,8 +89,12 @@ function defineAsGetSet(to, key, value, enumerable = false){
                 return value
             }
 
+			console.log("set", to, key, input)
+
 			// tell the current object in the data to be remapped if needed
-			emitEventRecursively("remap", false)
+			if (valueProto === Object.prototype || valueProto === Array.prototype){
+				value[Symbol.toPrimitive](recursiveEmitter)("remap", false)
+			}
 
 			// the remap call must happen to the current prop value if the current prop is an object of some kind and after we can check if the delete procuedure is triggered. this is because we cannot hook into the delete key word with getters and setters so we just tell users to set a value as undefined effectively delete it and thus we'll be able to do any required deletion procedure before doing the regular delete.
 			if (typeof input === "undefined"){
@@ -95,6 +104,9 @@ function defineAsGetSet(to, key, value, enumerable = false){
 
 			// if it's not a delete opperation, well update the value of the current property and we set it, this still lets us use NULL as a empty since we're effectively overriding undefined
 			events.async("set:" + secretId)
+
+			Array.isArray(to) && events.async("set:" + to[Symbol.toPrimitive](objectId) + ".length")
+
 			valueProto = input && Object.getPrototypeOf(input)
 			attachSecretMethods(input)
 			return value = proxify(input)
