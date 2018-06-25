@@ -6,12 +6,11 @@ var proxymity = (function(safeEval){
 
 	var publicUse = function(view, initialData = {}, modelProperty = "app"){
 		var proxied
-		var dataHasSecretId = initialData[getSecretId]
-		if (isFunction(dataHasSecretId)){
+		if (isFunction(initialData[Symbol.toPrimitive]) && isString(initialData[Symbol.toPrimitive](objectId))){
 			proxied = initialData
 		}
 		else {
-			proxied = proxyObj(initialData)
+			proxied = proxify(initialData)
 		}
 		events.async("set:")
 		// events.watch("asyncstart", function(ev){
@@ -38,7 +37,7 @@ var proxymity = (function(safeEval){
 		})
 		return ui
 	}
-	define(publicUse, "convert", proxyObj)
+	define(publicUse, "convert", proxify)
 	return publicUse
 })(function(s, sv = {}){
 	var os = s

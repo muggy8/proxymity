@@ -138,6 +138,7 @@ function copyKey(to, from, key){
 }
 var createMode = false
 var trapGetBlacklist = ["constructor", "toJSON"]
+var secretLength = generateId(randomInt(32, 48))
 var proxyTraps = {
     get: function(dataStash, prop, calledOn) {
         if (trapGetBlacklist.indexOf(prop) !== -1){
@@ -145,6 +146,9 @@ var proxyTraps = {
         }
         console.log("get")
         console.log.apply(console, arguments)
+		if (prop === secretLength){
+			return events.emit("get", calledOn[Symbol.toPrimitive](objectId) + ".length")
+		}
         if (prop in dataStash){
             // someone modified the prototype of this object D: time to take the procedure of finding the object that's just above the current object
             var stashProto = Object.getPrototypeOf(dataStash)
