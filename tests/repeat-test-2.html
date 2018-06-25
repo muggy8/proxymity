@@ -19,14 +19,14 @@
 				{:console.log("outer", this.index1, this.index2):}|{item.notifications[this.index1]}|
 				<div>
 					<!-- foreach: {
-						console.warn(this.index1, this.app.item.notifications.objectify())
+						console.warn(this.index1, this.app.item.notifications)
 						this.app.item.notifications[this.index1].push({})
 						key("index2").in(this.app.item.notifications[this.index1])
 					} -->
 					{:console.log("inner", this.index1, this.index2):}|{item.notifications[this.index1][this.index2]}|
 					<br>
 					<!-- foreach: key.end() -->
-					<button onclick="console.log(this.index1, this.app.item.notifications.objectify(), this.app.item.notifications[this.index1]); this.app.item.notifications[this.index1].push({})">add Inner</button>
+					<button onclick="console.log(this.index1, this.app.item.notifications, this.app.item.notifications[this.index1]); this.app.item.notifications[this.index1].push({})">add Inner</button>
 				</div>
 			<!-- foreach: key.end() -->
 			<button  onclick="this.app.item.notifications.push([])">add outer</button>
