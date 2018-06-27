@@ -23,7 +23,7 @@
 						this.app.item.notifications[this.index1].push({})
 						key("index2").in(this.app.item.notifications[this.index1])
 					} -->
-					{:console.log("inner", this.index1, this.index2):}|{item.notifications[this.index1][this.index2]}|
+					<span onclick=" this.app.item.notifications[this.index1].splice(this.index2, 1)">{:console.log("inner", this.index1, this.index2):}|{item.notifications[this.index1][this.index2]}|</span>
 					<br>
 					<!-- foreach: key.end() -->
 					<button onclick="console.log(this.index1, this.app.item.notifications, this.app.item.notifications[this.index1]); this.app.item.notifications[this.index1].push({})">add Inner</button>

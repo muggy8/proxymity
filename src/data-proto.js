@@ -124,7 +124,7 @@ function copyKey(to, from, key){
 				var preCallLength = this.length
 			}
 
-			var output = from[key].call(this, Array.from(arguments))
+			var output = from[key].apply(this, Array.from(arguments))
 
 			if (isNumber(preCallLength) && preCallLength !== this.length){
 				var payload = {}
