@@ -39,7 +39,7 @@ function objectToPrimitiveCaller(obj, methodToCall){
     var objPrimitive = obj && obj[Symbol.toPrimitive]
     var targetMember = isFunction(objPrimitive) && objPrimitive(methodToCall)
     if (isFunction(targetMember)){
-        return targetMember.apply(this, Array.prototype.slice.call(arguments, 2))
+        return targetMember.apply(obj, Array.prototype.slice.call(arguments, 2))
     }
     else {
         return targetMember
@@ -47,15 +47,9 @@ function objectToPrimitiveCaller(obj, methodToCall){
 }
 function toPrimitiveDefiner(onto, secretId){
 	var emitEventRecursively = function(eventName, emitSelf = true){
-		if (!isArrayOrObject(onto)){
-			return
-		}
-		var selfProps = propsIn(onto)
-		forEach(selfProps, function(prop){
-			// var childsToPrimitive = onto[prop][Symbol.toPrimitive]
-			// var childEmitter = childsToPrimitive && childsToPrimitive(recursiveEmitter)
-			// isFunction(childEmitter) && childEmitter(eventName)
-            objectToPrimitiveCaller(onto, recursiveEmitter, eventName)
+		var selfProps = onto && propsIn(onto)
+		selfProps && forEach(selfProps, function(prop){
+            objectToPrimitiveCaller(onto[prop], recursiveEmitter, eventName)
 		})
 		emitSelf && events.async(eventName + ":" + secretId)
 	}
@@ -115,9 +109,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 			console.log("set", to, key, input)
 
 			// tell the current object in the data to be remapped if needed
-			if (valueProto === Object.prototype || valueProto === Array.prototype){
-                objectToPrimitiveCaller(value, recursiveEmitter, "remap")
-			}
+            objectToPrimitiveCaller(value, recursiveEmitter, "remap")
 
 			// the remap call must happen to the current prop value if the current prop is an object of some kind and after we can check if the delete procuedure is triggered. this is because we cannot hook into the delete key word with getters and setters so we just tell users to set a value as undefined effectively delete it and thus we'll be able to do any required deletion procedure before doing the regular delete.
 			if (typeof input === "undefined"){
