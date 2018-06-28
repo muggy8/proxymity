@@ -35,6 +35,16 @@ function isArrayOrObject(obj){
 	}
 	return false
 }
+function objectToPrimitiveCaller(obj, methodToCall){
+    var objPrimitive = obj && obj[Symbol.toPrimitive]
+    var targetMember = isFunction(objPrimitive) && objPrimitive(methodToCall)
+    if (isFunction(targetMember)){
+        return targetMember.apply(this, Array.prototype.slice.call(arguments, 2))
+    }
+    else {
+        return targetMember
+    }
+}
 function toPrimitiveDefiner(onto, secretId){
 	var emitEventRecursively = function(eventName, emitSelf = true){
 		if (!isArrayOrObject(onto)){
@@ -42,19 +52,28 @@ function toPrimitiveDefiner(onto, secretId){
 		}
 		var selfProps = propsIn(onto)
 		forEach(selfProps, function(prop){
-			var childsToPrimitive = onto[prop][Symbol.toPrimitive]
-			var childEmitter = childsToPrimitive && childsToPrimitive(recursiveEmitter)
-			isFunction(childEmitter) && childEmitter(eventName)
+			// var childsToPrimitive = onto[prop][Symbol.toPrimitive]
+			// var childEmitter = childsToPrimitive && childsToPrimitive(recursiveEmitter)
+			// isFunction(childEmitter) && childEmitter(eventName)
+            objectToPrimitiveCaller(onto, recursiveEmitter, eventName)
 		})
 		emitSelf && events.async(eventName + ":" + secretId)
 	}
+    var getSetSecretId = function(id){
+        if (id){
+            return secretId = id
+        }
+        else {
+            return secretId
+        }
+    }
 	Object.defineProperty(onto, Symbol.toPrimitive, {
 		value: function(hint){
 			switch(hint){
 				// this switch doesn't need breaks cuz we're returning stuff and return acts as a break anyways
 				case "string": return this.toString()
 				case "number": return Object.getOwnPropertyNames(this).length
-				case objectId: return secretId
+				case objectId: return getSetSecretId
 				case recursiveEmitter: return emitEventRecursively
 				default: return !!Object.getOwnPropertyNames(this).length
 			}
@@ -69,7 +88,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 
 	// before we get onto the actual code we want to set up all of our internal methods and what not.
 	var valueProto = value && Object.getPrototypeOf(value)
-	var secretId = generateId(randomInt(32, 48))
+	var secretId = generateId(randomInt(32, 48)) // this secret id represents the relationship between this item's parent and this item's children as a result, the secret will not change even if the value is saved
 	var attachSecretMethods = function(input){
 		if (!isArrayOrObject(input)){
 			return
@@ -84,6 +103,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
         enumerable: enumerable,
         configurable: true,
         get: function(){
+            objectToPrimitiveCaller(value, objectId, secretId)
 			events.emit("get", secretId)
             return value
         },
@@ -96,7 +116,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 
 			// tell the current object in the data to be remapped if needed
 			if (valueProto === Object.prototype || valueProto === Array.prototype){
-				value[Symbol.toPrimitive](recursiveEmitter)("remap", false)
+                objectToPrimitiveCaller(value, recursiveEmitter, "remap")
 			}
 
 			// the remap call must happen to the current prop value if the current prop is an object of some kind and after we can check if the delete procuedure is triggered. this is because we cannot hook into the delete key word with getters and setters so we just tell users to set a value as undefined effectively delete it and thus we'll be able to do any required deletion procedure before doing the regular delete.
@@ -128,7 +148,7 @@ function copyKey(to, from, key){
 
 			if (isNumber(preCallLength) && preCallLength !== this.length){
 				var payload = {}
-				events.async("set:" + this[Symbol.toPrimitive](objectId) + ".length", payload)
+				events.async("set:" + objectToPrimitiveCaller(this, objectId) + ".length", payload)
 				payload.order = -1
 			}
 			return output
@@ -147,7 +167,8 @@ var proxyTraps = {
         console.log("get")
         console.log.apply(console, arguments)
 		if (prop === secretLength){
-			return events.emit("get", calledOn[Symbol.toPrimitive](objectId) + ".length")
+            objectToPrimitiveCaller(calledOn, objectId)
+			return events.emit("get", objectToPrimitiveCaller(calledOn, objectId) + ".length")
 		}
         if (prop in dataStash){
             // someone modified the prototype of this object D: time to take the procedure of finding the object that's just above the current object

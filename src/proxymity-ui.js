@@ -182,10 +182,7 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 			return stubKey
 		}
 		stubKey.in = function(arr){
-			if (!arr || !(
-				isFunction(arr[Symbol.toPrimitive]) &&
-				isString(arr[Symbol.toPrimitive](objectId))
-			)){
+			if (!isString(objectToPrimitiveCaller(arr, objectId))){
 				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
 			}
 			repeatBody.source = arr
