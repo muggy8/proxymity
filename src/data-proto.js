@@ -30,7 +30,7 @@ var recursiveEmitter = generateId(randomInt(32, 48))
 var objectId = generateId(randomInt(32, 48))
 function isArrayOrObject(obj){
 	var objProto = obj && Object.getPrototypeOf(obj)
-	if (objProto === Array.prototype || objProto === Object.prototype){
+	if (objProto === Array.prototype || objProto === Object.prototype || objProto === augmentedArrayProto || objProto === augmentedObjectProto){
 		return true
 	}
 	return false
@@ -74,6 +74,13 @@ function toPrimitiveDefiner(onto, secretId){
 		}
 	})
 }
+function internalMethod(f){
+    Object.setPrototypeOf(f, internalMethod.prototype)
+    return f
+}
+internalMethod.prototype = Object.create(Function.prototype)
+
+var getSecretEmitter = false;
 function defineAsGetSet(to, key, value, enumerable = false){
     // we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
     if (to.hasOwnProperty(key)){
@@ -83,13 +90,15 @@ function defineAsGetSet(to, key, value, enumerable = false){
 	// before we get onto the actual code we want to set up all of our internal methods and what not.
 	var valueProto = value && Object.getPrototypeOf(value)
 	var secretId = generateId(randomInt(32, 48)) // this secret id represents the relationship between this item's parent and this item's children as a result, the secret will not change even if the value is saved
-	var attachSecretMethods = function(input){
-		if (!isArrayOrObject(input)){
-			return
-		}
-		toPrimitiveDefiner(input, secretId)
-	}
-	attachSecretMethods(value)
+
+    var emitEventRecursively = internalMethod(function(eventName, emitSelf = true){
+		var selfProps = value && propsIn(value)
+		selfProps && forEach(selfProps, function(prop){
+            objectToPrimitiveCaller(onto[prop], recursiveEmitter, eventName)
+		})
+		emitSelf && events.async(eventName + ":" + secretId)
+	})
+
     proxify(value)
 
     // right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
@@ -97,16 +106,20 @@ function defineAsGetSet(to, key, value, enumerable = false){
         enumerable: enumerable,
         configurable: true,
         get: function(){
-            objectToPrimitiveCaller(value, objectId, secretId)
-			events.emit("get", secretId)
-            return value
+            if (getSecretEmitter){
+                getSecretEmitter = false
+                return emitEventRecursively
+            } else {
+                events.emit("get", secretId)
+                return value
+            }
         },
         set: function(input){
             if (input === value){
                 return value
             }
 
-			console.log("set", to, key, input)
+			// console.log("set", to, key, input)
 
 			// tell the current object in the data to be remapped if needed
             objectToPrimitiveCaller(value, recursiveEmitter, "remap", false)
@@ -156,8 +169,8 @@ var proxyTraps = {
         if (trapGetBlacklist.indexOf(prop) !== -1){
             return
         }
-        console.log("get")
-        console.log.apply(console, arguments)
+        // console.log("get")
+        // console.log.apply(console, arguments)
 		if (prop === secretLength){
             objectToPrimitiveCaller(calledOn, objectId)
 			return events.emit("get", objectToPrimitiveCaller(calledOn, objectId) + ".length")
@@ -183,8 +196,8 @@ var proxyTraps = {
         return Reflect.get(dataStash, prop, calledOn)
     },
     set: function(dataStash, prop, value, calledOn){
-        console.log("set")
-        console.log.apply(console, arguments)
+        // console.log("set")
+        // console.log.apply(console, arguments)
 
         defineAsGetSet(calledOn, prop, value, true)
         return true
@@ -232,6 +245,7 @@ function migrateData(protoObj, input){
 	return Object.setPrototypeOf(input, protoObj)
 	// return input
 }
-
-var proxyArray = migrateData.bind(this, augmentProto(Array.prototype))
-var proxyObject = migrateData.bind(this, augmentProto(Object.prototype))
+var augmentedArrayProto = augmentProto(Array.prototype)
+var augmentedObjectProto = augmentProto(Object.prototype)
+var proxyArray = migrateData.bind(this, augmentedArrayProto)
+var proxyObject = migrateData.bind(this, augmentedObjectProto)
