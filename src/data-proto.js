@@ -109,7 +109,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 			console.log("set", to, key, input)
 
 			// tell the current object in the data to be remapped if needed
-            objectToPrimitiveCaller(value, recursiveEmitter, "remap")
+            objectToPrimitiveCaller(value, recursiveEmitter, "remap", false)
 
 			// the remap call must happen to the current prop value if the current prop is an object of some kind and after we can check if the delete procuedure is triggered. this is because we cannot hook into the delete key word with getters and setters so we just tell users to set a value as undefined effectively delete it and thus we'll be able to do any required deletion procedure before doing the regular delete.
 			if (typeof input === "undefined"){
