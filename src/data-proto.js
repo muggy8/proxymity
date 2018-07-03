@@ -88,15 +88,24 @@ function defineAsGetSet(to, key, value, enumerable = false){
     }
 
 	// before we get onto the actual code we want to set up all of our internal methods and what not.
-	var valueProto = value && Object.getPrototypeOf(value)
 	var secretId = generateId(randomInt(32, 48)) // this secret id represents the relationship between this item's parent and this item's children as a result, the secret will not change even if the value is saved
 
     var emitEventRecursively = internalMethod(function(eventName, emitSelf = true){
+		var selfProps = isArrayOrObject(value) && propsIn(value)
+		selfProps && forEach(selfProps, function(key){
+			getSecretEmitter = true
+			var emitterFn = value[key]
+			(emitterFn instanceof internalMethod) && emitterFn(eventName)
+		})
+		console.log("Event:", eventName, emitSelf)
+		emitSelf && events.async(eventName + ":" + secretId)
+		/*
 		var selfProps = value && propsIn(value)
 		selfProps && forEach(selfProps, function(prop){
             objectToPrimitiveCaller(onto[prop], recursiveEmitter, eventName)
 		})
 		emitSelf && events.async(eventName + ":" + secretId)
+		*/
 	})
 
     proxify(value)
@@ -122,7 +131,8 @@ function defineAsGetSet(to, key, value, enumerable = false){
 			// console.log("set", to, key, input)
 
 			// tell the current object in the data to be remapped if needed
-            objectToPrimitiveCaller(value, recursiveEmitter, "remap", false)
+            // objectToPrimitiveCaller(value, recursiveEmitter, "remap", false)
+            emitEventRecursively("remap", false)
 
 			// the remap call must happen to the current prop value if the current prop is an object of some kind and after we can check if the delete procuedure is triggered. this is because we cannot hook into the delete key word with getters and setters so we just tell users to set a value as undefined effectively delete it and thus we'll be able to do any required deletion procedure before doing the regular delete.
 			if (typeof input === "undefined"){
@@ -132,8 +142,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 
 			// if it's not a delete opperation, well update the value of the current property and we set it, this still lets us use NULL as a empty since we're effectively overriding undefined
 			events.async("set:" + secretId)
-			valueProto = input && Object.getPrototypeOf(input)
-			attachSecretMethods(input)
+			// attachSecretMethods(input)
 			return value = proxify(input)
 		}
     })
