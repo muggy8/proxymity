@@ -11,15 +11,9 @@
 
 function proxify(value){
     if (value && Object.getPrototypeOf(value) === Object.prototype){
-		if (!value[Symbol.toPrimitive]){
-			toPrimitiveDefiner(value, generateId(randomInt(32, 48)))
-		}
         proxyObject(value) // defined below
     }
     else if (value && Object.getPrototypeOf(value) === Array.prototype){
-		if (!value[Symbol.toPrimitive]){
-			toPrimitiveDefiner(value, generateId(randomInt(32, 48)))
-		}
 		proxyArray(value) // defined below
     }
     return value
@@ -35,45 +29,7 @@ function isArrayOrObject(obj){
 	}
 	return false
 }
-function objectToPrimitiveCaller(obj, methodToCall){
-    var objPrimitive = obj && obj[Symbol.toPrimitive]
-    var targetMember = isFunction(objPrimitive) && objPrimitive(methodToCall)
-    if (isFunction(targetMember)){
-        return targetMember.apply(obj, Array.prototype.slice.call(arguments, 2))
-    }
-    else {
-        return targetMember
-    }
-}
-function toPrimitiveDefiner(onto, secretId){
-	var emitEventRecursively = function(eventName, emitSelf = true){
-		var selfProps = onto && propsIn(onto)
-		selfProps && forEach(selfProps, function(prop){
-            objectToPrimitiveCaller(onto[prop], recursiveEmitter, eventName)
-		})
-		emitSelf && events.async(eventName + ":" + secretId)
-	}
-    var getSetSecretId = function(id){
-        if (id){
-            return secretId = id
-        }
-        else {
-            return secretId
-        }
-    }
-	Object.defineProperty(onto, Symbol.toPrimitive, {
-		value: function(hint){
-			switch(hint){
-				// this switch doesn't need breaks cuz we're returning stuff and return acts as a break anyways
-				case "string": return this.toString()
-				case "number": return Object.getOwnPropertyNames(this).length
-				case objectId: return getSetSecretId
-				case recursiveEmitter: return emitEventRecursively
-				default: return !!Object.getOwnPropertyNames(this).length
-			}
-		}
-	})
-}
+
 function internalMethod(f){
     Object.setPrototypeOf(f, internalMethod.prototype)
     return f
@@ -99,13 +55,6 @@ function defineAsGetSet(to, key, value, enumerable = false){
 		})
 		console.log("Event: " + eventName, emitSelf)
 		emitSelf && events.async(eventName + ":" + secretId)
-		/*
-		var selfProps = value && propsIn(value)
-		selfProps && forEach(selfProps, function(prop){
-            objectToPrimitiveCaller(onto[prop], recursiveEmitter, eventName)
-		})
-		emitSelf && events.async(eventName + ":" + secretId)
-		*/
 	})
 
     proxify(value)
@@ -161,9 +110,9 @@ function copyKey(to, from, key){
 			var output = from[key].apply(this, Array.from(arguments))
 
 			if (isNumber(preCallLength) && preCallLength !== this.length){
-				var payload = {}
-				events.async("set:" + objectToPrimitiveCaller(this, objectId) + ".length", payload)
-				payload.order = -1
+				// var payload = {}
+				// events.async("set:" + objectToPrimitiveCaller(this, objectId) + ".length", payload)
+				// payload.order = -1
 			}
 			return output
 		}
