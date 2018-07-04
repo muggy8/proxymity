@@ -19,9 +19,6 @@ function proxify(value){
     return value
 }
 
-var emitMode = false
-var recursiveEmitter = generateId(randomInt(32, 48))
-var objectId = generateId(randomInt(32, 48))
 function isArrayOrObject(obj){
 	var objProto = obj && Object.getPrototypeOf(obj)
 	if (objProto === Array.prototype || objProto === Object.prototype || objProto === augmentedArrayProto || objProto === augmentedObjectProto){
@@ -36,6 +33,23 @@ function internalMethod(f){
 }
 internalMethod.prototype = Object.create(Function.prototype)
 
+var hiddenIds = generateId(randomInt(32, 48))
+var hiddenKey = Symbol.toPrimitive
+function initializeKeyStore = function(obj){
+	if (isArrayOrObject(obj) && typeof obj[hiddenKey] === "undefined"){
+		var hiddenIdObject = {}
+		Object.defineProperty(obj, hiddenKey, {
+			value: function(hint, key, value){
+				switch(hint){
+					case "number": return propsIn(this).length
+					case "string": return propsIn(this).length ? JSON.stringify(this) : "" 
+					case hiddenIds: return hiddenIdObject
+					default: return !!propsIn(this).length
+				}
+			}
+		})
+	}
+}
 var getSecretEmitter = false;
 function defineAsGetSet(to, key, value, enumerable = false){
     // we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
