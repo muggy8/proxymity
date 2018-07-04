@@ -38,7 +38,7 @@ function initializeKeyStore(obj){
 	if (isArrayOrObject(obj) && typeof obj[hiddenKey] === "undefined"){
 		var hiddenIdObject = {}
 		Object.defineProperty(obj, hiddenKey, {
-			value: function(hint, key, value){
+			value: function(hint){
 				switch(hint){
 					case "number": return propsIn(this).length
 					case "string": return propsIn(this).length ? JSON.stringify(this) : "" 
@@ -47,6 +47,19 @@ function initializeKeyStore(obj){
 				}
 			}
 		})
+	}
+}
+function getKeyStore(obj){
+	if (isArrayOrObject(obj) && isFunction(obj[hiddenKey])){
+		var hiddenObj = obj[hiddenKey](hiddenIds)
+		if (typeof hiddenOb === "object"){
+			return hiddenObj
+		}
+		else{
+			initializeKeyStore(obj)
+			hiddenObj = obj[hiddenKey](hiddenIds)
+			return (typeof hiddenObj === "object") ? hiddenObj : false
+		}
 	}
 }
 var getSecretEmitter = false;
@@ -69,6 +82,8 @@ function defineAsGetSet(to, key, value, enumerable = false){
 		console.log("Event: " + eventName, emitSelf)
 		emitSelf && events.async(eventName + ":" + secretId)
 	})
+
+	initializeKeyStore(to)
 
     proxify(value)
 
