@@ -83,7 +83,11 @@ function defineAsGetSet(to, key, value, enumerable = false){
 		emitSelf && events.async(eventName + ":" + secretId)
 	})
 
-	initializeKeyStore(to)
+	var toSecretIdObj = getKeyStore(to)
+	if (toSecretIdObj){
+		toSecretIdObj[key] = generateId(randomInt(32, 48)) // this is the relation between the parent aka an object and the property of the child,
+	}
+
 
     proxify(value)
 
