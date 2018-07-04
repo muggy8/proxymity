@@ -6,7 +6,6 @@
         > [1 of Original Prototype mask] - this is an object that contains a property for each the original data's prototype and maps to it directly. this will make sure that even if we call a prototype method, it bypasses the proxy
             > [1 of proxy of Original data's Prototype] - this is here incase the original data's prototype is modified and it will add that method to the mask object but it will also be able to add getters and setters to the data object. this will ensure we catch any new properties to be defined as getters and setters but also not be called that often to maximize on speed
                 > [1 prototype of the original data's prototype] - ya we likely wont be getting here but it's possible xP
-
 */
 
 function proxify(value){
@@ -35,7 +34,7 @@ internalMethod.prototype = Object.create(Function.prototype)
 
 var hiddenIds = generateId(randomInt(32, 48))
 var hiddenKey = Symbol.toPrimitive
-function initializeKeyStore = function(obj){
+function initializeKeyStore(obj){
 	if (isArrayOrObject(obj) && typeof obj[hiddenKey] === "undefined"){
 		var hiddenIdObject = {}
 		Object.defineProperty(obj, hiddenKey, {
