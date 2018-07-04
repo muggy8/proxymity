@@ -95,9 +95,9 @@ function defineAsGetSet(to, key, value, enumerable = false){
 		selfProps && forEach(selfProps, function(key){
 			getSecretEmitter = true
 			var emitterFn = value[key]
-			(emitterFn instanceof internalMethod) && emitterFn(eventName)
+			;(emitterFn instanceof internalMethod) && emitterFn(eventName)
 		})
-		console.log("Event:", eventName, emitSelf)
+		console.log("Event: " + eventName, emitSelf)
 		emitSelf && events.async(eventName + ":" + secretId)
 		/*
 		var selfProps = value && propsIn(value)
