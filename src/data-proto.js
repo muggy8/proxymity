@@ -61,6 +61,7 @@ function getKeyStore(obj){
 			return (typeof hiddenObj === "object") ? hiddenObj : false
 		}
 	}
+	return {}
 }
 var getSecretEmitter = false;
 function defineAsGetSet(to, key, value, enumerable = false){
@@ -70,10 +71,10 @@ function defineAsGetSet(to, key, value, enumerable = false){
     }
     
     var toPropIds = getKeyStore(to)
-    toPropIds[key] = toPropIds[key] || generateId(randomInt(32, 48))
+    var secretId = toPropIds[key] = toPropIds[key] || generateId(randomInt(32, 48))
 
 	// before we get onto the actual code we want to set up all of our internal methods and what not.
-	var secretId = generateId(randomInt(32, 48)) // this secret id represents the relationship between this item's parent and this item's children as a result, the secret will not change even if the value is saved
+	// generateId(randomInt(32, 48)) // this secret id represents the relationship between this item's parent and this item's children as a result, the secret will not change even if the value is saved
 
     var emitEventRecursively = internalMethod(function(eventName, emitSelf = true){
 		var selfProps = isArrayOrObject(value) && propsIn(value)
@@ -90,7 +91,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 	if (toSecretIdObj){
 		toSecretIdObj[key] = generateId(randomInt(32, 48)) // this is the relation between the parent aka an object and the property of the child,
 	}
-
+	
 
     proxify(value)
 
