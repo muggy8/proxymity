@@ -68,6 +68,9 @@ function defineAsGetSet(to, key, value, enumerable = false){
     if (to.hasOwnProperty(key)){
         return
     }
+    
+    var toPropIds = getKeyStore(to)
+    toPropIds[key] = toPropIds[key] || generateId(randomInt(32, 48))
 
 	// before we get onto the actual code we want to set up all of our internal methods and what not.
 	var secretId = generateId(randomInt(32, 48)) // this secret id represents the relationship between this item's parent and this item's children as a result, the secret will not change even if the value is saved
