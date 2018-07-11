@@ -41,7 +41,7 @@ function initializeKeyStore(obj){
 			value: function(hint){
 				switch(hint){
 					case "number": return propsIn(this).length
-					case "string": return propsIn(this).length ? JSON.stringify(this) : "" 
+					case "string": return propsIn(this).length ? JSON.stringify(this) : ""
 					case hiddenIds: return hiddenIdObject
 					default: return !!propsIn(this).length
 				}
@@ -50,16 +50,13 @@ function initializeKeyStore(obj){
 	}
 }
 function getKeyStore(obj){
-	if (isArrayOrObject(obj) && isFunction(obj[hiddenKey])){
+    var hiddenObj
+	if (isArrayOrObject(obj)){
+        if (!isFunction(obj[hiddenKey])){
+            initializeKeyStore(obj)
+        }
 		var hiddenObj = obj[hiddenKey](hiddenIds)
-		if (typeof hiddenOb === "object"){
-			return hiddenObj
-		}
-		else{
-			initializeKeyStore(obj)
-			hiddenObj = obj[hiddenKey](hiddenIds)
-			return (typeof hiddenObj === "object") ? hiddenObj : false
-		}
+		return (typeof hiddenObj === "object") ? hiddenObj : false
 	}
 	return {}
 }
@@ -69,7 +66,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
     if (to.hasOwnProperty(key)){
         return
     }
-    
+
     var toPropIds = getKeyStore(to)
     var secretId = toPropIds[key] = toPropIds[key] || generateId(randomInt(32, 48))
 
@@ -91,7 +88,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 	if (toSecretIdObj){
 		toSecretIdObj[key] = generateId(randomInt(32, 48)) // this is the relation between the parent aka an object and the property of the child,
 	}
-	
+
 
     proxify(value)
 
