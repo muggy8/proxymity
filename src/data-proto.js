@@ -33,11 +33,15 @@ function internalMethod(f){
 internalMethod.prototype = Object.create(Function.prototype)
 
 var hiddenIds = generateId(randomInt(32, 48))
-var hiddenKey = Symbol.toPrimitive
 function initializeKeyStore(obj){
-	if (isArrayOrObject(obj) && typeof obj[hiddenKey] === "undefined"){
+	if (isArrayOrObject(obj) && typeof obj[Symbol.toPrimitive] === "undefined"){
 		var hiddenIdObject = {}
-		Object.defineProperty(obj, hiddenKey, {
+
+        if (Array.isArray(obj)){
+            hiddenIdObject.length = generateId(randomInt(32, 48))
+        }
+
+        Object.defineProperty(obj, Symbol.toPrimitive, {
 			value: function(hint){
 				switch(hint){
 					case "number": return propsIn(this).length
@@ -52,10 +56,10 @@ function initializeKeyStore(obj){
 function getKeyStore(obj){
     var hiddenObj
 	if (isArrayOrObject(obj)){
-        if (!isFunction(obj[hiddenKey])){
+        if (!isFunction(obj[Symbol.toPrimitive])){
             initializeKeyStore(obj)
         }
-		var hiddenObj = obj[hiddenKey](hiddenIds)
+		var hiddenObj = obj[Symbol.toPrimitive](hiddenIds)
 		return (typeof hiddenObj === "object") ? hiddenObj : false
 	}
 	return {}
@@ -88,7 +92,6 @@ function defineAsGetSet(to, key, value, enumerable = false){
 	if (toSecretIdObj){
 		toSecretIdObj[key] = generateId(randomInt(32, 48)) // this is the relation between the parent aka an object and the property of the child,
 	}
-
 
     proxify(value)
 
@@ -143,9 +146,9 @@ function copyKey(to, from, key){
 			var output = from[key].apply(this, Array.from(arguments))
 
 			if (isNumber(preCallLength) && preCallLength !== this.length){
-				// var payload = {}
-				// events.async("set:" + objectToPrimitiveCaller(this, objectId) + ".length", payload)
-				// payload.order = -1
+				var payload = {}
+				events.async("set:" + getKeyStore(this).length, payload)
+				payload.order = -1
 			}
 			return output
 		}
