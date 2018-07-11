@@ -54,7 +54,6 @@ function initializeKeyStore(obj){
 	}
 }
 function getKeyStore(obj){
-    var hiddenObj
 	if (isArrayOrObject(obj)){
         if (!isFunction(obj[Symbol.toPrimitive])){
             initializeKeyStore(obj)
@@ -88,11 +87,6 @@ function defineAsGetSet(to, key, value, enumerable = false){
 		emitSelf && events.async(eventName + ":" + secretId)
 	})
 
-	var toSecretIdObj = getKeyStore(to)
-	if (toSecretIdObj){
-		toSecretIdObj[key] = generateId(randomInt(32, 48)) // this is the relation between the parent aka an object and the property of the child,
-	}
-
     proxify(value)
 
     // right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
@@ -113,8 +107,6 @@ function defineAsGetSet(to, key, value, enumerable = false){
                 return value
             }
 
-			// console.log("set", to, key, input)
-
 			// tell the current object in the data to be remapped if needed
             // objectToPrimitiveCaller(value, recursiveEmitter, "remap", false)
             emitEventRecursively("remap", false)
@@ -133,9 +125,9 @@ function defineAsGetSet(to, key, value, enumerable = false){
     })
 }
 
-function copyKey(to, from, key){
-	var toDefine = from[key]
-	if (isFunction(from[key])){
+function maskProtoMethods(mask, proto, method){
+	var toDefine = proto[method]
+	if (isFunction(proto[method])){
 		toDefine = function(){
 			// since we are overriding all the default methods we might as well overrid the default array methods to inform us that the length has changed when they're called
 
@@ -143,7 +135,7 @@ function copyKey(to, from, key){
 				var preCallLength = this.length
 			}
 
-			var output = from[key].apply(this, Array.from(arguments))
+			var output = proto[method].apply(this, Array.from(arguments))
 
 			if (isNumber(preCallLength) && preCallLength !== this.length){
 				var payload = {}
@@ -153,24 +145,19 @@ function copyKey(to, from, key){
 			return output
 		}
 	}
-    return defineAsGetSet(to, key, toDefine, from.propertyIsEnumerable(key))
+    return defineAsGetSet(mask, method, toDefine, proto.propertyIsEnumerable(method))
 }
 var createMode = false
 var trapGetBlacklist = ["constructor", "toJSON"]
-var secretLength = generateId(randomInt(32, 48))
 var proxyTraps = {
     get: function(dataStash, prop, calledOn) {
         if (trapGetBlacklist.indexOf(prop) !== -1){
             return
         }
-        // console.log("get")
-        // console.log.apply(console, arguments)
-		if (prop === secretLength){
-            objectToPrimitiveCaller(calledOn, objectId)
-			return events.emit("get", objectToPrimitiveCaller(calledOn, objectId) + ".length")
-		}
-        if (prop in dataStash){
+        else if (prop in dataStash){
             // someone modified the prototype of this object D: time to take the procedure of finding the object that's just above the current object
+
+            // this is for finding the mask object within the prototype chain
             var stashProto = Object.getPrototypeOf(dataStash)
             var currentStack = calledOn
             var previousStack = calledOn
@@ -180,9 +167,11 @@ var proxyTraps = {
                 currentStack = nextStack
                 nextStack = Object.getPrototypeOf(currentStack)
             }
-            copyKey(previousStack, dataStash, prop)
+
+            // we now have the mask object so we gotta update the mask with a new method now
+            maskProtoMethods(previousStack, dataStash, prop)
         }
-		if (createMode) {
+		else if (createMode) {
 			// create mode is at this time, our internal flag for when we just want to create anything so we can add listeners to it
 			proxyTraps.set(dataStash, prop, {}, calledOn)
 			return calledOn[prop]
@@ -190,18 +179,11 @@ var proxyTraps = {
         return Reflect.get(dataStash, prop, calledOn)
     },
     set: function(dataStash, prop, value, calledOn){
-        // console.log("set")
-        // console.log.apply(console, arguments)
-
         defineAsGetSet(calledOn, prop, value, true)
         return true
     }
 }
 
-// function watchChange(prop, callback){
-// 	// logic here
-//
-// }
 
 function augmentProto(originalProto){
     var replacementProto = {}
@@ -217,7 +199,7 @@ function augmentProto(originalProto){
     // first we copy everything over to the new proto object that will sit above the proxy object. this object will catch any calls to the existing that would normally have to drill down the prototype chain so we can bypass the need to use the proxy since proxy is slow af
     var getKeysFrom = originalProto
     while (getKeysFrom){
-        forEach(Object.getOwnPropertyNames(getKeysFrom), copyKey.bind(this, replacementProto, getKeysFrom))
+        forEach(Object.getOwnPropertyNames(getKeysFrom), maskProtoMethods.bind(this, replacementProto, getKeysFrom))
         getKeysFrom = Object.getPrototypeOf(getKeysFrom) // setup for next while loop iteration
     }
 
