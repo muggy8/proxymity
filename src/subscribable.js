@@ -69,7 +69,7 @@ var events = (function(){
 	var order = 0
 
 	var currentAsyncLoop = 0
-	var maxAsyncLoop = 3
+	var maxAsyncLoop = 256
 
 	var nextEvent = generateId(randomInt(32, 48))
 	var nextEventSet = false
