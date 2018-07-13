@@ -190,7 +190,7 @@
 				<!-- {: this.app.chosen = this.app.filtered[parseInt(this.app.choice || 0)] :}|{choice},{filtered}| -->
 
 				<div>
-					<strong>choice {:(parseInt(this.app.choice) || 0) + 1:}</strong>
+					<strong>choice {:(parseInt(this.app.choice) || 0) + 1:}|{choice}|</strong>
 					<label class="block">
 						Str 1: <input type="text" name="chosen.str">
 					</label>
@@ -210,6 +210,8 @@
 				<pre>{:this.app.toString():}</pre>
 			`, testRepeat.app.arr[3])
 			.appendTo("body")
+
+			// events.watch(console.log)
 
 			// renderedArrData.sort(function(a, b){
 			// 	if (a.int > b.int){

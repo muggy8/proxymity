@@ -434,7 +434,7 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 					createMode = true
 					var payloadString = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
 					createMode = false
-					payloadString = payload.value.toString()
+
 
 					if (node.value === payloadString && !node.checked) {
 						node.checked = true
