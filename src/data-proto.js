@@ -81,7 +81,19 @@ function defineAsGetSet(to, key, value, enumerable = false){
 		selfProps && forEach(selfProps, function(key){
 			getSecretEmitter = true
 			var emitterFn = value[key]
-			;(emitterFn instanceof internalMethod) && emitterFn(eventName)
+            console.log("key", key, value)
+			if (emitterFn instanceof internalMethod) {
+                emitterFn(eventName)
+            }
+            else if (Array.isArray(value) && key === 'length') {
+                var valHiddenKeys = getKeyStore(value)
+                if (valHiddenKeys && isString(valHiddenKeys.length)){
+                    console.log("emitted length")
+                    var payload = {}
+                    events.async(eventName + ":" + valHiddenKeys.length, payload)
+                    payload.order = -1
+                }
+            }
 		})
 		console.log("Event: " + eventName, emitSelf)
 		emitSelf && events.async(eventName + ":" + secretId)
