@@ -133,6 +133,8 @@ function defineAsGetSet(to, key, value, enumerable = false){
 			return value = proxify(input)
 		}
     })
+
+    events.async("set:" + secretId)
 }
 
 function maskProtoMethods(mask, proto, method){
