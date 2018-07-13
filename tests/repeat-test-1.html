@@ -12,29 +12,32 @@
 	<body>
 		<div class="fixed col-2-2 col-1-2-mid col-1-4-big cell" style="bottom: 0; right: 0">
 			<!-- foreach:{
-				console.log("setting")
 				this.app.item.notifications = [{}]
+				console.log("setting", this.app.item.notifications)
 				key("index").in(this.app.item.notifications)
 			}-->
 				<div onclick="this.app.item.notifications.push({})">
-					{:console.log("rendering"); this.app.item.notifications[this.index].stringify():}
+					{:console.log("rendering"); JSON.stringify(this.app.item.notifications[this.index]):}
 				</div>
 			<!-- foreach: key.end() -->
 			<button onclick="this.app.item = {}">reset</button>
 		</div>
 		<script>
 			// gonna stub this in here
-			var safeEval = function(s, sv = {}){
-				var os = s
-				for(let k in sv){
-					s = "var " + k + " = sv." + k + ";\n" + s
-				}
+            var safeEval = function(s, sv = {}, t = false){
 				try {
-					return eval(s)
+					with(sv){
+						return eval(s)
+					}
 				}
 				catch(o3o){
-					console.error("failed to evaluate expression [" + os + "]", this, o3o)
-					return ""
+                    if (!t){
+                        console.error("failed to evaluate expression [" + s + "]", this, o3o)
+					    return ""
+                    }
+					else {
+                        throw o3o
+                    }
 				}
 			}
 
