@@ -1,4 +1,3 @@
-"use strict"
 var proxymity = (function(safeEval){
 
 	// ^INSERT^
@@ -39,17 +38,20 @@ var proxymity = (function(safeEval){
 	}
 	define(publicUse, "convert", proxify)
 	return publicUse
-})(function(s, sv = {}){
-	var os = s
-	for(let k in sv){
-		s = "var " + k + " = sv." + k + ";\n" + s
-	}
+})(function(s, sv = {}, t = false){
 	try {
-		return eval(s)
+		with(sv){
+			return eval(s)
+		}
 	}
 	catch(o3o){
-		console.error("failed to evaluate expression [" + os + "]", this, o3o)
-		return ""
+		if (!t){
+			console.error("failed to evaluate expression [" + s + "]", this, o3o)
+			return ""
+		}
+		else {
+			throw o3o
+		}
 	}
 })
 typeof module !== "undefined" && (module.exports = proxymity)
