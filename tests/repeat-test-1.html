@@ -17,7 +17,7 @@
 				key("index").in(this.app.items.notifications)
 			}-->
 				<div onclick="this.app.items.notifications.push({})">
-					{:console.log("rendering", this.index); JSON.stringify(this.app.items.notifications[this.index]):}|{items}|
+					{:console.log("rendering", this.index); JSON.stringify(this.app.items.notifications[this.index]):}
 				</div>
 			<!-- foreach: key.end() -->
 			<button onclick="this.app.items = {}; console.log('reseting')">reset</button>

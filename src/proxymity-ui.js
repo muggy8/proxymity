@@ -39,10 +39,7 @@ function renderCustomSyntax(textSource, containingElement, appProp){
 				})
 			}
 			else {
-				destroyCallbacks.push(
-					events.watch("asyncstart", renderFn)
-				)
-				renderFn() // render immediately first
+				renderFn()
 			}
 		})
 		// console.log(onRenderEvalQueue, evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue))
