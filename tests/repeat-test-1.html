@@ -12,15 +12,15 @@
 	<body>
 		<div class="fixed col-2-2 col-1-2-mid col-1-4-big cell" style="bottom: 0; right: 0">
 			<!-- foreach:{
-				this.app.item.notifications = [{}]
-				console.log("setting", this.app.item.notifications)
-				key("index").in(this.app.item.notifications)
+				this.app.items.notifications = [{}]
+				console.log("setting", this.app.items, this.app.items.notifications)
+				key("index").in(this.app.items.notifications)
 			}-->
-				<div onclick="this.app.item.notifications.push({})">
-					{:console.log("rendering", this.index); JSON.stringify(this.app.item.notifications[this.index]):}|{item}|
+				<div onclick="this.app.items.notifications.push({})">
+					{:console.log("rendering", this.index); JSON.stringify(this.app.items.notifications[this.index]):}|{items}|
 				</div>
 			<!-- foreach: key.end() -->
-			<button onclick="this.app.item = {}; console.log('reseting')">reset</button>
+			<button onclick="this.app.items = {}; console.log('reseting')">reset</button>
 		</div>
 		<script>
 			// gonna stub this in here
@@ -42,12 +42,12 @@
 			}
 
 			var test = proxymity(document.querySelector(".fixed"), {
-				item: {
+				items: {
 					notifications: [{}]
 				}
 			})
 
-            events.watch(console.log)
+            // events.watch(console.log)
 		</script>
 	</body>
 </html>
