@@ -118,8 +118,6 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 	// console.log(repeatBody)
 
 	var lengthSet = function(){
-
-        console.log("length set")
 		// the flow: because we know that the output list is always gonna be here while we dont know the current state of the element and if it has a parent at all, the best that we can do is to build the output list right and then remove all the elements form the parent element if there is one then stick the output list in after.
 		var elementsList = repeatBody.outputList
 		var insertBeforeIndex = elementsList.indexOf(repeatBody.insertBefore)
@@ -197,7 +195,6 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 		}, true)
 
 		events.emit("get", hiddenKeys.length)
-        console.log("source set", repeatBody.source, hiddenKeys, isString(hiddenKeys.length))
 	}, lengthSet)
 }
 
