@@ -78,7 +78,7 @@ function define(obj, key, val){
 }
 
 function evalScriptConcatinator(targetLocation){
-    if (targetLocation[0].match(/[\w\_\$]/)){
+    if (targetLocation.trim()[0].match(/[\w\_\$]/)){
         return "."
     }
     return ""
