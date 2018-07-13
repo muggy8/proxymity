@@ -68,8 +68,6 @@ var events = (function(){
 	var queue = {}
 	var order = 0
 
-	var currentAsyncLoop = 0
-
 	var nextEvent = generateId(randomInt(32, 48))
 	var nextEventSet = false
 	var async = output.async = function(name, payload = {}){
@@ -84,7 +82,6 @@ var events = (function(){
 
 	// this is how we get the queue to resolve on the next event cycle instead of immediately
 	function renderEndProcedure(){
-		currentAsyncLoop = 0
 		emit("renderend")
 		for(var key in lastEmitLog){ // this is going to be how we make sure that we dont get a memory leak hopefully
 			delete lastEmitLog[key]
@@ -102,9 +99,6 @@ var events = (function(){
 		nextEventSet = false
 		queue = {}
 		order = 0
-
-		// now we check how many times the loops has ran and if the loop ran too many times, we'll exit without resolving the queue
-		currentAsyncLoop++
 
 		var emitOrder = propsIn(workingQueue)
 		emitOrder.sort(function(a, b){
