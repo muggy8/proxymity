@@ -1,7 +1,7 @@
 <html>
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-		<script type='text/javascript' src='http://getfirebug.com/releases/lite/1.2/firebug-lite-compressed.js'></script>
+		<!-- <script type='text/javascript' src='http://getfirebug.com/releases/lite/1.2/firebug-lite-compressed.js'></script> -->
 		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
 		<script src="../src/proxymity-util.js"></script>
 		<script src="../src/subscribable.js"></script>
@@ -35,17 +35,20 @@
 		</div>
 		<script>
 			// gonna stub this in here
-			var safeEval = function(s, sv = {}){
-				var os = s
-				for(let k in sv){
-					s = "var " + k + " = sv." + k + ";\n" + s
-				}
+            var safeEval = function(s, sv = {}, t = false){
 				try {
-					return eval(s)
+					with(sv){
+						return eval(s)
+					}
 				}
 				catch(o3o){
-					console.error("failed to evaluate expression [" + os + "]", this, o3o)
-					return ""
+                    if (!t){
+                        console.error("failed to evaluate expression [" + s + "]", this, o3o)
+					    return ""
+                    }
+					else {
+                        throw o3o
+                    }
 				}
 			}
 

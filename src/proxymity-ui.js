@@ -118,13 +118,15 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 	// console.log(repeatBody)
 
 	var lengthSet = function(){
+
+        console.log("length set")
 		// the flow: because we know that the output list is always gonna be here while we dont know the current state of the element and if it has a parent at all, the best that we can do is to build the output list right and then remove all the elements form the parent element if there is one then stick the output list in after.
 		var elementsList = repeatBody.outputList
 		var insertBeforeIndex = elementsList.indexOf(repeatBody.insertBefore)
         var insertAfterIndex = elementsList.indexOf(repeatBody.insertAfter)
 		var parent = repeatBody.insertBefore.parentNode
         var currentGroups = groupBy(elementsList.slice(insertAfterIndex + 1, insertBeforeIndex), repeatBody.key)
-		var targetCount = +repeatBody.source.length
+		var targetCount = repeatBody.source.length
 
         if (currentGroups.length < targetCount){
             while (currentGroups.length !== targetCount){
@@ -178,11 +180,13 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 	}
 
 	return observe(function(){
+        var hiddenKeys
 		var stubKey = function(){
 			return stubKey
 		}
 		stubKey.in = function(arr){
-			if (!isString(objectToPrimitiveCaller(arr, objectId))){
+            hiddenKeys = getKeyStore(arr)
+			if (!hiddenKeys || !isString(hiddenKeys.length)){
 				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
 			}
 			repeatBody.source = arr
@@ -190,9 +194,10 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 		stubKey.end = function(){}
 		safeEval.call(repeatBody.insertAfter, repeatBody.insertAfter.textContent, {
 			key: stubKey
-		})
+		}, true)
 
-		return repeatBody.source[secretLength]
+		events.emit("get", hiddenKeys.length)
+        console.log("source set", repeatBody.source, hiddenKeys, isString(hiddenKeys.length))
 	}, lengthSet)
 }
 
