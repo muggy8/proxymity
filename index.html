@@ -33,14 +33,14 @@
 			</div><br>
 			<input name='user.name' type='text' placeholder='experimenting'/><br>
 
-			<pre>{:this.app.user.stringify(null, "    "):}</pre>
+			<pre>{:this.app.user.toString():}</pre>
 
 			<!--repeat.begin(this.app.prop, "propName", function(item, index, whole){
 				// item returned is the new data obj
 				item.index = index
 				return item
 			})-->
-				<pre>{:this.app.stringify(null, "    "):}</pre>
+				<pre>{:this.app.toString():}</pre>
 			<!--repeat.end("propName")-->
 			<div>
 				<label class="block">
