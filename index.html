@@ -4,7 +4,7 @@
 		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
 		<script src="src/proxymity-util.js"></script>
 		<script src="src/subscribable.js"></script>
-		<script src="src/proxymity-obj.js"></script>
+		<script src="src/data-proto.js"></script>
 		<script src="src/proxymity-observe.js"></script>
 		<script src="src/proxymity-ui.js"></script>
 		<script src="src/proxymity.dev.js"></script>
@@ -22,7 +22,7 @@
 				<option value="2">She/Her</option>
 				<option value="3">They/Them</option>
 			</select><br>
-			<div class='{:this.app.user.name.toString() && "test-1":}(:this.app.user.name:) {:parseInt(this.app.user.age) && "test-2":}|
+			<div class='{:this.app.user.name.toString() && "test-1":}|{user.name}| {:parseInt(this.app.user.age) && "test-2":}|
 				{ user.age } ,
 				{ user.name } ,
 				{ user.class }
@@ -78,17 +78,20 @@
 		</div>
 		<script>
 			// gonna stub this in here
-			var safeEval = function(s, sv = {}){
-				var os = s
-				for(let k in sv){
-					s = "var " + k + " = sv." + k + ";\n" + s
-				}
+			var safeEval = function(s, sv = {}, t = false){
 				try {
-					return eval(s)
+					with(sv){
+						return eval(s)
+					}
 				}
 				catch(o3o){
-					console.error("failed to evaluate expression [" + os + "]", this, o3o)
-					return ""
+                    if (!t){
+                        console.error("failed to evaluate expression [" + s + "]", this, o3o)
+					    return ""
+                    }
+					else {
+                        throw o3o
+                    }
 				}
 			}
 
@@ -134,7 +137,7 @@
 					</div>
 				`
 			}
-			testArrStr += "<pre>{:this.app.stringify(null, '    '):}</pre>"
+			testArrStr += "<pre>{:this.app.toString():}</pre>"
 
 			var renderedArr = proxymity(testArrStr, arr)
 			// renderedArr.appendTo("body")
@@ -173,10 +176,10 @@
 					this.app.filtered = this.app.arr.filter(function(_, index){
 						return index < 2
 					})
-					console.log(this.app.filtered.objectify())
+					console.log(this.app.filtered)
 				:}|{arr.length}| -->
 
-				<!-- <pre>{:this.app.stringify(null, '    '):}</pre> -->
+				<!-- <pre>{:this.app.toString():}</pre> -->
 
 				<label>
 					Option 1 <input type="radio" name="choice" value="0">
@@ -204,7 +207,7 @@
 
 			proxymity(`
 				<h3>testing things muahaha</h3>
-				<pre>{:this.app.stringify(null, "    "):}</pre>
+				<pre>{:this.app.toString():}</pre>
 			`, testRepeat.app.arr[3])
 			.appendTo("body")
 
