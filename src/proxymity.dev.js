@@ -2,7 +2,7 @@ var proxymity = (function(safeEval){
 
 	// ^INSERT^
 	// ya i'm not a huge fan of pre-compiling but this lets me test indivual parts since this library is very modular and this is the easiest way to just insert it without having to pull in rediculous amounts of dev dependencies that i dont particularly want to learn so ya why not xP
-	
+
 	var publicUse = function(view, initialData = {}, modelProperty = "app"){
 		var proxied = proxify(initialData)
 		events.async("set:")
@@ -18,7 +18,6 @@ var proxymity = (function(safeEval){
 		// })
 
 		var ui = proxyUI(view, proxied, modelProperty)
-
 		Object.defineProperty(ui, modelProperty, {
 			get: function(){
 				return proxied
