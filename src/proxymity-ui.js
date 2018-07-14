@@ -88,7 +88,7 @@ define(appendableArrayProto, "when", function(whatHappens){
 })
 
 function forEveryElement(source, callback){
-	forEach(source, function(item, index, whole){
+	forEach(source, function(item){
 		callback(item)
 		forEveryElement(item.childNodes, callback)
 	})
@@ -144,7 +144,7 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 				defineIndexKey(bodyClones)
 
 
-                proxyUI(bodyClones, model, mainModelVar, defineIndexKey)
+                transformList(bodyClones, model, mainModelVar, defineIndexKey)
                 if (parent){
                     forEach(bodyClones, function(clone){
     					parent.insertBefore(clone, repeatBody.insertBefore)
@@ -339,7 +339,7 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 		stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
 	}
 	else {
-		proxyUI(node.childNodes, model, propertyToDefine, parentRepeatIndexDefiner)
+		transformList(node.childNodes, model, propertyToDefine, parentRepeatIndexDefiner)
 	}
 
 	// step 3: set up continious rendering for element properties but also link the names of items to the model
