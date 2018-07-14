@@ -78,7 +78,7 @@ when the code gets executed the whole part will get replaced but until then, as 
 
 ### Body Continued
 ```html
-<h1>Welcome {:this.controller.user.name:}</h1>
+<h1>Welcome {:this.controller.user.name:}|{user.name}|</h1>
 <div>
 	name: <input type="text" name="user.name">
 </div>
@@ -86,11 +86,13 @@ when the code gets executed the whole part will get replaced but until then, as 
 	age: <input type="number" name="user.age">
 </div>
 <p>
-	The Fibonacci number associated with your age is {:this.controller.fibonacci(parseInt(this.controller.user.age)):}
+	The Fibonacci number associated with your age is {:this.controller.fibonacci(parseInt(this.controller.user.age)):}|{user.age}|
 </p>
 ```
 
 here we see the data binding in action. the name of each input element on the input is also used to denote where on the controller object the item should look for. because it can only be connected to the controller object, we do not need to define this.controller on it.
+
+You may also be noticing that the binding syntax is slightly different that there's 2 chunks. the first chunk that's wrapped inside `{: ... :}`. This chunk is the chunk that you execute. The next chunk is the chunk that is wrapped inside `|{ ... }|` which is the chunk that watches a specific path for changes. this path always starts at the root so you do not need to include this.controller in it. It specifies that the code within `{: ... :}` should be updated when a change to `|{ ... }|` happens.
 
 however none of this actually works unless the body gets initialized
 
