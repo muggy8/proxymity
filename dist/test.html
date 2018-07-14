@@ -24,7 +24,7 @@
 			</div><br>
 			<input name='user.name' type='text' placeholder='experimenting'/><br>
 
-			<pre>{:this.app.user.stringify(null, "    "):}</pre>
+			<pre>{:this.app.user.toString():}</pre>
 			<div>
 				<label class="block">
 					color: <input name="color" />
@@ -102,7 +102,7 @@
 					</div>
 				`
 			}
-			testArrStr += "<pre>{:this.app.stringify(null, '    '):}</pre>"
+			testArrStr += "<pre>{:this.app.toString():}</pre>"
 
 			var renderedArr = proxymity(testArrStr, arr)
 			// renderedArr.appendTo("body")
@@ -128,7 +128,7 @@
 				<!-- {:this.app.filtered = this.app.arr.filter(function(_, index){
 					return index < 2
 				}):} -->
-				<pre>{:this.app.stringify(null, "    "):}</pre>
+				<pre>{:this.app.toString():}</pre>
 			`, {
 				arr: arr
 			})
@@ -136,7 +136,7 @@
 
 			proxymity(`
 				<h3>testing things muahaha</h3>
-				<pre>{:this.app.stringify(null, "    "):}</pre>
+				<pre>{:this.app.toString():}</pre>
 			`, testRepeat.app.arr[3])
 			.appendTo("body")
 
