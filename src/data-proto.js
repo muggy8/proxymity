@@ -186,12 +186,11 @@ var proxyTraps = {
             // we now have the mask object so we gotta update the mask with a new method now
             maskProtoMethods(previousStack, dataStash, prop)
         }
-		else if (createMode) {
+		else {
 			// create mode is at this time, our internal flag for when we just want to create anything so we can add listeners to it
 			proxyTraps.set(dataStash, prop, {}, calledOn)
 			return calledOn[prop]
 		}
-        return Reflect.get(dataStash, prop, calledOn)
     },
     set: function(dataStash, prop, value, calledOn){
         defineAsGetSet(calledOn, prop, value, true)

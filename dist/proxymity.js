@@ -421,12 +421,11 @@ var proxyTraps = {
             // we now have the mask object so we gotta update the mask with a new method now
             maskProtoMethods(previousStack, dataStash, prop)
         }
-		else if (createMode) {
+		else {
 			// create mode is at this time, our internal flag for when we just want to create anything so we can add listeners to it
 			proxyTraps.set(dataStash, prop, {}, calledOn)
 			return calledOn[prop]
 		}
-        return Reflect.get(dataStash, prop, calledOn)
     },
     set: function(dataStash, prop, value, calledOn){
         defineAsGetSet(calledOn, prop, value, true)
@@ -1053,13 +1052,6 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 	// ^INSERT^
 	// ya i'm not a huge fan of pre-compiling but this lets me test indivual parts since this library is very modular and this is the easiest way to just insert it without having to pull in rediculous amounts of dev dependencies that i dont particularly want to learn so ya why not xP
 	
-	events.watch("asyncstart", function(){
-		createMode = true
-	})
-	events.watch("asyncend", function(){
-		createMode = false
-	})
-
 	var publicUse = function(view, initialData = {}, modelProperty = "app"){
 		var proxied = proxify(initialData)
 		events.async("set:")
@@ -1074,9 +1066,8 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 		// 	console.warn("end block")
 		// })
 
-		createMode = true
 		var ui = proxyUI(view, proxied, modelProperty)
-		createMode = false
+
 		Object.defineProperty(ui, modelProperty, {
 			get: function(){
 				return proxied
