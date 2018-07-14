@@ -437,7 +437,7 @@ var proxyTraps = {
 function watchChange(path, callback){
 	var context = this
 	var perviousCall
-	observe(function(){
+	return observe(function(){
 		createMode = true;
 		perviousCall = safeEval.call(context, "this" + evalScriptConcatinator(path) + path)
 		createMode = false;
