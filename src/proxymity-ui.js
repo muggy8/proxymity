@@ -327,6 +327,7 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 			if (isObject(val)){
 				softCopy(val, model)
 			}
+            return model
 		}
 	})
 	onDestroyCallbacks.push(function(){
@@ -518,12 +519,7 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 		node.removeEventListener(destroyEventName, destroyListener)
 	})
 	var destroyListener = createDestroylistenerCallback(onDestroyCallbacks)
-	// var destroyListener = function(ev){
-	// 	ev.stopPropagation()
-	// 	forEach(onDestroyCallbacks, function(fn){
-	// 		fn()
-	// 	})
-	// }
+
 	node.addEventListener(destroyEventName, destroyListener)
 
 
