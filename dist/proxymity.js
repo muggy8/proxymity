@@ -864,7 +864,7 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 		stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
 	}
 	else {
-		transformList(node.childNodes, model, propertyToDefine, parentRepeatIndexDefiner)
+		transformList(arrayFrom(node.childNodes), model, propertyToDefine, parentRepeatIndexDefiner)
 	}
 
 	// step 3: set up continious rendering for element properties but also link the names of items to the model
