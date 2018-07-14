@@ -434,11 +434,29 @@ var proxyTraps = {
     }
 }
 
+function watchChange(path, callback){
+	var context = this
+	var perviousCall
+	observe(function(){
+		createMode = true;
+		perviousCall = safeEval.call(context, "this" + evalScriptConcatinator(path) + path)
+		createMode = false;
+	}, function(){
+		createMode = true; // incase it's been deleted for some reason
+		var thisCall = safeEval.call(context, "this" + evalScriptConcatinator(path) + path)
+		createMode = false;
+		
+		if (thisCall !== perviousCall){
+			perviousCall = thisCall
+			callback(thisCall)			
+		}
+	})	
+}
 
 function augmentProto(originalProto){
     var replacementProto = {}
 	// before we go nuts we need to set up our public api for methods on objects and what not
-    // defineAsGetSet(replacementProto, "watch", watchChange)
+    defineAsGetSet(replacementProto, "watch", watchChange)
     defineAsGetSet(replacementProto, "toString", function(){
         if (Object.getOwnPropertyNames(this).length){
             return JSON.stringify(this)
