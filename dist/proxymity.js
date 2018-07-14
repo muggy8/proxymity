@@ -1,4 +1,3 @@
-"use strict"
 var proxymity = (function(safeEval){
 
 // src/proxymity-util.js
@@ -81,6 +80,13 @@ function define(obj, key, val){
 	return val
 }
 
+function evalScriptConcatinator(targetLocation){
+    if (targetLocation.trim()[0].match(/[\w\_\$]/)){
+        return "."
+    }
+    return ""
+}
+
 // src/subscribable.js
 var events = (function(){
 	var listenerLibrary = {}
@@ -152,9 +158,6 @@ var events = (function(){
 	var queue = {}
 	var order = 0
 
-	var currentAsyncLoop = 0
-	var maxAsyncLoop = 3
-
 	var nextEvent = generateId(randomInt(32, 48))
 	var nextEventSet = false
 	var async = output.async = function(name, payload = {}){
@@ -168,6 +171,12 @@ var events = (function(){
 	}
 
 	// this is how we get the queue to resolve on the next event cycle instead of immediately
+	function renderEndProcedure(){
+		emit("renderend")
+		for(var key in lastEmitLog){ // this is going to be how we make sure that we dont get a memory leak hopefully
+			delete lastEmitLog[key]
+		}
+	}
 	window.addEventListener("message", function(ev){
         if (ev.data !== nextEvent){
             return
@@ -180,14 +189,6 @@ var events = (function(){
 		nextEventSet = false
 		queue = {}
 		order = 0
-
-		// now we check how many times the loops has ran and if the loop ran too many times, we'll exit without resolving the queue
-		currentAsyncLoop++
-		if (currentAsyncLoop > maxAsyncLoop){
-			currentAsyncLoop = 0
-			emit("renderend")
-			return
-		}
 
 		var emitOrder = propsIn(workingQueue)
 		emitOrder.sort(function(a, b){
@@ -214,8 +215,7 @@ var events = (function(){
 
 		// finally we can check to see if resolving this queue triggered any new events and if it didn't then we can safely reset the loop count to prep for the next render/re-render cycle to be triggered
 		if (!nextEventSet){
-			currentAsyncLoop = 0
-			emit("renderend")
+			renderEndProcedure()
 		}
 	})
 
@@ -232,251 +232,255 @@ var events = (function(){
 	return output
 })()
 
-// src/proxymity-obj.js
-var proxyObjProto = {
-	[Symbol.toPrimitive]: function(hint){
-		if (hint == 'number') {
-			return propsIn(this).length;
-		}
-		if (hint == 'string') {
-			return proxyObjProto.toString.call(this)
-		}
-		return !!propsIn(this).length
-	}
+// src/data-proto.js
+/*
+    Hierarchically we want to create a chain of prototypes that will reduce how often the proxy is used since it's slow. to do this we create a prototype chain that would make the proxy the last item to be accessed by the javascript run time and therefore speeding up the process of getting and setting properties. because we still need to be able to know when properties change, we'll need to to wrap everything with a getter and a setter which is much faster and should prevent the proxy from being used when accessing and updating already existing properties
+
+    the desired hierarchically is
+    [many of Data Object where we put our data] - everything in here is the "model" of the app
+        > [1 of Original Prototype mask] - this is an object that contains a property for each the original data's prototype and maps to it directly. this will make sure that even if we call a prototype method, it bypasses the proxy
+            > [1 of proxy of Original data's Prototype] - this is here incase the original data's prototype is modified and it will add that method to the mask object but it will also be able to add getters and setters to the data object. this will ensure we catch any new properties to be defined as getters and setters but also not be called that often to maximize on speed
+                > [1 prototype of the original data's prototype] - ya we likely wont be getting here but it's possible xP
+*/
+function proxify(value){
+    if (value && Object.getPrototypeOf(value) === Object.prototype){
+        proxyObject(value) // defined below
+    }
+    else if (value && Object.getPrototypeOf(value) === Array.prototype){
+		proxyArray(value) // defined below
+    }
+    return value
 }
-var proxyArrayProto = Object.create(Array.prototype)
 
-var tempProp
-define(
-	proxyArrayProto,
-	tempProp = "objectify",
-	define(proxyObjProto, tempProp, function(){
-		if (Array.isArray(this)){
-			var raw = []
-		}
-		else {
-			var raw = {}
-		}
-		var keys = propsIn(this)
-		for(var index in keys){ // we dont use foreach here cuz we want to perserve the "this" variable
-			var key = keys[index]
-			if (isObject(this[key]) && this[key].objectify){
-				raw[key] = this[key].objectify()
-			}
-			else {
-				raw[key] = this[key]
-			}
-		}
-		return raw
-	})
-)
+function isArrayOrObject(obj){
+	var objProto = obj && Object.getPrototypeOf(obj)
+	if (objProto === Array.prototype || objProto === Object.prototype || objProto === augmentedArrayProto || objProto === augmentedObjectProto){
+		return true
+	}
+	return false
+}
 
-define(
-	proxyArrayProto,
-	tempProp = "stringify",
-	define(proxyObjProto, tempProp, function(){
-		var args = arrayFrom(arguments)
-		args.unshift(proxyObjProto.objectify.call(this))
-		return JSON.stringify.apply(JSON, args)
-	})
-)
+function internalMethod(f){
+    Object.setPrototypeOf(f, internalMethod.prototype)
+    return f
+}
+internalMethod.prototype = Object.create(Function.prototype)
 
-define(
-	proxyArrayProto,
-	tempProp = "toString",
-	define(proxyObjProto, tempProp, function(){
-		if (propsIn(this).length){
-			return proxyObjProto.stringify.call(this)
-		}
-		return ""
-	})
-)
+var hiddenIds = generateId(randomInt(32, 48))
+function initializeKeyStore(obj){
+	if (isArrayOrObject(obj) && typeof obj[Symbol.toPrimitive] === "undefined"){
+		var hiddenIdObject = {}
 
-define(
-	proxyArrayProto,
-	tempProp = "watch",
-	define(proxyObjProto, tempProp, function(watchThis, callback){
-		var self = this
-		return observe(function(){
-			return safeEval.call(self, "this" + (watchThis[0] === "[" ? "" : ".") + watchThis)
-		}, function(payload){
-			payload && callback(payload.value)
-		})
-	})
-)
+        if (Array.isArray(obj)){
+            hiddenIdObject.length = generateId(randomInt(32, 48))
+        }
 
-var getSecretId = generateId(randomInt(32, 48))
-var secretSelfMoved = generateId(randomInt(32, 48))
-var secretSelfDeleted = generateId(randomInt(32, 48))
-
-function proxyObj(obj){
-	var objProto = Object.getPrototypeOf(obj)
-	var objToProxy
-	if (isObject(obj) && (
-			(objProto === Object.prototype && (objToProxy = Object.create(proxyObjProto))) ||
-			(objProto === Array.prototype && (objToProxy = Object.setPrototypeOf([], proxyArrayProto)))
-		)
-	){
-		// setting up helper functions and secret stuff. The secret stuff is not seen by anyone other than the internals of the framework and to make it more difficult to access and to avoid collisions, we generate random keys for secret props on every framework boot up.
-		// Object.setPrototypeOf(obj, proxyProto)
-		var secretProps = {
-			[getSecretId]: function(property){
-				return secretProps[property]
-			},
-			[secretSelfMoved]: secretSelfEventFn(secretSelfMoved, "remap:"),
-			[secretSelfDeleted]: secretSelfEventFn(secretSelfDeleted, "del:")
-		}
-
-		function secretSelfEventFn(secretProp, eventPrefix){
-			return function(){
-				forEach(propsIn(proxied), function(property){
-					var emitPropertyMoved = proxied[property][secretProp]
-					if (isFunction(emitPropertyMoved)){
-						emitPropertyMoved()
-					}
-
-					var payload = {
-						p: property
-					}
-					!events.next(eventPrefix + secretProps[property]) && events.async(eventPrefix + secretProps[property], payload)
-
-					if (Array.isArray(proxied) && property === "length"){
-						payload.order = -1
-					}
-				})
-			}
-		}
-
-		// now we create the proxy that actually houses everything
-		var traps
-		var proxied = new Proxy(objToProxy, traps = {
-			get: function(target, property){
-				// when we get a property there's 1 of 3 cases,
-				// 1: it's a property that doesn't exist and isn't a secret property, in that case, we create it as an object
-				// 2: it's a property that doesn't exist but is a secret property. in that case, we return the secret prop
-				// 3: it's a property that does but doesn't have an in dom model then we just return whatever is in our storage
-				// 4: it is a property that is in the dom model and we update our storage to keep things in sync and then return the value in the dom
-
-				// console.log("get:" + eventNamespace + property, payload)
-				if (!(property in target) && !(property in secretProps)) {
-					// the case, the property isn't in the dom or the cache or the secret props so we have to create it
-					traps.set(target, property, {})
+        Object.defineProperty(obj, Symbol.toPrimitive, {
+			value: function(hint){
+				switch(hint){
+					case "number": return propsIn(this).length
+					case "string": return propsIn(this).length ? JSON.stringify(this) : ""
+					case hiddenIds: return hiddenIdObject
+					default: return !!propsIn(this).length
 				}
-				else if (!(property in target) && (property in secretProps)){
-					return secretProps[property]
-				}
-
-				// before we enter return cycle, we want to log what props were gotten so we can solve other get related challenges
-				// because getting an undefined or existing prop results will happen after getting the secret prop and we only emit this event if the get is for a real prop
-				if (!secretProps.hasOwnProperty(property)){
-					// we also want to fill in secret props for things that dont have them because they were there in the beginning (like the length property for arrays for example)
-					secretProps[property] = generateId(randomInt(32, 48))
-				}
-				events.emit("get", {
-					value: secretProps[property]
-				})
-
-				// we checked our 2 special cases, property in target and property in secret with property in target overriding secret props. now we check the target is not null if we got here
-				if (typeof target[property] === 'undefined' || target[property] === null){
-					// do not ever return null or undefined. the only fulsy val we return is an empty string cuz asking for the truthy property of an empty string will not result in undefined (same with ints, floats and bools)
-					return ""
-				}
-				return target[property]
-			},
-			set: function(target, property, val){
-				try{
-					var valProto = Object.getPrototypeOf(val)
-				}
-				catch(o3o){
-					// cannot get val proto means val is either null, undefined or something similar. so we just catch it and do nothing with the error cuz its a test anyways
-				}
-                var selfIsArray = Array.isArray(target)
-                if (selfIsArray){
-                    var selfLength = target.length
-                    if (!secretProps.hasOwnProperty("length")){
-    					secretProps["length"] = generateId(randomInt(32, 48))
-    				}
-                }
-
-				// tell everyone that we should remap to the new item
-				var emitPropertyMoved = target[property] && target[property][secretSelfMoved]
-				if (isFunction(emitPropertyMoved)){
-					emitPropertyMoved()
-				}
-
-				if (val && isObject(val) && (valProto === Object.prototype || valProto === Array.prototype)){
-					//console.log("1", target[property])
-					target[property] = proxyObj(val)
-				}
-				// this is our degenerate case where we just set the value on the data
-				else {
-					// now we need to set the actual property
-					target[property] = val
-				}
-
-				// before we enter into our return procedure, we want to make sure that whatever prop we're setting, we have a secret id for that prop. we keep the secret ids for prop in the parent object because the props might be something we control or it might not be but we do know that we do control this so that's why we're keeping it here
-				// because normal props on the target always take presidense over the secret props we can use the same name as the normal prop on the secret prop
-				if (!secretProps.hasOwnProperty(property)){
-					secretProps[property] = generateId(randomInt(32, 48))
-				}
-
-				// testing stuff
-				// proxied[property].id = secretProps[property]
-
-				// before we return we want to update everything in the DOM model if it has something that's waiting on our data so we notify whoever cares about this that they should update. However, because of the nature of updating dom is very slow, we want to limit all set events to fire once and only once each primary call
-				// console.log("set", property)
-				var firstPayload = { // first payload,let everyone know i change and if i am an array and this is the length property, elevate this notification
-					value: target[property],
-					p: property
-				}
-				events.async("set:" + secretProps[property], firstPayload)
-				if (selfIsArray && property === "length"){
-					firstPayload.order = -2
-				}
-                if (selfIsArray && selfLength !== target.length){
-					var secondPayload = { // payload 2: i am an array and my length changed as a ressult of setting something else, I must alert everyone to this news as well
-                        value: target.length,
-						p: property
-                    }
-					events.async("set:" + secretProps["length"], secondPayload)
-					secondPayload.order = -2
-                }
-
-				if (Array.isArray(target[property])){
-					target[property].length = target[property].length
-				}
-				return true
-			},
-			deleteProperty: function(target, property){
-				if (property in target) {
-					var emitMoved = target[property][secretSelfMoved]
-					if (isFunction(emitMoved)){
-						// target[property][secretSelfDeleted]()
-						emitMoved()
-					}
-					events.async("del:" + secretProps[property], {
-						value: target[property],
-						p: property
-					})
-
-					delete secretProps[property] // we know this key MUST exist because we made sure of it when we are setting keys and the only way to set properties is through the set method above
-					delete target[property]
-					return true
-				}
-				return false
 			}
 		})
-
-		// this is for populating the initialized proxy with our input data if we have that. This ensures we always use the set method using set data method above. This means that rather than having double input we only have one path to get data into the proxy which means consistant performance and less werid bugs.
-		softCopy(obj, proxied)
-		return proxied
 	}
 }
+function getKeyStore(obj){
+	if (isArrayOrObject(obj)){
+        if (!isFunction(obj[Symbol.toPrimitive])){
+            initializeKeyStore(obj)
+        }
+		var hiddenObj = obj[Symbol.toPrimitive](hiddenIds)
+		return (typeof hiddenObj === "object") ? hiddenObj : false
+	}
+	return {}
+}
+var getSecretEmitter = false;
+function defineAsGetSet(to, key, value, enumerable = false){
+    // we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
+    if (to.hasOwnProperty(key)){
+        return
+    }
+
+    var toPropIds = getKeyStore(to)
+    var secretId = toPropIds[key] = toPropIds[key] || generateId(randomInt(32, 48))
+
+	// before we get onto the actual code we want to set up all of our internal methods and what not.
+	// generateId(randomInt(32, 48)) // this secret id represents the relationship between this item's parent and this item's children as a result, the secret will not change even if the value is saved
+
+    var emitEventRecursively = internalMethod(function(eventName, emitSelf = true){
+		var selfProps = isArrayOrObject(value) && propsIn(value)
+		selfProps && forEach(selfProps, function(key){
+			getSecretEmitter = true
+			var emitterFn = value[key]
+			if (emitterFn instanceof internalMethod) {
+                emitterFn(eventName)
+            }
+            else if (Array.isArray(value) && key === 'length') {
+                var valHiddenKeys = getKeyStore(value)
+                if (valHiddenKeys && isString(valHiddenKeys.length)){
+                    var payload = {}
+                    events.async(eventName + ":" + valHiddenKeys.length, payload)
+                    payload.order = -1
+                }
+            }
+            getSecretEmitter = false
+		})
+		emitSelf && events.async(eventName + ":" + secretId)
+	})
+
+    proxify(value)
+
+    // right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
+    Object.defineProperty(to, key, {
+        enumerable: enumerable,
+        configurable: true,
+        get: function(){
+            if (getSecretEmitter){
+                getSecretEmitter = false
+                return emitEventRecursively
+            } else {
+                if (Array.isArray(value)){
+                    events.emit("get", getKeyStore(value).length)
+                } else {
+                    events.emit("get", secretId)
+                }
+                return value
+            }
+        },
+        set: function(input){
+            if (input === value){
+                return value
+            }
+
+			// tell the current object in the data to be remapped if needed
+            // objectToPrimitiveCaller(value, recursiveEmitter, "remap", false)
+            emitEventRecursively("remap", false)
+
+			// the remap call must happen to the current prop value if the current prop is an object of some kind and after we can check if the delete procuedure is triggered. this is because we cannot hook into the delete key word with getters and setters so we just tell users to set a value as undefined effectively delete it and thus we'll be able to do any required deletion procedure before doing the regular delete.
+			if (typeof input === "undefined"){
+				events.async("del:" + secretId)
+				return delete to[key]
+			}
+
+			// if it's not a delete opperation, well update the value of the current property and we set it, this still lets us use NULL as a empty since we're effectively overriding undefined
+			events.async("set:" + secretId)
+			// attachSecretMethods(input)
+			return value = proxify(input)
+		}
+    })
+
+    events.async("set:" + secretId)
+}
+
+function maskProtoMethods(mask, proto, method){
+	var toDefine = proto[method]
+	if (isFunction(proto[method])){
+		toDefine = function(){
+			// since we are overriding all the default methods we might as well overrid the default array methods to inform us that the length has changed when they're called
+
+			if (Array.isArray(this)){
+				var preCallLength = this.length
+			}
+
+			var output = proto[method].apply(this, Array.from(arguments))
+
+			if (isNumber(preCallLength) && preCallLength !== this.length){
+				var payload = {}
+				events.async("set:" + getKeyStore(this).length, payload)
+				payload.order = -1
+			}
+			return output
+		}
+	}
+    return defineAsGetSet(mask, method, toDefine, proto.propertyIsEnumerable(method))
+}
+var createMode = false
+var trapGetBlacklist = ["constructor", "toJSON"]
+var proxyTraps = {
+    get: function(dataStash, prop, calledOn) {
+        if (trapGetBlacklist.indexOf(prop) !== -1){
+            return
+        }
+        else if (prop in dataStash){
+            // someone modified the prototype of this object D: time to take the procedure of finding the object that's just above the current object
+
+            // this is for finding the mask object within the prototype chain
+            var stashProto = Object.getPrototypeOf(dataStash)
+            var currentStack = calledOn
+            var previousStack = calledOn
+            var nextStack = Object.getPrototypeOf(currentStack)
+            while (nextStack !== stashProto){
+                previousStack = currentStack
+                currentStack = nextStack
+                nextStack = Object.getPrototypeOf(currentStack)
+            }
+
+            // we now have the mask object so we gotta update the mask with a new method now
+            maskProtoMethods(previousStack, dataStash, prop)
+        }
+		else if (createMode) {
+			// create mode is at this time, our internal flag for when we just want to create anything so we can add listeners to it
+			proxyTraps.set(dataStash, prop, {}, calledOn)
+			return calledOn[prop]
+		}
+        return Reflect.get(dataStash, prop, calledOn)
+    },
+    set: function(dataStash, prop, value, calledOn){
+        defineAsGetSet(calledOn, prop, value, true)
+        return true
+    }
+}
+
+
+function augmentProto(originalProto){
+    var replacementProto = {}
+	// before we go nuts we need to set up our public api for methods on objects and what not
+    // defineAsGetSet(replacementProto, "watch", watchChange)
+    defineAsGetSet(replacementProto, "toString", function(){
+        if (Object.getOwnPropertyNames(this).length){
+            return JSON.stringify(this)
+        }
+        return ''
+    })
+
+    // first we copy everything over to the new proto object that will sit above the proxy object. this object will catch any calls to the existing that would normally have to drill down the prototype chain so we can bypass the need to use the proxy since proxy is slow af
+    var getKeysFrom = originalProto
+    while (getKeysFrom){
+        forEach(Object.getOwnPropertyNames(getKeysFrom), maskProtoMethods.bind(this, replacementProto, getKeysFrom))
+        getKeysFrom = Object.getPrototypeOf(getKeysFrom) // setup for next while loop iteration
+    }
+
+
+    // afterwards we want to set the prototype of the replacement prototype object to a proxy so when we set any new properties, we can catch that and create a getter/setter combo on the main object.
+    // we want to still retain the original proto in the proxy because in case something changes on the prototype because someone is loading in a utils library that modifies the prototype after we are done (for example, a library that adds methods to array.prototype), we are able to also reflect that and stick it into the proto layer above
+    Object.setPrototypeOf(replacementProto, new Proxy(originalProto, proxyTraps))
+    return replacementProto
+}
+
+function migrateData(protoObj, input){
+	forEach(Object.getOwnPropertyNames(input), function(key){
+		var propVal = input[key]
+		var enumerable = input.propertyIsEnumerable(key)
+		if (Array.isArray(input) && key !== "length"){
+            delete input[key]
+			defineAsGetSet(input, key, propVal, enumerable)
+		}
+	})
+	return Object.setPrototypeOf(input, protoObj)
+	// return input
+}
+var augmentedArrayProto = augmentProto(Array.prototype)
+var augmentedObjectProto = augmentProto(Object.prototype)
+var proxyArray = migrateData.bind(this, augmentedArrayProto)
+var proxyObject = migrateData.bind(this, augmentedObjectProto)
 
 // src/proxymity-observe.js
 function observe(targetFinder, callbackSet, stuffToUnWatch = []){
     targetFinder()
-    var targetId = events.last("get").value
+    var targetId = events.last("get")
 
     if (isFunction(callbackSet)){
         var callback = callbackSet
@@ -542,27 +546,24 @@ function renderCustomSyntax(textSource, containingElement, appProp){
 	if (onRenderEvalQueue.length){
 		var destroyCallbacks = []
 		var renderFn = function(){
+            createMode = true
 			textSource.textContent = evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue)
+            createMode = false
 		}
 		forEach(onRenderEvalQueue, function(queuedItem){
 			var dataVar = generateId(randomInt(32, 48))
 			if (queuedItem.on){
 				var watchfor = []
 				forEach(queuedItem.on, function(attributeToListenTo){
-					var delFn = renderFn.bind(null)
-					// delFn.to = "del"
-					var setFn = renderFn.bind(null)
-					// setFn.to = "set"
 					destroyCallbacks.push(observe(function(){
-						safeEval.call(containingElement, "this." + appProp + (attributeToListenTo[0] === "[" ? "" : ".") + attributeToListenTo)
+                        createMode = true
+						safeEval.call(containingElement, "this." + appProp + evalScriptConcatinator(attributeToListenTo) + attributeToListenTo)
+                        createMode = false
 					}, renderFn))
 				})
 			}
 			else {
-				destroyCallbacks.push(
-					events.watch("asyncstart", renderFn)
-				)
-				renderFn() // render immediately first
+				renderFn()
 			}
 		})
 		// console.log(onRenderEvalQueue, evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue))
@@ -611,7 +612,7 @@ define(appendableArrayProto, "when", function(whatHappens){
 })
 
 function forEveryElement(source, callback){
-	forEach(source, function(item, index, whole){
+	forEach(source, function(item){
 		callback(item)
 		forEveryElement(item.childNodes, callback)
 	})
@@ -644,7 +645,7 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
         var insertAfterIndex = elementsList.indexOf(repeatBody.insertAfter)
 		var parent = repeatBody.insertBefore.parentNode
         var currentGroups = groupBy(elementsList.slice(insertAfterIndex + 1, insertBeforeIndex), repeatBody.key)
-		var targetCount = +repeatBody.source.length
+		var targetCount = repeatBody.source.length
 
         if (currentGroups.length < targetCount){
             while (currentGroups.length !== targetCount){
@@ -667,7 +668,7 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 				defineIndexKey(bodyClones)
 
 
-                proxyUI(bodyClones, model, mainModelVar, defineIndexKey)
+                transformList(bodyClones, model, mainModelVar, defineIndexKey)
                 if (parent){
                     forEach(bodyClones, function(clone){
     					parent.insertBefore(clone, repeatBody.insertBefore)
@@ -698,11 +699,13 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 	}
 
 	return observe(function(){
+        var hiddenKeys
 		var stubKey = function(){
 			return stubKey
 		}
 		stubKey.in = function(arr){
-			if (!arr || !isFunction(arr[getSecretId])){
+            hiddenKeys = getKeyStore(arr)
+			if (!hiddenKeys || !isString(hiddenKeys.length)){
 				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
 			}
 			repeatBody.source = arr
@@ -710,9 +713,9 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 		stubKey.end = function(){}
 		safeEval.call(repeatBody.insertAfter, repeatBody.insertAfter.textContent, {
 			key: stubKey
-		})
+		}, true)
 
-		return repeatBody.source.length
+		events.emit("get", hiddenKeys.length)
 	}, lengthSet)
 }
 
@@ -737,283 +740,314 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 	if (nodeOrNodeListOrHTML instanceof NodeList || (nodeOrNodeListOrHTML instanceof Array && nodeOrNodeListOrHTML.reduce(function(current, node){
 		return current && node instanceof Node
 	}, true))){
-		// before we get to repeatable sections we're just going to bind things to other things so this step is going to be a bit short
-		var elementList = arrayFrom(nodeOrNodeListOrHTML)
-		var repeatBody
-		var key = function(property){
-			if (repeatBody){
-				throw new error("Improper usage of key(string).in(array): key(string) cannot be nested on the same level")
-			}
-			repeatBody = {
-				key: property
-			}
-			return key
-		}
-		key.in = function(array){
-			if (!repeatBody){
-				throw new Error("Improper usage of key(string).in(array): key(string) not called")
-			}
-			if (repeatBody.source){
-				throw new Error("Improper usage of key(string).in(array): in(array) called before key")
-			}
-
-			// repeatBody.source = array
-			repeatBody.elements = []
-		}
-		key.end = function(onClone){
-			if (!repeatBody || !repeatBody.key || !repeatBody.elements || !repeatBody.elements.length){
-				throw new Error("Improper usage of key.end([onClone]): key(string).in(array) is not called properly prior to calling key.end([onClone])")
-			}
-
-			repeatBody.outputList = elementList
-			repeatBody.insertBefore = repeatBody.elements.pop() // we're going to use this comment as the place where we will be inserting all of our loopy stuff before
-			if (isFunction(onClone)){
-				repeatBody.onClone = onClone
-			}
-
-			var elementsToExclude = repeatBody.elements
-
-			// first off, we're going to need to reset everything in these elements to it's default ground state
-			// destroyListeners(repeatBody.elements)
-
-    		// we're doing this here so we can clean up the body so every element between the end and the start comment are empty s we know that they are next to each other and can set where we want to do our insertions later
-    		for(var i = elementList.length - 1; i >= 0; i--){
-    			if (elementsToExclude.indexOf(elementList[i]) !== -1){
-					var parentNode = elementList[i].parentNode
-					if (parentNode){
-						parentNode.removeChild(elementList[i])
-					}
-    				elementList.splice(i, 1)
-    			}
-    		}
-            var beginningComment = repeatBody.insertAfter = repeatBody.insertBefore.previousSibling
-
-			var callbackDestroyer = createDestroylistenerCallback([
-				initializeRepeater(model, propertyToDefine, repeatBody, parentRepeatIndexDefiner),
-				function(){
-					beginningComment.removeEventListener(destroyEventName, callbackDestroyer)
-				}
-			])
-			beginningComment.addEventListener(destroyEventName, callbackDestroyer)
-
-			repeatBody = undefined // this is for back to back repeats in the same lare
-		}
-
-		// first time we go through and find the comments with our special "foreach: ..." in it and calling the key, key.in and key.end functions. after doing that those functions will extract all of those elements from the list cuz they need a clean template to work with then we can continue with the proper init opperations
-		forEach(elementList, function(node){
-			repeatBody && repeatBody.elements && repeatBody.elements.push(node)
-			if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
-				proxyUI(node, model, propertyToDefine, parentRepeatIndexDefiner)
-				safeEval.call(node, node.textContent, {
-					key: key
-				})
-				if (repeatBody && (!repeatBody.key || !repeatBody.elements)){
-					throw new Error("Improper usage of key(string).in(array): in(array) not called in conjunction with key")
-				}
-				else if (repeatBody && !repeatBody.insertAfter){
-					repeatBody.insertAfter = node
-				}
-			}
-		})
-
-		// By the time we get here, the elementList already has what it needs to slice off sliced off. so we can get strait to inserting variables that we need to insert
-		forEach(elementList, function(node){
-			if (node[propertyToDefine] !== model){ // we use this if because some elements have it defined already (above) so we save more clock cycles :3
-				proxyUI(node, model, propertyToDefine, parentRepeatIndexDefiner)
-			}
-		})
-		return Object.setPrototypeOf(
-			elementList,
-			appendableArrayProto
-		)
+		return transformList(arrayFrom(nodeOrNodeListOrHTML), model, propertyToDefine, parentRepeatIndexDefiner)
 	}
 
 	if (nodeOrNodeListOrHTML instanceof Node){
-		var node = nodeOrNodeListOrHTML
-		var onDestroyCallbacks = []
+		return transformNode(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatIndexDefiner)
+	}
+}
 
-		// step 1: define the data (or any other property for that matter) onto everything
-		Object.defineProperty(node, propertyToDefine, {
-            configurable: true,
-			get: function(){
-				return model
-			},
-			set: function(val){
-				if (isObject(val)){
-					softCopy(val, model)
-				}
-			}
-		})
-		onDestroyCallbacks.push(function(){
-            delete node[propertyToDefine]
-		})
-
-		// step 2: set up continious rendering for everything that's a text element
-		if (node instanceof CharacterData){
-			var stopSyntaxRender = renderCustomSyntax(node, node, propertyToDefine)
-			stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
+function transformList(elementList, model, propertyToDefine, parentRepeatIndexDefiner){
+	var repeatBody
+	var key = function(property){
+		if (repeatBody){
+			throw new error("Improper usage of key(string).in(array): key(string) cannot be nested on the same level")
 		}
-		else {
-			proxyUI(node.childNodes, model, propertyToDefine, parentRepeatIndexDefiner)
+		repeatBody = {
+			key: property
+		}
+		return key
+	}
+	key.in = function(array){
+		if (!repeatBody){
+			throw new Error("Improper usage of key(string).in(array): key(string) not called")
+		}
+		if (repeatBody.source){
+			throw new Error("Improper usage of key(string).in(array): in(array) called before key")
 		}
 
-		// step 3: set up continious rendering for element properties but also link the names of items to the model
-		forEach(node.attributes, function(attr){
-			// we do this for everything because we want this to also be the case for stuff inside name
-			var stopPropertyRendering = renderCustomSyntax(attr, node, propertyToDefine)
-			stopPropertyRendering && onDestroyCallbacks.push(stopPropertyRendering)
+		// repeatBody.source = array
+		repeatBody.elements = []
+	}
+	key.end = function(onClone){
+		if (!repeatBody || !repeatBody.key || !repeatBody.elements || !repeatBody.elements.length){
+			throw new Error("Improper usage of key.end([onClone]): key(string).in(array) is not called properly prior to calling key.end([onClone])")
+		}
 
-			if (
-				attr.name !== "name" || (
-					node.nodeName !== "INPUT" &
-					node.nodeName !== "TEXTAREA" &
-					node.nodeName !== "SELECT"
-				)
-			){
-				return
+		repeatBody.outputList = elementList
+		repeatBody.insertBefore = repeatBody.elements.pop() // we're going to use this comment as the place where we will be inserting all of our loopy stuff before
+		if (isFunction(onClone)){
+			repeatBody.onClone = onClone
+		}
+
+		var elementsToExclude = repeatBody.elements
+
+		// first off, we're going to need to reset everything in these elements to it's default ground state
+		// destroyListeners(repeatBody.elements)
+
+		// we're doing this here so we can clean up the body so every element between the end and the start comment are empty s we know that they are next to each other and can set where we want to do our insertions later
+		for(var i = elementList.length - 1; i >= 0; i--){
+			if (elementsToExclude.indexOf(elementList[i]) !== -1){
+				var parentNode = elementList[i].parentNode
+				if (parentNode){
+					parentNode.removeChild(elementList[i])
+				}
+				elementList.splice(i, 1)
 			}
+		}
+		var beginningComment = repeatBody.insertAfter = repeatBody.insertBefore.previousSibling
 
-			// we are gonna get rid of del listeners cuz they cause more trouble than they're worth. instead the only 2 events that will be emmited by the data object is set and remap. since remap wild find the last/next item on resolve anyways, we need to handle that that here.
-			// the different situations we expect is
+		var callbackDestroyer = createDestroylistenerCallback([
+			initializeRepeater(model, propertyToDefine, repeatBody, parentRepeatIndexDefiner),
+			function(){
+				beginningComment.removeEventListener(destroyEventName, callbackDestroyer)
+			}
+		])
+		beginningComment.addEventListener(destroyEventName, callbackDestroyer)
 
-			// getting a payload with a matching value => update
-			// getting a payload with unmatching values => clear (eg we get a proxy object instead of a number)
-			// getting no payload => clear
+		repeatBody = undefined // this is for back to back repeats in the same lare
+	}
 
+	// first time we go through and find the comments with our special "foreach: ..." in it and calling the key, key.in and key.end functions. after doing that those functions will extract all of those elements from the list cuz they need a clean template to work with then we can continue with the proper init opperations
+	forEach(elementList, function(node){
+		repeatBody && repeatBody.elements && repeatBody.elements.push(node)
+		if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
+			transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner)
+			safeEval.call(node, node.textContent, {
+				key: key
+			})
+			if (repeatBody && (!repeatBody.key || !repeatBody.elements)){
+				throw new Error("Improper usage of key(string).in(array): in(array) not called in conjunction with key")
+			}
+			else if (repeatBody && !repeatBody.insertAfter){
+				repeatBody.insertAfter = node
+			}
+		}
+	})
 
-			// (rework below)
+	// By the time we get here, the elementList already has what it needs to slice off sliced off. so we can get strait to inserting variables that we need to insert
+	forEach(elementList, function(node){
+		if (node[propertyToDefine] !== model){ // we use this if because some elements have it defined already (above) so we save more clock cycles :3
+			transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner)
+		}
+	})
+	return Object.setPrototypeOf(
+		elementList,
+		appendableArrayProto
+	)
+}
 
-			// this is the default setter and deleter for this property that we'll use if it's not overwritten in the if statements below
-			var setListener = function(payload){
-				// toString is for incase we get an object here for some reason which will happen when we initialize the whole process and when we do that at least the toString method of proxied objects is going to return "" if it's empty
-				try {
-					var payloadString = payload.value.toString()
-					if (payloadString !== node.value){
-						node.value = payloadString
+function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
+	var onDestroyCallbacks = []
+
+	// step 1: define the data (or any other property for that matter) onto everything
+	Object.defineProperty(node, propertyToDefine, {
+		configurable: true,
+		get: function(){
+			return model
+		},
+		set: function(val){
+			if (isObject(val)){
+				softCopy(val, model)
+			}
+            return model
+		}
+	})
+	onDestroyCallbacks.push(function(){
+		delete node[propertyToDefine]
+	})
+
+	// step 2: set up continious rendering for everything that's a text element
+	if (node instanceof CharacterData){
+		var stopSyntaxRender = renderCustomSyntax(node, node, propertyToDefine)
+		stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
+	}
+	else {
+		transformList(node.childNodes, model, propertyToDefine, parentRepeatIndexDefiner)
+	}
+
+	// step 3: set up continious rendering for element properties but also link the names of items to the model
+	forEach(node.attributes, function(attr){
+		// we do this for everything because we want this to also be the case for stuff inside name
+		var stopPropertyRendering = renderCustomSyntax(attr, node, propertyToDefine)
+		stopPropertyRendering && onDestroyCallbacks.push(stopPropertyRendering)
+
+		if (
+			attr.name !== "name" || (
+				node.nodeName !== "INPUT" &
+				node.nodeName !== "TEXTAREA" &
+				node.nodeName !== "SELECT"
+			)
+		){
+			return
+		}
+
+		// we are gonna get rid of del listeners cuz they cause more trouble than they're worth. instead the only 2 events that will be emmited by the data object is set and remap. since remap wild find the last/next item on resolve anyways, we need to handle that that here.
+		// the different situations we expect is
+
+		// getting a payload with a matching value => update
+		// getting a payload with unmatching values => clear (eg we get a proxy object instead of a number)
+		// getting no payload => clear
+
+		// this is the default setter and deleter for this property that we'll use if it's not overwritten in the if statements below
+		var setListener = function(){
+			// toString is for incase we get an object here for some reason which will happen when we initialize the whole process and when we do that at least the toString method of proxied objects is going to return "" if it's empty
+			try {
+				createMode = true
+				var payloadString = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
+				createMode = false
+				if (payloadString !== node.value){
+					node.value = payloadString
+				}
+			}
+			catch(o3o){ // this means the payload must be undefined or null
+				node.value = null
+				createMode = false
+			}
+		}
+		var uiDataVal = "value"
+
+		var nodeTypeLowercase = node.type.toLowerCase()
+		if (
+			nodeTypeLowercase === "number" ||
+			nodeTypeLowercase === "range"
+		){
+			uiDataVal = "valueAsNumber"
+			setListener = function(){
+				try{
+					createMode = true
+					var payloadNum = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
+					createMode = false
+					if (isNumber(payloadNum) && payloadNum !== node.valueAsNumber){
+						node.valueAsNumber = payloadNum
+					}
+					else if (payloadNum !== node.valueAsNumber){
+						node.value = null
 					}
 				}
-				catch(o3o){ // this means the payload must be undefined or null
+				catch(o3o){
 					node.value = null
+					createMode = false
 				}
 			}
-			var delListener = function(payload){
-				if (isObject(payload)){
-					node.value = null
-				}
-			}
-			var uiDataVal = "value"
+		}
+		else if (nodeTypeLowercase === "checkbox"){
+			uiDataVal = "checked"
+			setListener = function(){
+				try{
+					createMode = true
+					var payloadBool = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
+					createMode = false
 
-			var nodeTypeLowercase = node.type.toLowerCase()
-			if (
-				nodeTypeLowercase === "number" ||
-				nodeTypeLowercase === "range"
-			){
-				uiDataVal = "valueAsNumber"
-				setListener = function(payload){
-                    if (!payload || !isNumber(payload.value)){
-                        node.value = null
-                    }
-					else if (isNumber(payload.value) && payload.value !== node.valueAsNumber){
-						node.valueAsNumber = payload.value
+					if (isBool(payloadBool) && payloadBool !== node.checked){
+						node.checked = payloadBool
 					}
-				}
-			}
-			else if (nodeTypeLowercase === "checkbox"){
-				uiDataVal = "checked"
-				setListener = function(payload){
-                    if (!payload || isBool(payload.value)){
-                        node.checked = false
-                    }
-					else if (isBool(payload.value) && payload.value !== node.checked){
-						node.checked = payload.value
-					}
-				}
-			}
-			else if (nodeTypeLowercase === "radio"){
-				setListener = function(payload){
-					try{
-						var payloadString = payload.value.toString()
-						if (payload && node.value === payloadString && node.checked !== true) {
-							node.checked = true
-						}
-						else if (payload && node.value !== payloadString && node.checked === true){
-							node.checked = false
-						}
-					}
-					catch(o3o){
+					else if (payloadBool !== node.checked) {
 						node.checked = false
 					}
 				}
-			}
-			else if (
-				nodeTypeLowercase === "date" ||
-				nodeTypeLowercase === "month" ||
-				nodeTypeLowercase === "week" ||
-				nodeTypeLowercase === "time" ||
-				nodeTypeLowercase === "datetime-local"
-			){
-				uiDataVal = "valueAsDate"
-				setListener = function(payload){
-                    if (!payload || !(payload.value instanceof Date)){
-                        node.value = null
-                    }
-					else if (payload.value instanceof Date && payload.value.getTime() !== node.valueAsDate.getTime()) {
-						node.valueAsDate = payload.value
-					}
+				catch(o3o){
+					node.checked = false
+					createMode = false
 				}
 			}
+		}
+		else if (nodeTypeLowercase === "radio"){
+			setListener = function(){
+				try{
+					createMode = true
+					var payloadString = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
+					createMode = false
 
-			// delListener.to = "del"
-			// setListener.to = "set"
 
-			onDestroyCallbacks.push(
-				observe(function(){
-					safeEval.call(node, "this." + propertyToDefine + (attr.value[0] === "[" ? "" : ".") + attr.value)
-				}, [
-					{
-						to: "del",
-						fn: setListener
-					},
-					{
-						to: "set",
-						fn: setListener
+					if (node.value === payloadString && !node.checked) {
+						node.checked = true
 					}
-				])
-			)
-
-			var changeListeners = ["change", "keyup", "click"]
-			var onChange = function(ev){
-				var secretValue = generateId(randomInt(32, 48))
-				safeEval.call(node, "this." + propertyToDefine + (attr.value[0] === "[" ? "" : ".") + attr.value + " = " + secretValue, {
-					[secretValue]: node[uiDataVal]
-				})
+					else if (node.value !== payloadString && node.checked){
+						node.checked = false
+					}
+				}
+				catch(o3o){
+					node.checked = false
+					createMode = false
+				}
 			}
+		}
+		else if (
+			nodeTypeLowercase === "date" ||
+			nodeTypeLowercase === "month" ||
+			nodeTypeLowercase === "week" ||
+			nodeTypeLowercase === "time" ||
+			nodeTypeLowercase === "datetime-local"
+		){
+			uiDataVal = "valueAsDate"
+			setListener = function(payload){
+				try{
+					createMode = true
+					var payloadDate = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
+					createMode = false
 
-			forEach(changeListeners, function(listenTo){
-				node.addEventListener(listenTo, onChange)
+					if (payloadDate instanceof Date && payloadDate.getTime() !== node.valueAsDate.getTime()){
+						node.valueAsDate = payloadDate
+					}
+					else if (!(payloadDate instanceof Date)) {
+						node.value = null
+					}
+				}
+				catch(o3o){
+					node.value = null
+					createMode = false
+				}
+			}
+		}
+
+		// setListener.to = "set"
+
+		onDestroyCallbacks.push(
+			observe(function(){
+				createMode = true
+				safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value)
+				createMode = false
+			}, [
+				{
+					to: "del",
+					fn: setListener
+				},
+				{
+					to: "set",
+					fn: setListener
+				}
+			])
+		)
+
+		var changeListeners = ["change", "keyup", "click"]
+		var onChange = function(ev){
+			var secretValue = generateId(randomInt(32, 48))
+			safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value + " = " + secretValue, {
+				[secretValue]: node[uiDataVal]
 			})
-			onDestroyCallbacks.push(function(){
-				forEach(changeListeners, function(listenTo){
-					node.removeEventListener(listenTo, onChange)
-				})
-			})
+		}
+
+		forEach(changeListeners, function(listenTo){
+			node.addEventListener(listenTo, onChange)
 		})
-
 		onDestroyCallbacks.push(function(){
-			node.removeEventListener(destroyEventName, destroyListener)
+			forEach(changeListeners, function(listenTo){
+				node.removeEventListener(listenTo, onChange)
+			})
 		})
-		var destroyListener = createDestroylistenerCallback(onDestroyCallbacks)
-		// var destroyListener = function(ev){
-		// 	ev.stopPropagation()
-		// 	forEach(onDestroyCallbacks, function(fn){
-		// 		fn()
-		// 	})
-		// }
-		node.addEventListener(destroyEventName, destroyListener)
+	})
+
+	onDestroyCallbacks.push(function(){
+		node.removeEventListener(destroyEventName, destroyListener)
+	})
+	var destroyListener = createDestroylistenerCallback(onDestroyCallbacks)
+
+	node.addEventListener(destroyEventName, destroyListener)
 
 
-		return Object.setPrototypeOf([node], appendableArrayProto)
-	}
+	return Object.setPrototypeOf([node], appendableArrayProto)
 }
 
 	// ^INSERT^
@@ -1021,12 +1055,11 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 
 	var publicUse = function(view, initialData = {}, modelProperty = "app"){
 		var proxied
-		var dataHasSecretId = initialData[getSecretId]
-		if (isFunction(dataHasSecretId)){
+		if (isFunction(initialData[Symbol.toPrimitive]) && isString(initialData[Symbol.toPrimitive](objectId))){
 			proxied = initialData
 		}
 		else {
-			proxied = proxyObj(initialData)
+			proxied = proxify(initialData)
 		}
 		events.async("set:")
 		// events.watch("asyncstart", function(ev){
@@ -1053,19 +1086,22 @@ function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatInde
 		})
 		return ui
 	}
-	define(publicUse, "convert", proxyObj)
+	define(publicUse, "convert", proxify)
 	return publicUse
-})(function(s, sv = {}){
-	var os = s
-	for(let k in sv){
-		s = "var " + k + " = sv." + k + ";\n" + s
-	}
+})(function(s, sv = {}, t = false){
 	try {
-		return eval(s)
+		with(sv){
+			return eval(s)
+		}
 	}
 	catch(o3o){
-		console.error("failed to evaluate expression [" + os + "]", this, o3o)
-		return ""
+		if (!t){
+			console.error("failed to evaluate expression [" + s + "]", this, o3o)
+			return ""
+		}
+		else {
+			throw o3o
+		}
 	}
 })
 typeof module !== "undefined" && (module.exports = proxymity)
