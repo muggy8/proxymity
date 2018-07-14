@@ -1054,13 +1054,7 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 	// ya i'm not a huge fan of pre-compiling but this lets me test indivual parts since this library is very modular and this is the easiest way to just insert it without having to pull in rediculous amounts of dev dependencies that i dont particularly want to learn so ya why not xP
 
 	var publicUse = function(view, initialData = {}, modelProperty = "app"){
-		var proxied
-		if (isFunction(initialData[Symbol.toPrimitive]) && isString(initialData[Symbol.toPrimitive](objectId))){
-			proxied = initialData
-		}
-		else {
-			proxied = proxify(initialData)
-		}
+		var proxied = proxify(initialData)
 		events.async("set:")
 		// events.watch("asyncstart", function(ev){
 		// 	console.log(proxied.objectify())
