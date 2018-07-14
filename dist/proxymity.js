@@ -668,7 +668,7 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 				defineIndexKey(bodyClones)
 
 
-                transformList(bodyClones, model, mainModelVar, defineIndexKey)
+                transformList(arrayFrom(bodyClones), model, mainModelVar, defineIndexKey)
                 if (parent){
                     forEach(bodyClones, function(clone){
     					parent.insertBefore(clone, repeatBody.insertBefore)
