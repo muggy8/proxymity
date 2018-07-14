@@ -546,9 +546,9 @@ function renderCustomSyntax(textSource, containingElement, appProp){
 	if (onRenderEvalQueue.length){
 		var destroyCallbacks = []
 		var renderFn = function(){
-            createMode = true
+            // createMode = true
 			textSource.textContent = evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue)
-            createMode = false
+            // createMode = false
 		}
 		forEach(onRenderEvalQueue, function(queuedItem){
 			var dataVar = generateId(randomInt(32, 48))
@@ -556,9 +556,9 @@ function renderCustomSyntax(textSource, containingElement, appProp){
 				var watchfor = []
 				forEach(queuedItem.on, function(attributeToListenTo){
 					destroyCallbacks.push(observe(function(){
-                        createMode = true
+                        // createMode = true
 						safeEval.call(containingElement, "this." + appProp + evalScriptConcatinator(attributeToListenTo) + attributeToListenTo)
-                        createMode = false
+                        // createMode = false
 					}, renderFn))
 				})
 			}
@@ -894,16 +894,16 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 		var setListener = function(){
 			// toString is for incase we get an object here for some reason which will happen when we initialize the whole process and when we do that at least the toString method of proxied objects is going to return "" if it's empty
 			try {
-				createMode = true
+				// createMode = true
 				var payloadString = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
-				createMode = false
+				// createMode = false
 				if (payloadString !== node.value){
 					node.value = payloadString
 				}
 			}
 			catch(o3o){ // this means the payload must be undefined or null
 				node.value = null
-				createMode = false
+				// createMode = false
 			}
 		}
 		var uiDataVal = "value"
@@ -916,9 +916,9 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 			uiDataVal = "valueAsNumber"
 			setListener = function(){
 				try{
-					createMode = true
+					// createMode = true
 					var payloadNum = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
-					createMode = false
+					// createMode = false
 					if (isNumber(payloadNum) && payloadNum !== node.valueAsNumber){
 						node.valueAsNumber = payloadNum
 					}
@@ -928,7 +928,7 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 				}
 				catch(o3o){
 					node.value = null
-					createMode = false
+					// createMode = false
 				}
 			}
 		}
@@ -936,9 +936,9 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 			uiDataVal = "checked"
 			setListener = function(){
 				try{
-					createMode = true
+					// createMode = true
 					var payloadBool = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
-					createMode = false
+					// createMode = false
 
 					if (isBool(payloadBool) && payloadBool !== node.checked){
 						node.checked = payloadBool
@@ -949,16 +949,16 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 				}
 				catch(o3o){
 					node.checked = false
-					createMode = false
+					// createMode = false
 				}
 			}
 		}
 		else if (nodeTypeLowercase === "radio"){
 			setListener = function(){
 				try{
-					createMode = true
+					// createMode = true
 					var payloadString = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
-					createMode = false
+					// createMode = false
 
 
 					if (node.value === payloadString && !node.checked) {
@@ -970,7 +970,7 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 				}
 				catch(o3o){
 					node.checked = false
-					createMode = false
+					// createMode = false
 				}
 			}
 		}
@@ -984,9 +984,9 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 			uiDataVal = "valueAsDate"
 			setListener = function(payload){
 				try{
-					createMode = true
+					// createMode = true
 					var payloadDate = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
-					createMode = false
+					// createMode = false
 
 					if (payloadDate instanceof Date && payloadDate.getTime() !== node.valueAsDate.getTime()){
 						node.valueAsDate = payloadDate
@@ -997,7 +997,7 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 				}
 				catch(o3o){
 					node.value = null
-					createMode = false
+					// createMode = false
 				}
 			}
 		}
@@ -1006,9 +1006,9 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 
 		onDestroyCallbacks.push(
 			observe(function(){
-				createMode = true
+				// createMode = true
 				safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value)
-				createMode = false
+				// createMode = false
 			}, [
 				{
 					to: "del",
@@ -1052,6 +1052,13 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 
 	// ^INSERT^
 	// ya i'm not a huge fan of pre-compiling but this lets me test indivual parts since this library is very modular and this is the easiest way to just insert it without having to pull in rediculous amounts of dev dependencies that i dont particularly want to learn so ya why not xP
+	
+	events.watch("asyncstart", function(){
+		createMode = true
+	})
+	events.watch("asyncend", function(){
+		createMode = false
+	})
 
 	var publicUse = function(view, initialData = {}, modelProperty = "app"){
 		var proxied = proxify(initialData)
@@ -1067,7 +1074,9 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 		// 	console.warn("end block")
 		// })
 
+		createMode = true
 		var ui = proxyUI(view, proxied, modelProperty)
+		createMode = false
 		Object.defineProperty(ui, modelProperty, {
 			get: function(){
 				return proxied
