@@ -108,7 +108,11 @@ function defineAsGetSet(to, key, value, enumerable = false){
                 getSecretEmitter = false
                 return emitEventRecursively
             } else {
-                events.emit("get", secretId)
+                if (Array.isArray(value)){
+                    events.emit("get", getKeyStore(value).length)
+                } else {
+                    events.emit("get", secretId)
+                }
                 return value
             }
         },
