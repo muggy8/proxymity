@@ -7,7 +7,6 @@
             > [1 of proxy of Original data's Prototype] - this is here incase the original data's prototype is modified and it will add that method to the mask object but it will also be able to add getters and setters to the data object. this will ensure we catch any new properties to be defined as getters and setters but also not be called that often to maximize on speed
                 > [1 prototype of the original data's prototype] - ya we likely wont be getting here but it's possible xP
 */
-
 function proxify(value){
     if (value && Object.getPrototypeOf(value) === Object.prototype){
         proxyObject(value) // defined below
@@ -230,7 +229,8 @@ function migrateData(protoObj, input){
 	forEach(Object.getOwnPropertyNames(input), function(key){
 		var propVal = input[key]
 		var enumerable = input.propertyIsEnumerable(key)
-		if (delete input[key]){
+		if (Array.isArray(input) && key !== "length"){
+            delete input[key]
 			defineAsGetSet(input, key, propVal, enumerable)
 		}
 	})
