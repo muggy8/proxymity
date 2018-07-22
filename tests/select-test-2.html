@@ -1,0 +1,45 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+		<!-- <script type='text/javascript' src='http://getfirebug.com/releases/lite/1.2/firebug-lite-compressed.js'></script> -->
+		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
+		<script src="../src/proxymity-util.js"></script>
+		<script src="../src/subscribable.js"></script>
+		<script src="../src/proxymity-observe.js"></script>
+		<script src="../src/data-proto.js"></script>
+		<script src="../src/proxymity-ui.js"></script>
+		<script src="../src/proxymity.dev.js"></script>
+	</head>
+	<body>
+		<div class="fixed col-2-2 col-1-2-mid col-1-4-big cell" style="bottom: 0; right: 0">
+			<select>
+				<option></option>
+			</select)
+		</div>
+		<script>
+			// gonna stub this in here
+            var safeEval = function(s, sv = {}, t = false){
+				try {
+					with(sv){
+						return eval(s)
+					}
+				}
+				catch(o3o){
+                    if (!t){
+                        console.error("failed to evaluate expression [" + s + "]", this, o3o)
+					    return ""
+                    }
+					else {
+                        throw o3o
+                    }
+				}
+			}
+
+			var test = proxymity(document.querySelector(".fixed"), {
+				item: {
+					notifications: [{}]
+				}
+			})
+		</script>
+	</body>
+</html>
