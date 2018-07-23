@@ -17,11 +17,6 @@
 				<option value="{:this.app.options[this.index]:}">{:this.app.options[this.index]:}</option>
 				<!-- foreach: key.end() -->
 			</select>
-			<!-- foreach: key("index").in(this.app.options) -->
-			<div>
-				<input name="selected" type="radio" value="{:this.app.options[this.index]:}"> {:this.app.options[this.index]:}
-			</div>
-			<!-- foreach: key.end() -->
 		</div>
 		<script>
 			// gonna stub this in here
@@ -47,6 +42,15 @@
 					1,2,3,4,5
 				]
 			})
+
+            var late = proxymity(`
+			<!-- foreach: key("index").in(this.app.options) -->
+			<div>
+				<input name="selected" type="radio" value="{:this.app.options[this.index]:}"> {:this.app.options[this.index]:}
+			</div>
+			<!-- foreach: key.end() -->`, test.app)
+
+            late.appendTo(document.body)
 		</script>
 	</body>
 </html>
