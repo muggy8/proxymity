@@ -289,7 +289,7 @@ function initializeKeyStore(obj){
 }
 function getKeyStore(obj){
 	if (isArrayOrObject(obj)){
-        if (!isFunction(obj[Symbol.toPrimitive])){
+        if (!obj.hasOwnProperty(Symbol.toPrimitive) || !isFunction(obj[Symbol.toPrimitive])){
             initializeKeyStore(obj)
         }
 		var hiddenObj = obj[Symbol.toPrimitive](hiddenIds)
