@@ -12,9 +12,9 @@
 	</head>
 	<body>
 		<div class="fixed col-2-2 col-1-2-mid col-1-4-big cell" style="bottom: 0; right: 0">
-			<select>
+			<select name="selected">
 				<!-- foreach: key("index").in(this.app.options)  -->
-				<option name="selected" value="{:this.app.options[this.index]:}">{:this.app.options[this.index]:}</option>
+				<option value="{:this.app.options[this.index]:}">{:this.app.options[this.index]:}</option>
 				<!-- foreach: key.end() -->
 			</select>
 			<!-- foreach: key("index").in(this.app.options) -->
