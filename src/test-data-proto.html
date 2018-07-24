@@ -27,22 +27,22 @@
 
 			events.watch(console.log)
 
-            var obj = proxify({
-                foo: "bar",
+			var obj = proxify({
+				foo: "bar",
 				bleh: "meh"
-            })
-            var arr = proxify([
-                1,2,3
-            ])
+			})
+			var arr = proxify([
+				1,2,3
+			])
 
-            Array.prototype.foo = "bar"
+			Array.prototype.foo = "bar"
 
-            if (arr.foo === "bar") {
-                console.log("test 1 ok")
-            }
-            else {
-                console.warn("test 1 failed")
-            }
+			if (arr.foo === "bar") {
+				console.log("test 1 ok")
+			}
+			else {
+				console.warn("test 1 failed")
+			}
 
 			createMode = true
 			obj.test.test1.test2

@@ -88,9 +88,9 @@ var events = (function(){
 		}
 	}
 	window.addEventListener("message", function(ev){
-        if (ev.data !== nextEvent){
-            return
-        }
+		if (ev.data !== nextEvent){
+			return
+		}
 
 		ev.stopPropagation()
 

@@ -24,20 +24,20 @@
 		</div>
 		<script>
 			// gonna stub this in here
-            var safeEval = function(s, sv = {}, t = false){
+			var safeEval = function(s, sv = {}, t = false){
 				try {
 					with(sv){
 						return eval(s)
 					}
 				}
 				catch(o3o){
-                    if (!t){
-                        console.error("failed to evaluate expression [" + s + "]", this, o3o)
-					    return ""
-                    }
+					if (!t){
+						console.error("failed to evaluate expression [" + s + "]", this, o3o)
+						return ""
+					}
 					else {
-                        throw o3o
-                    }
+						throw o3o
+					}
 				}
 			}
 
@@ -47,7 +47,7 @@
 				}
 			})
 
-            // events.watch(console.log)
+			// events.watch(console.log)
 		</script>
 	</body>
 </html>

@@ -19,13 +19,13 @@
 					}
 				}
 				catch(o3o){
-                    if (!t){
-                        console.error("failed to evaluate expression [" + s + "]", this, o3o)
-					    return ""
-                    }
+					if (!t){
+						console.error("failed to evaluate expression [" + s + "]", this, o3o)
+						return ""
+					}
 					else {
-                        throw o3o
-                    }
+						throw o3o
+					}
 				}
 			}
 
@@ -54,7 +54,7 @@
 					font-family: <input name="fontFace" />
 				</label>
 			</div>
-            <pre>{:JSON.stringify(this.app, null, "    "):}</pre>
+			<pre>{:JSON.stringify(this.app, null, "	"):}</pre>
 			<style>
 				pre {
 					background-color: {:this.app.background.toString() || 'initial':};

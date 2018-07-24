@@ -23,16 +23,16 @@ controller.fibonacci = function(n){
 <!DOCTYPE html>
 <html>
 
-    <head>
-        <script src="/path/to/proxymity.min.js"></script>
-        <style>
-    		body.this {
-    			opacity: 0;
-    		}
-    	</style>
-    </head>
+	<head>
+		<script src="/path/to/proxymity.min.js"></script>
+		<style>
+			body.this {
+				opacity: 0;
+			}
+		</style>
+	</head>
 
-    <body class="{:void this :}">
+	<body class="{:void this :}">
 		<h1>Welcome {:this.controller.user.name:}</h1>
 		<div>
 			name: <input type="text" name="user.name">
@@ -54,12 +54,12 @@ lets go through this chunks at a time
 ### Head
 ```html
 <head>
-    <script src="/path/to/proxymity.min.js"></script>
-    <style>
-    	body.this {
-    		opacity: 0;
-    	}
-    </style>
+	<script src="/path/to/proxymity.min.js"></script>
+	<style>
+		body.this {
+			opacity: 0;
+		}
+	</style>
 </head>
 ```
 

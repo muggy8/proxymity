@@ -85,13 +85,13 @@
 					}
 				}
 				catch(o3o){
-                    if (!t){
-                        console.error("failed to evaluate expression [" + s + "]", this, o3o)
-					    return ""
-                    }
+					if (!t){
+						console.error("failed to evaluate expression [" + s + "]", this, o3o)
+						return ""
+					}
 					else {
-                        throw o3o
-                    }
+						throw o3o
+					}
 				}
 			}
 
@@ -167,8 +167,8 @@
 								Option 3 <input type="radio" name="arr[{:this.index:}].option" value="Option 3">
 							</label>
 						</div>
-                        <button onclick="this.app.arr.splice(this.index + 1, 0, {})">Add another Below</button>
-                        <button onclick="this.app.arr.splice(this.index, 1)">Delete This</button>
+						<button onclick="this.app.arr.splice(this.index + 1, 0, {})">Add another Below</button>
+						<button onclick="this.app.arr.splice(this.index, 1)">Delete This</button>
 						<hr />
 					</div>
 				<!-- foreach: key.end() -->

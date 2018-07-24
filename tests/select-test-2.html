@@ -20,20 +20,20 @@
 		</div>
 		<script>
 			// gonna stub this in here
-            var safeEval = function(s, sv = {}, t = false){
+			var safeEval = function(s, sv = {}, t = false){
 				try {
 					with(sv){
 						return eval(s)
 					}
 				}
 				catch(o3o){
-                    if (!t){
-                        console.error("failed to evaluate expression [" + s + "]", this, o3o)
-					    return ""
-                    }
+					if (!t){
+						console.error("failed to evaluate expression [" + s + "]", this, o3o)
+						return ""
+					}
 					else {
-                        throw o3o
-                    }
+						throw o3o
+					}
 				}
 			}
 
@@ -43,14 +43,14 @@
 				]
 			})
 
-            var late = proxymity(`
+			var late = proxymity(`
 			<!-- foreach: key("index").in(this.app.options) -->
 			<div>
 				<input name="selected" type="radio" value="{:this.app.options[this.index]:}"> {:this.app.options[this.index]:}
 			</div>
 			<!-- foreach: key.end() -->`, test.app)
 
-            late.appendTo(document.body)
+			late.appendTo(document.body)
 		</script>
 	</body>
 </html>

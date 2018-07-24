@@ -155,13 +155,13 @@ function proxyObj(obj){
 				catch(o3o){
 					// cannot get val proto means val is either null, undefined or something similar. so we just catch it and do nothing with the error cuz its a test anyways
 				}
-                var selfIsArray = Array.isArray(target)
-                if (selfIsArray){
-                    var selfLength = target.length
-                    if (!secretProps.hasOwnProperty("length")){
-    					secretProps["length"] = generateId(randomInt(32, 48))
-    				}
-                }
+				var selfIsArray = Array.isArray(target)
+				if (selfIsArray){
+					var selfLength = target.length
+					if (!secretProps.hasOwnProperty("length")){
+						secretProps["length"] = generateId(randomInt(32, 48))
+					}
+				}
 
 				// tell everyone that we should remap to the new item
 				var emitPropertyMoved = target[property] && target[property][secretSelfMoved]
@@ -198,14 +198,14 @@ function proxyObj(obj){
 				if (selfIsArray && property === "length"){
 					firstPayload.order = -2
 				}
-                if (selfIsArray && selfLength !== target.length){
+				if (selfIsArray && selfLength !== target.length){
 					var secondPayload = { // payload 2: i am an array and my length changed as a ressult of setting something else, I must alert everyone to this news as well
-                        value: target.length,
+						value: target.length,
 						p: property
-                    }
+					}
 					events.async("set:" + secretProps["length"], secondPayload)
 					secondPayload.order = -2
-                }
+				}
 
 				if (Array.isArray(target[property])){
 					target[property].length = target[property].length

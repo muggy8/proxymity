@@ -9,25 +9,25 @@
 	</head>
 	<body>
 		<script>
-            var proxy = proxify({
-                foo: []
-            })
+			var proxy = proxify({
+				foo: []
+			})
 
-            var stopObserving = observe(function(){
+			var stopObserving = observe(function(){
 				createMode = true
-                var val = proxy.foo[0].name
+				var val = proxy.foo[0].name
 				createMode = false
 				return val
-            }, [
-                {
-                    to: "del",
-                    fn: console.log
-                },
-                {
-                    to: "set",
-                    fn: console.log
-                }
-            ])
+			}, [
+				{
+					to: "del",
+					fn: console.log
+				},
+				{
+					to: "set",
+					fn: console.log
+				}
+			])
 		</script>
 	</body>
 </html>

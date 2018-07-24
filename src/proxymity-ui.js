@@ -22,9 +22,9 @@ function renderCustomSyntax(textSource, containingElement, appProp){
 	if (onRenderEvalQueue.length){
 		var destroyCallbacks = []
 		var renderFn = function(){
-            createMode = true
+			createMode = true
 			textSource.textContent = evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue)
-            createMode = false
+			createMode = false
 		}
 		forEach(onRenderEvalQueue, function(queuedItem){
 			var dataVar = generateId(randomInt(32, 48))
@@ -32,9 +32,9 @@ function renderCustomSyntax(textSource, containingElement, appProp){
 				var watchfor = []
 				forEach(queuedItem.on, function(attributeToListenTo){
 					destroyCallbacks.push(observe(function(){
-                        createMode = true
+						createMode = true
 						safeEval.call(containingElement, "this." + appProp + evalScriptConcatinator(attributeToListenTo) + attributeToListenTo)
-                        createMode = false
+						createMode = false
 					}, renderFn))
 				})
 			}
@@ -101,13 +101,13 @@ function destroyListeners(elements){
 }
 
 function groupBy(itemArray, propertyToGroupBy){
-    var groups = []
-    forEach(itemArray, function(node){
-        var nodeIndex = node[propertyToGroupBy]
-        groups[nodeIndex] = groups[nodeIndex] || []
-        groups[nodeIndex].push(node)
-    })
-    return groups
+	var groups = []
+	forEach(itemArray, function(node){
+		var nodeIndex = node[propertyToGroupBy]
+		groups[nodeIndex] = groups[nodeIndex] || []
+		groups[nodeIndex].push(node)
+	})
+	return groups
 }
 
 var destroyEventName = generateId(randomInt(32, 48))
@@ -118,16 +118,16 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 		// the flow: because we know that the output list is always gonna be here while we dont know the current state of the element and if it has a parent at all, the best that we can do is to build the output list right and then remove all the elements form the parent element if there is one then stick the output list in after.
 		var elementsList = repeatBody.outputList
 		var insertBeforeIndex = elementsList.indexOf(repeatBody.insertBefore)
-        var insertAfterIndex = elementsList.indexOf(repeatBody.insertAfter)
+		var insertAfterIndex = elementsList.indexOf(repeatBody.insertAfter)
 		var parent = repeatBody.insertBefore.parentNode
-        var currentGroups = groupBy(elementsList.slice(insertAfterIndex + 1, insertBeforeIndex), repeatBody.key)
+		var currentGroups = groupBy(elementsList.slice(insertAfterIndex + 1, insertBeforeIndex), repeatBody.key)
 		var targetCount = repeatBody.source.length
 
-        if (currentGroups.length < targetCount){
-            while (currentGroups.length !== targetCount){
-                var bodyClones = repeatBody.elements.map(function(ele){
-                    return ele.cloneNode(true)
-                })
+		if (currentGroups.length < targetCount){
+			while (currentGroups.length !== targetCount){
+				var bodyClones = repeatBody.elements.map(function(ele){
+					return ele.cloneNode(true)
+				})
 
 				var defineIndexKey = function(index, cloneEles) {
 					parentIndexDefiner(cloneEles)
@@ -144,43 +144,43 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 				defineIndexKey(bodyClones)
 
 
-                transformList(arrayFrom(bodyClones), model, mainModelVar, defineIndexKey)
-                if (parent){
-                    forEach(bodyClones, function(clone){
-    					parent.insertBefore(clone, repeatBody.insertBefore)
-    				})
-                }
+				transformList(arrayFrom(bodyClones), model, mainModelVar, defineIndexKey)
+				if (parent){
+					forEach(bodyClones, function(clone){
+						parent.insertBefore(clone, repeatBody.insertBefore)
+					})
+				}
 				repeatBody.onClone && forEach(bodyClones, function(clone){
 					clone instanceof HTMLElement && repeatBody.onClone(clone)
 				})
 
-                // add to elements list and update where to insert
-                elementsList.splice.apply(elementsList, [insertBeforeIndex, 0].concat(bodyClones))
-                insertBeforeIndex += bodyClones.length
-                currentGroups.push(bodyClones)
-            }
-        }
-        else if (currentGroups.length > targetCount){
-            while (currentGroups.length !== targetCount){
-                var setToRemove = currentGroups.pop()
-                forEach(setToRemove, function(node){
-                    elementsList.splice(elementsList.indexOf(node), 1)
-                    if (node.parentNode){
-                        node.parentNode.removeChild(node)
-                    }
-                })
-                destroyListeners(setToRemove)
-            }
-        }
+				// add to elements list and update where to insert
+				elementsList.splice.apply(elementsList, [insertBeforeIndex, 0].concat(bodyClones))
+				insertBeforeIndex += bodyClones.length
+				currentGroups.push(bodyClones)
+			}
+		}
+		else if (currentGroups.length > targetCount){
+			while (currentGroups.length !== targetCount){
+				var setToRemove = currentGroups.pop()
+				forEach(setToRemove, function(node){
+					elementsList.splice(elementsList.indexOf(node), 1)
+					if (node.parentNode){
+						node.parentNode.removeChild(node)
+					}
+				})
+				destroyListeners(setToRemove)
+			}
+		}
 	}
 
 	return observe(function(){
-        var hiddenKeys
+		var hiddenKeys
 		var stubKey = function(){
 			return stubKey
 		}
 		stubKey.in = function(arr){
-            hiddenKeys = getKeyStore(arr)
+			hiddenKeys = getKeyStore(arr)
 			if (!hiddenKeys || !isString(hiddenKeys.length)){
 				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
 			}
@@ -327,7 +327,7 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 			if (isObject(val)){
 				softCopy(val, model)
 			}
-            return model
+			return model
 		}
 	})
 	onDestroyCallbacks.push(function(){

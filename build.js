@@ -2,14 +2,14 @@ const fs = require("fs")
 const UglifyJS = require("uglify-es")
 
 new Promise(function(accept, reject){
-    fs.readFile("index.html", "utf8",  function(o3o, html){
-        if (o3o){
-            reject(o3o)
-        }
-        else {
-            accept(html)
-        }
-    })
+	fs.readFile("index.html", "utf8",  function(o3o, html){
+		if (o3o){
+			reject(o3o)
+		}
+		else {
+			accept(html)
+		}
+	})
 }).then(function(html){
 	var getScriptPromises = html
 		.match(/<script[^>]+>[^<]*<\/script>/gi)
@@ -26,10 +26,10 @@ new Promise(function(accept, reject){
 			return new Promise(function(accept, reject){
 				fs.readFile(src, "utf8", function(o3o, html){
   			 	 if (o3o){
- 			 	      reject(o3o)
+ 			 		  reject(o3o)
 			 	   }
-			 	    else {
-  				      accept({
+			 		else {
+  					  accept({
 							src: src,
 							contents: html
 						})

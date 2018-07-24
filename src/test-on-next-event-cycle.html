@@ -1,48 +1,48 @@
 <html>
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-        <!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
-        <script src="proxymity-util.js"></script>
-        <script src="on-next-event-cycle.js"></script>
+		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
+		<script src="proxymity-util.js"></script>
+		<script src="on-next-event-cycle.js"></script>
 	</head>
 	<body>
 		<script>
-            var test1 = []
-            onNextEventCycle(function(){
-                test1.push(2)
-            })
-            test1.push(1)
+			var test1 = []
+			onNextEventCycle(function(){
+				test1.push(2)
+			})
+			test1.push(1)
 
-            var test2 = []
+			var test2 = []
 
-            for (let i = 0; i < 100; i++) {
-                onNextEventCycle(function(){
-                    test2.push(i)
-                })
-                test2.push(i)
-            }
+			for (let i = 0; i < 100; i++) {
+				onNextEventCycle(function(){
+					test2.push(i)
+				})
+				test2.push(i)
+			}
 
-            console.log("TEST 2: checking inital length")
-            if (test2.length !== 100){
-                console.error("TEST 2: Failed. Initial Push cycle does not have 100 items", test2.length)
-            }            
-            
-            setTimeout(function(){
-                if (test1[0] === 1 && test1[1] === 2 && test1.length === 2){
-                    console.warn("TEST 1: Passed")
-                }
-                else {
-                    console.error("TEST 1: Failed, array is not [1, 2]")
-                }
+			console.log("TEST 2: checking inital length")
+			if (test2.length !== 100){
+				console.error("TEST 2: Failed. Initial Push cycle does not have 100 items", test2.length)
+			}			
+			
+			setTimeout(function(){
+				if (test1[0] === 1 && test1[1] === 2 && test1.length === 2){
+					console.warn("TEST 1: Passed")
+				}
+				else {
+					console.error("TEST 1: Failed, array is not [1, 2]")
+				}
 
-                if (test2.length === 200) {
-                    console.warn("TEST 2: Passed")
-                }
-                else {
-                    console.error("TEST 2: Failed, does not have 200 items")
-                }
-                
-            }, 200)
+				if (test2.length === 200) {
+					console.warn("TEST 2: Passed")
+				}
+				else {
+					console.error("TEST 2: Failed, does not have 200 items")
+				}
+				
+			}, 200)
 		</script>
 	</body>
 </html>
