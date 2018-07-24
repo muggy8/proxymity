@@ -9,11 +9,16 @@
 */
 function proxify(value){
     if (value && Object.getPrototypeOf(value) === Object.prototype){
+        // console.log("obj", value)
         proxyObject(value) // defined below
     }
     else if (value && Object.getPrototypeOf(value) === Array.prototype){
+        // console.log("arr", value)
 		proxyArray(value) // defined below
     }
+    // else {
+    //     console.log("wut", value)
+    // }
     return value
 }
 
@@ -33,7 +38,7 @@ internalMethod.prototype = Object.create(Function.prototype)
 
 var hiddenIds = generateId(randomInt(32, 48))
 function initializeKeyStore(obj){
-	if (isArrayOrObject(obj) && typeof obj[Symbol.toPrimitive] === "undefined"){
+	if (isArrayOrObject(obj) && !obj.hasOwnProperty(Symbol.toPrimitive)){
 		var hiddenIdObject = {}
 
         if (Array.isArray(obj)){
@@ -96,6 +101,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 		emitSelf && events.async(eventName + ":" + secretId)
 	})
 
+    // console.log(key, value, to)
     proxify(value)
 
     // right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
@@ -210,12 +216,12 @@ function watchChange(path, callback){
 		createMode = true; // incase it's been deleted for some reason
 		var thisCall = safeEval.call(context, "this" + evalScriptConcatinator(path) + path)
 		createMode = false;
-		
+
 		if (thisCall !== perviousCall){
 			perviousCall = thisCall
-			callback(thisCall)			
+			callback(thisCall)
 		}
-	})	
+	})
 }
 
 function augmentProto(originalProto){
@@ -244,12 +250,13 @@ function augmentProto(originalProto){
 }
 
 function migrateData(protoObj, input){
+    console.log(Object.getOwnPropertyNames(input))
 	forEach(Object.getOwnPropertyNames(input), function(key){
 		var propVal = input[key]
 		var enumerable = input.propertyIsEnumerable(key)
-		if (Array.isArray(input) && key !== "length"){
+		if (!(Array.isArray(input) && key === "length")){
             delete input[key]
-			defineAsGetSet(input, key, propVal, enumerable)
+    		defineAsGetSet(input, key, propVal, enumerable)
 		}
 	})
 	return Object.setPrototypeOf(input, protoObj)
