@@ -485,7 +485,6 @@ function augmentProto(originalProto){
 }
 
 function migrateData(protoObj, input){
-	console.log(Object.getOwnPropertyNames(input))
 	forEach(Object.getOwnPropertyNames(input), function(key){
 		var propVal = input[key]
 		var enumerable = input.propertyIsEnumerable(key)
