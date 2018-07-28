@@ -320,6 +320,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 		selfProps && forEach(selfProps, function(key){
 			getSecretEmitter = true
 			var emitterFn = value[key]
+			getSecretEmitter = false
 			if (emitterFn instanceof internalMethod) {
 				emitterFn(eventName)
 			}
@@ -331,7 +332,6 @@ function defineAsGetSet(to, key, value, enumerable = false){
 					payload.order = -1
 				}
 			}
-			getSecretEmitter = false
 		})
 		emitSelf && events.async(eventName + ":" + secretId)
 	})
