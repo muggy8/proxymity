@@ -33,7 +33,7 @@ controller.fibonacci = function(n){
 	</head>
 
 	<body class="{:void this :}">
-		<h1>Welcome {:this.controller.user.name:}</h1>
+		<h1>Welcome {:this.controller.user.name:}|{user.name}|</h1>
 		<div>
 			name: <input type="text" name="user.name">
 		</div>
@@ -41,7 +41,7 @@ controller.fibonacci = function(n){
 			age: <input type="number" name="user.age">
 		</div>
 		<p>
-			The Fibonacci number associated with your age is {:this.controller.fibonacci(parseInt(this.controller.user.age)):}
+			The Fibonacci number associated with your age is {:this.controller.fibonacci(parseInt(this.controller.user.age)):}|{user.age}|
 		</p>
 
 		<script src="script.js"></script>
