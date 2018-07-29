@@ -124,6 +124,7 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 		var targetCount = repeatBody.source.length
 
 		if (currentGroups.length < targetCount){
+			var toAppend = document.createDocumentFragment()
 			while (currentGroups.length !== targetCount){
 				var bodyClones = repeatBody.elements.map(function(ele){
 					return ele.cloneNode(true)
@@ -147,7 +148,7 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 				transformList(arrayFrom(bodyClones), model, mainModelVar, defineIndexKey)
 				if (parent){
 					forEach(bodyClones, function(clone){
-						parent.insertBefore(clone, repeatBody.insertBefore)
+						toAppend.appendChild(clone)
 					})
 				}
 				repeatBody.onClone && forEach(bodyClones, function(clone){
@@ -159,6 +160,7 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 				insertBeforeIndex += bodyClones.length
 				currentGroups.push(bodyClones)
 			}
+			parent.insertBefore(toAppend, repeatBody.insertBefore)
 		}
 		else if (currentGroups.length > targetCount){
 			while (currentGroups.length !== targetCount){
