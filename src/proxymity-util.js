@@ -3,7 +3,7 @@ function arrayFrom(arrayLike){ // incase we are running in a not so new browser 
 }
 
 function forEach(arrayLike, callback){
-	return arrayFrom(arrayLike).forEach(callback)
+	return Array.prototype.forEach.call(arrayLike, callback)
 }
 
 function isFunction(val){
