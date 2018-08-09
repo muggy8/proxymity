@@ -17,3 +17,4 @@
 [ ]	: nested foreach on the same level would be nice
 [x]	: sharing model objects would be nice
 [X]	: make repeat also watch for changes to the data object and rerun on array replace
+[ ] : async foreach rendering so things that would take a long time to render would not lock up the main thread from doing stuff
