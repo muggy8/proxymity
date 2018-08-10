@@ -184,7 +184,7 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 		stubKey.in = function(arr){
 			hiddenKeys = getKeyStore(arr)
 			if (!hiddenKeys || !isString(hiddenKeys.length)){
-				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
+				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root evaluating [" + repeatBody.insertAfter.textContent + "]")
 			}
 			repeatBody.source = arr
 		}
@@ -230,7 +230,7 @@ function transformList(elementList, model, propertyToDefine, parentRepeatIndexDe
 	var repeatBody
 	var key = function(property){
 		if (repeatBody){
-			throw new error("Improper usage of key(string).in(array): key(string) cannot be nested on the same level")
+			throw new Error("Improper usage of key(string).in(array): key(string) cannot be nested on the same level")
 		}
 		repeatBody = {
 			key: property
