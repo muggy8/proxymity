@@ -4,7 +4,7 @@ var events = (function(){
 	var output = {}
 
 	var watch = output.watch = function(nameOrCallback, callbackOrOptions, options){
-		var name, callback
+		var name, callback, maybeDeleteGroup
 		if (isFunction(callbackOrOptions)){
 			name = nameOrCallback
 			callback = callbackOrOptions
@@ -31,14 +31,25 @@ var events = (function(){
 				listeners: []
 			}
 			var addTo = wiledcards.listeners
+			maybeDeleteGroup = function(){
+				if (!wiledcards.listeners.length){
+					delete listenerWildcards[name]
+				}
+			}
 		}
 		else {
 			var addTo = listenerLibrary[name] = listenerLibrary[name] || []
+			maybeDeleteGroup = function(){
+				if (!listenerLibrary[name]){
+					delete listenerLibrary[name]
+				}
+			}
 		}
 
 		addTo.push(callback)
 		return function(){
 			addTo.splice(addTo.indexOf(callback), 1)
+			maybeDeleteGroup()
 		}
 	}
 
