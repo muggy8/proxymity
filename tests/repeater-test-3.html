@@ -1,0 +1,91 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+		<!-- <script type='text/javascript' src='http://getfirebug.com/releases/lite/1.2/firebug-lite-compressed.js'></script> -->
+		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
+		<script src="../src/proxymity-util.js"></script>
+		<script src="../src/subscribable.js"></script>
+		<script src="../src/proxymity-observe.js"></script>
+		<script src="../src/data-proto.js"></script>
+		<script src="../src/proxymity-ui.js"></script>
+		<script src="../src/proxymity.dev.js"></script>
+	</head>
+	<body>
+		<!-- foreach: {
+			console.log("table loop");
+			this.app.tables = [
+				{},
+				{},
+				{},
+				{},
+				{}
+			];
+			key("tableIndex").in(this.app.tables)
+		} -->
+		<table>
+			<!-- foreach: {
+				console.log("tbody loop", this.tableIndex);
+				this.app.tables[this.tableIndex].bodies = [
+					{},
+					{},
+					{},
+					{},
+					{}
+				];
+				key("tbodyIndex").in(this.app.tables[this.tableIndex].bodies);
+			}-->
+			<tbody>
+				<!-- foreach: {
+					console.log("tr loop", this.tableIndex, this.tbodyIndex);
+					this.app.tables[this.tableIndex].bodies[this.tbodyIndex].rows = [
+						{},
+						{},
+						{},
+						{},
+						{}
+					];
+					key("trIndex").in(this.app.tables[this.tableIndex].bodies[this.tbodyIndex].rows);
+				}-->
+				<tr>
+					<!-- foreach: {
+						console.log("td loop", this.tableIndex, this.tbodyIndex, this.trIndex);
+						this.app.tables[this.tableIndex].bodies[this.tbodyIndex].rows[this.trIndex].cells = [
+							{},
+							{},
+							{},
+							{},
+							{}
+						];
+						key("tdIndex").in(this.app.tables[this.tableIndex].bodies[this.tbodyIndex].rows[this.trIndex].cells);
+					}-->
+					<td>{:this.tableIndex:},{:this.tbodyIndex:},{:this.trIndex:},{:this.tdIndex:} {:console.log("ran", this.tableIndex, this.tbodyIndex, this.trIndex, this.tdIndex) || '':}</td>
+					<!-- foreach: key.end() -->
+				</tr>
+				<!-- foreach: key.end() -->
+			</tbody>
+			<!-- foreach: key.end() -->
+		</table>
+		<!-- foreach: key.end() -->
+		<script>
+			// gonna stub this in here
+			var safeEval = function(s, sv = {}, t = false){
+				try {
+					with(sv){
+						return eval(s)
+					}
+				}
+				catch(o3o){
+					if (!t){
+						console.error("failed to evaluate expression [" + s + "]", this, o3o)
+						return ""
+					}
+					else {
+						throw o3o
+					}
+				}
+			}
+
+			var test = proxymity(document.body, {})
+		</script>
+	</body>
+</html>
