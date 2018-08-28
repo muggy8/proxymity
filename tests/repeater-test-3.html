@@ -12,7 +12,7 @@
 	</head>
 	<body>
 		<!-- foreach: {
-			console.log("table loop");
+			console.warn("table loop");
 			this.app.tables = [
 				{},
 				{},
@@ -24,7 +24,7 @@
 		} -->
 		<table>
 			<!-- foreach: {
-				console.log("tbody loop", this.tableIndex);
+				console.warn("tbody loop", this.tableIndex);
 				this.app.tables[this.tableIndex].bodies = [
 					{},
 					{},
@@ -36,7 +36,7 @@
 			}-->
 			<tbody>
 				<!-- foreach: {
-					console.log("tr loop", this.tableIndex, this.tbodyIndex);
+					console.warn("tr loop", this.tableIndex, this.tbodyIndex);
 					this.app.tables[this.tableIndex].bodies[this.tbodyIndex].rows = [
 						{},
 						{},
@@ -48,7 +48,7 @@
 				}-->
 				<tr>
 					<!-- foreach: {
-						console.log("td loop", this.tableIndex, this.tbodyIndex, this.trIndex);
+						console.warn("td loop", this.tableIndex, this.tbodyIndex, this.trIndex);
 						this.app.tables[this.tableIndex].bodies[this.tbodyIndex].rows[this.trIndex].cells = [
 							{},
 							{},
@@ -58,7 +58,7 @@
 						];
 						key("tdIndex").in(this.app.tables[this.tableIndex].bodies[this.tbodyIndex].rows[this.trIndex].cells);
 					}-->
-					<td>{:this.tableIndex:},{:this.tbodyIndex:},{:this.trIndex:},{:this.tdIndex:} {:console.log("ran", this.tableIndex, this.tbodyIndex, this.trIndex, this.tdIndex) || '':}</td>
+					<td>{:this.tableIndex:},{:this.tbodyIndex:},{:this.trIndex:},{:this.tdIndex:} {:console.warn("ran", this.tableIndex, this.tbodyIndex, this.trIndex, this.tdIndex) || '':}</td>
 					<!-- foreach: key.end() -->
 				</tr>
 				<!-- foreach: key.end() -->

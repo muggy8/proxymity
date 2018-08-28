@@ -177,6 +177,10 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 	}
 
 	return observe(function(){
+	    if (repeatBody.eventId){
+	        events.emit("get", repeatBody.eventId)
+	        return delete repeatBody.eventId // this is so we dont run the foreach script the first time since it's ran in the beginning
+	    }
 		var hiddenKeys
 		var stubKey = function(){
 			return stubKey
@@ -244,8 +248,14 @@ function transformList(elementList, model, propertyToDefine, parentRepeatIndexDe
 		if (repeatBody.source){
 			throw new Error("Improper usage of key(string).in(array): in(array) called before key")
 		}
+		
+		var hiddenKeys = getKeyStore(array)
+		if (!hiddenKeys || !isString(hiddenKeys.length)){
+			throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
+		}
 
-		// repeatBody.source = array
+		repeatBody.eventId = hiddenKeys.length
+		repeatBody.source = array
 		repeatBody.elements = []
 	}
 	key.end = function(onClone){
@@ -460,7 +470,7 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 			nodeTypeLowercase === "datetime-local"
 		){
 			uiDataVal = "valueAsDate"
-			setListener = function(payload){
+			setListener = function(){
 				try{
 					createMode = true
 					var payloadDate = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
