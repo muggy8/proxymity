@@ -179,6 +179,7 @@ var events = (function(){
 
 		queue[name] = payload
 		payload.order = order = order + 1
+        payload.priority = payload.priority || 0
 	}
 
 	// this is how we get the queue to resolve on the next event cycle instead of immediately
@@ -203,6 +204,13 @@ var events = (function(){
 
 		var emitOrder = propsIn(workingQueue)
 		emitOrder.sort(function(a, b){
+			if (workingQueue[a].priority > workingQueue[b].priority){
+				return -1
+			}
+			else if (workingQueue[a].priority < workingQueue[b].priority){
+				return 1
+			}
+
 			if (workingQueue[a].order > workingQueue[b].order){
 				return 1
 			}
@@ -327,24 +335,31 @@ function defineAsGetSet(to, key, value, enumerable = false){
 	// generateId(randomInt(32, 48)) // this secret id represents the relationship between this item's parent and this item's children as a result, the secret will not change even if the value is saved
 
 	var emitEventRecursively = internalMethod(function(eventName, emitSelf = true){
-		var selfProps = isArrayOrObject(value) && propsIn(value)
-		selfProps && forEach(selfProps, function(key){
-			getSecretEmitter = true
-			var emitterFn = value[key]
-			getSecretEmitter = false
-			if (emitterFn instanceof internalMethod) {
-				emitterFn(eventName)
-			}
-			else if (Array.isArray(value) && key === 'length') {
-				var valHiddenKeys = getKeyStore(value)
-				if (valHiddenKeys && isString(valHiddenKeys.length)){
-					var payload = {}
-					events.async(eventName + ":" + valHiddenKeys.length, payload)
-					payload.order = -1
-				}
-			}
-		})
 		emitSelf && events.async(eventName + ":" + secretId)
+		var selfProps = isArrayOrObject(value) && propsIn(value)
+        if (selfProps) {
+
+            // we need to do this first cuz the length prop is the last item in an array so this will elevate it
+            if (Array.isArray(value)) {
+                var valHiddenKeys = getKeyStore(value)
+                if (valHiddenKeys && isString(valHiddenKeys.length)){
+                    events.async(eventName + ":" + valHiddenKeys.length, {
+                        priority: 1
+                    })
+                }
+            }
+
+            // after we can do the rest of the numbers
+            forEach(selfProps, function(key){
+    			getSecretEmitter = true
+    			var emitterFn = value[key]
+    			getSecretEmitter = false
+    			if (emitterFn instanceof internalMethod) {
+    				emitterFn(eventName)
+    			}
+    		})
+
+        }
 	})
 
 	// console.log(key, value, to)
@@ -405,9 +420,9 @@ function maskProtoMethods(mask, proto, method){
 			var output = proto[method].apply(this, Array.from(arguments))
 
 			if (isNumber(preCallLength) && preCallLength !== this.length){
-				var payload = {}
-				events.async("set:" + getKeyStore(this).length, payload)
-				payload.order = -1
+				events.async("set:" + getKeyStore(this).length, {
+                    priority: 1
+                })
 			}
 			return output
 		}
@@ -736,6 +751,10 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 	}
 
 	return observe(function(){
+	    if (repeatBody.eventId){
+	        events.emit("get", repeatBody.eventId)
+	        return delete repeatBody.eventId // this is so we dont run the foreach script the first time since it's ran in the beginning
+	    }
 		var hiddenKeys
 		var stubKey = function(){
 			return stubKey
@@ -803,8 +822,14 @@ function transformList(elementList, model, propertyToDefine, parentRepeatIndexDe
 		if (repeatBody.source){
 			throw new Error("Improper usage of key(string).in(array): in(array) called before key")
 		}
+		
+		var hiddenKeys = getKeyStore(array)
+		if (!hiddenKeys || !isString(hiddenKeys.length)){
+			throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
+		}
 
-		// repeatBody.source = array
+		repeatBody.eventId = hiddenKeys.length
+		repeatBody.source = array
 		repeatBody.elements = []
 	}
 	key.end = function(onClone){
@@ -1019,7 +1044,7 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 			nodeTypeLowercase === "datetime-local"
 		){
 			uiDataVal = "valueAsDate"
-			setListener = function(payload){
+			setListener = function(){
 				try{
 					createMode = true
 					var payloadDate = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
