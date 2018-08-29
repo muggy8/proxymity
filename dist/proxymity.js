@@ -572,11 +572,16 @@ function observe(targetFinder, callbackSet, stuffToUnWatch = []){
 }
 
 // src/proxymity-ui.js
-function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue){
-	forEach(evalQueue, function(queuedItem){
-		originalText = originalText.replace(queuedItem.drop, function(){
-			return safeEval.call(sourceEle, queuedItem.run)
-		})
+function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue, target){
+	forEach(evalQueue, function(queuedItem, index){
+        if (target === index) {
+            originalText = originalText.replace(queuedItem.drop, function(){
+    			return queuedItem.cache = safeEval.call(sourceEle, queuedItem.run)
+    		})
+        }
+        else {
+            originalText = originalText.replace(queuedItem.drop, queuedItem.cache)
+        }
 	})
 	return originalText
 }
@@ -595,12 +600,13 @@ function renderCustomSyntax(textSource, containingElement, appProp){
 	// we spliced out what we had above that we can use to render the text. if have a render queue then this text is worth parsing and running and re-running on asyncstart or whatever. other wise it's jsut regular text so we ignore it :3
 	if (onRenderEvalQueue.length){
 		var destroyCallbacks = []
-		var renderFn = function(){
+		var renderFn = function(queueIndex){
 			createMode = true
-			textSource.textContent = evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue)
+			textSource.textContent = evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue, queueIndex)
 			createMode = false
 		}
-		forEach(onRenderEvalQueue, function(queuedItem){
+        console.log(onRenderEvalQueue)
+		forEach(onRenderEvalQueue, function(queuedItem, index){
 			var dataVar = generateId(randomInt(32, 48))
 			if (queuedItem.on){
 				var watchfor = []
@@ -609,14 +615,15 @@ function renderCustomSyntax(textSource, containingElement, appProp){
 						createMode = true
 						safeEval.call(containingElement, "this." + appProp + evalScriptConcatinator(attributeToListenTo) + attributeToListenTo)
 						createMode = false
-					}, renderFn))
+					}, function(){
+                        renderFn(index)
+                    }))
 				})
 			}
-			else {
-				renderFn()
-			}
+            else {
+                renderFn(index)
+            }
 		})
-		// console.log(onRenderEvalQueue, evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue))
 		return function(){
 			forEach(destroyCallbacks, function(fn){
 				fn()
@@ -822,7 +829,7 @@ function transformList(elementList, model, propertyToDefine, parentRepeatIndexDe
 		if (repeatBody.source){
 			throw new Error("Improper usage of key(string).in(array): in(array) called before key")
 		}
-		
+
 		var hiddenKeys = getKeyStore(array)
 		if (!hiddenKeys || !isString(hiddenKeys.length)){
 			throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
