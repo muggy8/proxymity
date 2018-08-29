@@ -89,6 +89,7 @@ var events = (function(){
 
 		queue[name] = payload
 		payload.order = order = order + 1
+        payload.priority = payload.priority || 0
 	}
 
 	// this is how we get the queue to resolve on the next event cycle instead of immediately
@@ -113,6 +114,13 @@ var events = (function(){
 
 		var emitOrder = propsIn(workingQueue)
 		emitOrder.sort(function(a, b){
+			if (workingQueue[a].priority > workingQueue[b].priority){
+				return -1
+			}
+			else if (workingQueue[a].priority < workingQueue[b].priority){
+				return 1
+			}
+
 			if (workingQueue[a].order > workingQueue[b].order){
 				return 1
 			}

@@ -81,24 +81,31 @@ function defineAsGetSet(to, key, value, enumerable = false){
 	// generateId(randomInt(32, 48)) // this secret id represents the relationship between this item's parent and this item's children as a result, the secret will not change even if the value is saved
 
 	var emitEventRecursively = internalMethod(function(eventName, emitSelf = true){
-		var selfProps = isArrayOrObject(value) && propsIn(value)
-		selfProps && forEach(selfProps, function(key){
-			getSecretEmitter = true
-			var emitterFn = value[key]
-			getSecretEmitter = false
-			if (emitterFn instanceof internalMethod) {
-				emitterFn(eventName)
-			}
-			else if (Array.isArray(value) && key === 'length') {
-				var valHiddenKeys = getKeyStore(value)
-				if (valHiddenKeys && isString(valHiddenKeys.length)){
-					var payload = {}
-					events.async(eventName + ":" + valHiddenKeys.length, payload)
-					payload.order = -1
-				}
-			}
-		})
 		emitSelf && events.async(eventName + ":" + secretId)
+		var selfProps = isArrayOrObject(value) && propsIn(value)
+        if (selfProps) {
+
+            // we need to do this first cuz the length prop is the last item in an array so this will elevate it
+            if (Array.isArray(value)) {
+                var valHiddenKeys = getKeyStore(value)
+                if (valHiddenKeys && isString(valHiddenKeys.length)){
+                    events.async(eventName + ":" + valHiddenKeys.length, {
+                        priority: 1
+                    })
+                }
+            }
+
+            // after we can do the rest of the numbers
+            forEach(selfProps, function(key){
+    			getSecretEmitter = true
+    			var emitterFn = value[key]
+    			getSecretEmitter = false
+    			if (emitterFn instanceof internalMethod) {
+    				emitterFn(eventName)
+    			}
+    		})
+
+        }
 	})
 
 	// console.log(key, value, to)
@@ -159,9 +166,9 @@ function maskProtoMethods(mask, proto, method){
 			var output = proto[method].apply(this, Array.from(arguments))
 
 			if (isNumber(preCallLength) && preCallLength !== this.length){
-				var payload = {}
-				events.async("set:" + getKeyStore(this).length, payload)
-				payload.order = -1
+				events.async("set:" + getKeyStore(this).length, {
+                    priority: 1
+                })
 			}
 			return output
 		}
