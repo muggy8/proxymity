@@ -605,7 +605,6 @@ function renderCustomSyntax(textSource, containingElement, appProp){
 			textSource.textContent = evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue, queueIndex)
 			createMode = false
 		}
-        console.log(onRenderEvalQueue)
 		forEach(onRenderEvalQueue, function(queuedItem, index){
 			var dataVar = generateId(randomInt(32, 48))
 			if (queuedItem.on){
