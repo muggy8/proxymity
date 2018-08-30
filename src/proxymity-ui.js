@@ -1,40 +1,39 @@
-function evalAndReplaceExpessionQueue(originalText, sourceEle, evalQueue, target){
-	forEach(evalQueue, function(queuedItem, index){
-        if (target === index) {
-            originalText = originalText.replace(queuedItem.drop, function(){
-    			return queuedItem.cache = safeEval.call(sourceEle, queuedItem.run)
-    		})
-        }
-        else {
-            originalText = originalText.replace(queuedItem.drop, queuedItem.cache)
-        }
-	})
-	return originalText
-}
 function renderCustomSyntax(textSource, containingElement, appProp){
 	var sourceText = textSource.textContent
 	var onRenderEvalQueue = []
-	sourceText.replace(/\{\:([\s\S]*?)\:\}(\|(\s|\n)*\{[\s\S]*?\}(\s|\n)*\|)?/g, function(wholeMatch, evalText, dependencyText){
+	var outputTemplate = sourceText.replace(/\{\:([\s\S]*?)\:\}(\|(\s|\n)*\{[\s\S]*?\}(\s|\n)*\|)?/g, function(wholeMatch, evalText, dependencyText){
 		// console.log(evalText, dependencyText)
 		onRenderEvalQueue.push({
-			drop: wholeMatch,
+			// drop: wholeMatch,
 			run: evalText,
 			on: dependencyText && dependencyText.replace(/^\|[\s\n]*\{|\}[\s\n]*\|$/g, "").split(/\}[\s\n]*\,[\s\n]*\{/g)
 		})
-	})
+        return "{::}"
+	}).split("{::}")
 
 	// we spliced out what we had above that we can use to render the text. if have a render queue then this text is worth parsing and running and re-running on asyncstart or whatever. other wise it's jsut regular text so we ignore it :3
 	if (onRenderEvalQueue.length){
 		var destroyCallbacks = []
 		var renderFn = function(queueIndex){
-			createMode = true
-			textSource.textContent = evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue, queueIndex)
-			createMode = false
+			// textSource.textContent = evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue, queueIndex)
+            textSource.textContent = outputTemplate.reduce(function(sum, chunk, chunkIndex) {
+                var expressionSegment = ""
+                if (onRenderEvalQueue[chunkIndex]){
+                    if (chunkIndex === queueIndex){
+                        createMode = true
+                        expressionSegment = onRenderEvalQueue[chunkIndex].cache = safeEval.call(containingElement, onRenderEvalQueue[chunkIndex].run)
+			            createMode = false
+                    }
+                    else {
+                        expressionSegment = onRenderEvalQueue[chunkIndex].cache
+                    }
+                }
+                return sum + chunk + expressionSegment
+            }, '')
 		}
 		forEach(onRenderEvalQueue, function(queuedItem, index){
 			var dataVar = generateId(randomInt(32, 48))
 			if (queuedItem.on){
-				var watchfor = []
 				forEach(queuedItem.on, function(attributeToListenTo){
 					destroyCallbacks.push(observe(function(){
 						createMode = true
@@ -119,8 +118,11 @@ function groupBy(itemArray, propertyToGroupBy){
 var destroyEventName = generateId(randomInt(32, 48))
 function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner){
 	// console.log(repeatBody)
-
+    var startTime = Date.now()
+    console.warn("initializing repeater", repeatBody)
 	var lengthSet = function(){
+        var startTime = Date.now()
+        console.warn("begin length set", repeatBody)
 		// the flow: because we know that the output list is always gonna be here while we dont know the current state of the element and if it has a parent at all, the best that we can do is to build the output list right and then remove all the elements form the parent element if there is one then stick the output list in after.
 		var elementsList = repeatBody.outputList
 		var insertBeforeIndex = elementsList.indexOf(repeatBody.insertBefore)
@@ -180,9 +182,10 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 				destroyListeners(setToRemove)
 			}
 		}
-	}
+        console.warn("end length set after (ms):", Date.now() - startTime, repeatBody)
+    }
 
-	return observe(function(){
+	var stop = observe(function(){
 	    if (repeatBody.eventId){
 	        events.emit("get", repeatBody.eventId)
 	        return delete repeatBody.eventId // this is so we dont run the foreach script the first time since it's ran in the beginning
@@ -205,6 +208,8 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 
 		events.emit("get", hiddenKeys.length)
 	}, lengthSet)
+    console.warn("ending repeater process after (ms):", Date.now() - startTime, repeatBody)
+    return stop
 }
 
 function createDestroylistenerCallback(arrayOfFunctions){
