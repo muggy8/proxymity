@@ -878,7 +878,7 @@ function transformList(elementList, model, propertyToDefine, parentRepeatIndexDe
 	}
 
 	// first time we go through and find the comments with our special "foreach: ..." in it and calling the key, key.in and key.end functions. after doing that those functions will extract all of those elements from the list cuz they need a clean template to work with then we can continue with the proper init opperations
-	forEach(elementList, function(node){
+	forEach(arrayFrom(elementList), function(node){
 		repeatBody && repeatBody.elements && repeatBody.elements.push(node)
 		if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
 			transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner)
