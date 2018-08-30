@@ -461,7 +461,14 @@ var proxyTraps = {
 		return Reflect.get(dataStash, prop, calledOn)
 	},
 	set: function(dataStash, prop, value, calledOn){
+		var calledOnArray = Array.isArray(calledOn)
+		if (calledOnArray){
+			var beforeLength = calledOn.length
+		}
 		defineAsGetSet(calledOn, prop, value, true)
+		if (calledOnArray && calledOn.length !== beforeLength){
+			events.async("set:" + getKeyStore(calledOn).length)
+		}
 		return true
 	}
 }
