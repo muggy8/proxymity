@@ -70,9 +70,9 @@ define(
 	})
 )
 
-var getSecretId = generateId(randomInt(12, 16))
-var secretSelfMoved = generateId(randomInt(12, 16))
-var secretSelfDeleted = generateId(randomInt(12, 16))
+var getSecretId = generateId(randomInt(32, 48))
+var secretSelfMoved = generateId(randomInt(32, 48))
+var secretSelfDeleted = generateId(randomInt(32, 48))
 
 function proxyObj(obj){
 	var objProto = Object.getPrototypeOf(obj)
@@ -135,7 +135,7 @@ function proxyObj(obj){
 				// because getting an undefined or existing prop results will happen after getting the secret prop and we only emit this event if the get is for a real prop
 				if (!secretProps.hasOwnProperty(property)){
 					// we also want to fill in secret props for things that dont have them because they were there in the beginning (like the length property for arrays for example)
-					secretProps[property] = generateId(randomInt(12, 16))
+					secretProps[property] = generateId(randomInt(32, 48))
 				}
 				events.emit("get", {
 					value: secretProps[property]
@@ -159,7 +159,7 @@ function proxyObj(obj){
 				if (selfIsArray){
 					var selfLength = target.length
 					if (!secretProps.hasOwnProperty("length")){
-						secretProps["length"] = generateId(randomInt(12, 16))
+						secretProps["length"] = generateId(randomInt(32, 48))
 					}
 				}
 
@@ -182,7 +182,7 @@ function proxyObj(obj){
 				// before we enter into our return procedure, we want to make sure that whatever prop we're setting, we have a secret id for that prop. we keep the secret ids for prop in the parent object because the props might be something we control or it might not be but we do know that we do control this so that's why we're keeping it here
 				// because normal props on the target always take presidense over the secret props we can use the same name as the normal prop on the secret prop
 				if (!secretProps.hasOwnProperty(property)){
-					secretProps[property] = generateId(randomInt(12, 16))
+					secretProps[property] = generateId(randomInt(32, 48))
 				}
 
 				// testing stuff

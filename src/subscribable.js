@@ -79,7 +79,7 @@ var events = (function(){
 	var queue = {}
 	var order = 0
 
-	var nextEvent = generateId(randomInt(12, 16))
+	var nextEvent = generateId(randomInt(32, 48))
 	var nextEventSet = false
 	var async = output.async = function(name, payload = {}){
 		if (!nextEventSet){

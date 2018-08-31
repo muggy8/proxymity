@@ -32,7 +32,7 @@ function renderCustomSyntax(textSource, containingElement, appProp){
             }, '')
 		}
 		forEach(onRenderEvalQueue, function(queuedItem, index){
-			var dataVar = generateId(randomInt(12, 16))
+			var dataVar = generateId(randomInt(32, 48))
 			if (queuedItem.on){
 				forEach(queuedItem.on, function(attributeToListenTo){
 					destroyCallbacks.push(observe(function(){
@@ -115,7 +115,7 @@ function groupBy(itemArray, propertyToGroupBy){
 	return groups
 }
 
-var destroyEventName = generateId(randomInt(12, 16))
+var destroyEventName = generateId(randomInt(32, 48))
 function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner){
 	// console.log(repeatBody)
     var startTime = Date.now()
@@ -522,7 +522,7 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 
 		var changeListeners = ["change", "keyup", "click"]
 		var onChange = function(ev){
-			var secretValue = generateId(randomInt(12, 16))
+			var secretValue = generateId(randomInt(32, 48))
 			safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value + " = " + secretValue, {
 				[secretValue]: node[uiDataVal]
 			})
