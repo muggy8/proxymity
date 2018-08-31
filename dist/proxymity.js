@@ -699,11 +699,7 @@ function groupBy(itemArray, propertyToGroupBy){
 var destroyEventName = generateId(randomInt(32, 48))
 function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner){
 	// console.log(repeatBody)
-    var startTime = Date.now()
-    console.warn("initializing repeater", repeatBody)
 	var lengthSet = function(){
-        var startTime = Date.now()
-        console.warn("begin length set", repeatBody)
 		// the flow: because we know that the output list is always gonna be here while we dont know the current state of the element and if it has a parent at all, the best that we can do is to build the output list right and then remove all the elements form the parent element if there is one then stick the output list in after.
 		var elementsList = repeatBody.outputList
 		var insertBeforeIndex = elementsList.indexOf(repeatBody.insertBefore)
@@ -763,10 +759,9 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 				destroyListeners(setToRemove)
 			}
 		}
-        console.warn("end length set after (ms):", Date.now() - startTime, repeatBody)
     }
 
-	var stop = observe(function(){
+	return observe(function(){
 	    if (repeatBody.eventId){
 	        events.emit("get", repeatBody.eventId)
 	        return delete repeatBody.eventId // this is so we dont run the foreach script the first time since it's ran in the beginning
@@ -789,8 +784,6 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 
 		events.emit("get", hiddenKeys.length)
 	}, lengthSet)
-    console.warn("ending repeater process after (ms):", Date.now() - startTime, repeatBody)
-    return stop
 }
 
 function createDestroylistenerCallback(arrayOfFunctions){
