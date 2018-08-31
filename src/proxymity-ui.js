@@ -32,7 +32,6 @@ function renderCustomSyntax(textSource, containingElement, appProp){
             }, '')
 		}
 		forEach(onRenderEvalQueue, function(queuedItem, index){
-			var dataVar = generateId(randomInt(32, 48))
 			if (queuedItem.on){
 				forEach(queuedItem.on, function(attributeToListenTo){
 					destroyCallbacks.push(observe(function(){

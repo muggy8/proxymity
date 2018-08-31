@@ -37,12 +37,13 @@ function internalMethod(f){
 internalMethod.prototype = Object.create(Function.prototype)
 
 var hiddenIds = generateId(randomInt(32, 48))
+var internalIdCounter = 0
 function initializeKeyStore(obj){
 	if (isArrayOrObject(obj) && !obj.hasOwnProperty(Symbol.toPrimitive)){
 		var hiddenIdObject = {}
 
 		if (Array.isArray(obj)){
-			hiddenIdObject.length = generateId(randomInt(32, 48))
+			hiddenIdObject.length = (++internalIdCounter).toString()
 		}
 
 		Object.defineProperty(obj, Symbol.toPrimitive, {
@@ -75,7 +76,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 	}
 
 	var toPropIds = getKeyStore(to)
-	var secretId = toPropIds[key] = toPropIds[key] || generateId(randomInt(32, 48))
+	var secretId = toPropIds[key] = toPropIds[key] || (++internalIdCounter).toString()
 
 	// before we get onto the actual code we want to set up all of our internal methods and what not.
 	// generateId(randomInt(32, 48)) // this secret id represents the relationship between this item's parent and this item's children as a result, the secret will not change even if the value is saved
