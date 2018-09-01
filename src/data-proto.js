@@ -19,9 +19,25 @@ function proxify(value){
 	return value
 }
 
-var recursiveEmitter = function(){},
-    callbackAdder = function(){}
-
+var blankFunction = function(){},
+	recursiveEmitter = blankFunction,
+    callbackAdder = blankFunction,
+    executeWatchersSource = function(eventType){
+		var watchers = this
+        var waiters = watchers.slice()
+        for(var i = 0; waiters && i < waiters.length; i++){
+			if (watchers.indexOf(waiters[i]) > -1){
+				waiters[i](eventType)
+			}
+		}
+    },
+	addWatcherSource = function(callback){
+		var watchers = this
+        watchers.push(callback)
+        return function(){
+            watchers.splice(watchers.indexOf(callback), 1)
+        }
+    }
 function defineAsGetSet(to, key, value, enumerable = false){
 	// we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
 	if (to.hasOwnProperty(key)){
@@ -30,27 +46,19 @@ function defineAsGetSet(to, key, value, enumerable = false){
 
 	// console.log(key, value, to)
     var watchers = []
-    var executeWatchers = function(eventType){
-        var waiters = watchers.slice()
-        for(var i = 0; waiters && i < waiters.length; i++){
-			if (watchers.indexOf(waiters[i]) > -1){
-				waiters[i](eventType, value)
-			}
-		}
-    }
-    var addWatcher = function(callback){
-        watchers.push(callback)
-        return function(){
-            watchers.splice(watchers.indexOf(callback), 1)
-        }
-    }
+	var addWatcher = addWatcherSource.bind(watchers)
+	var executeWatchers = executeWatchersSource.bind(watchers)
 
 	// right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
 	Object.defineProperty(to, key, {
 		enumerable: enumerable,
 		configurable: true,
 		get: function(){
-            callbackAdder = addWatcher
+			if (Array.isArray(value)) {
+				callbackAdder = getSecretProps(value, secretAddWatcher)
+			} else {
+				callbackAdder = addWatcher
+			}
 			return value
 		},
 		set: function(input){
@@ -64,10 +72,15 @@ function defineAsGetSet(to, key, value, enumerable = false){
 		}
 	})
 
-	callbackAdder = addWatcher
-    onNextEventCycle(executeWatchers, "set")
 
-	return proxify(value)
+	proxify(value)
+	if (Array.isArray(value)) {
+		callbackAdder = getSecretProps(value, secretAddWatcher)
+		onNextEventCycle(getSecretProps(value, secretExecuteWatchers), "set")
+	} else {
+		callbackAdder = addWatcher
+    	onNextEventCycle(executeWatchers, "set")
+	}
 }
 
 function maskProtoMethods(mask, proto, method){
@@ -83,9 +96,10 @@ function maskProtoMethods(mask, proto, method){
 			var output = proto[method].apply(this, Array.from(arguments))
 
 			if (isNumber(preCallLength) && preCallLength !== this.length){
-				events.async("set:" + getKeyStore(this).length, {
-                    priority: 1
-                })
+				// figure out how to create a callback listener for this thing
+				if (Array.isArray(this)) {
+					onNextEventCycle(getSecretProps(this, secretExecuteWatchers), "set")
+				}
 			}
 			return output
 		}
@@ -130,7 +144,7 @@ var proxyTraps = {
 		}
 		defineAsGetSet(calledOn, prop, value, true)
 		if (calledOnArray && calledOn.length !== beforeLength){
-			events.async("set:" + getKeyStore(calledOn).length)
+			onNextEventCycle(getSecretProps(calledOn, secretExecuteWatchers), "set")
 		}
 		return true
 	}
@@ -180,11 +194,47 @@ function augmentProto(originalProto){
 	return replacementProto
 }
 
+function internalMethod(f){
+	Object.setPrototypeOf(f, internalMethod.prototype)
+	return f
+}
+internalMethod.prototype = Object.create(Function.prototype)
+
+function getSecretProps(proxiedObject, prop){
+	if (isFunction(proxiedObject[Symbol.toPrimitive])){
+		var potentiallyHiddenMethod = proxiedObject[Symbol.toPrimitive](prop)
+		if (potentiallyHiddenMethod instanceof internalMethod){
+			return potentiallyHiddenMethod
+		}
+	}
+	return blankFunction
+}
+
+
+var secretAddWatcher = generateId(randomInt(32, 48))
+var secretExecuteWatchers = generateId(randomInt(32, 48))
 function migrateData(protoObj, input){
+	var watchers, addWatcher, executeWatchers
+	if (protoObj === augmentedArrayProto){
+		watchers = []
+		addWatcher = internalMethod(addWatcherSource.bind(watchers))
+		executeWatchers = internalMethod(executeWatchersSource.bind(watchers))
+	}
+	Object.defineProperty(input, Symbol.toPrimitive, {
+		value: function(hint){
+			switch(hint){
+				case "number": return propsIn(this).length
+				case "string": return propsIn(this).length ? JSON.stringify(this) : ""
+				case secretAddWatcher: return protoObj === augmentedArrayProto && addWatcher
+				case secretExecuteWatchers: return protoObj === augmentedArrayProto && executeWatchers
+				default: return !!propsIn(this).length
+			}
+		}
+	})
 	forEach(Object.getOwnPropertyNames(input), function(key){
 		var propVal = input[key]
 		var enumerable = input.propertyIsEnumerable(key)
-		if (!(Array.isArray(input) && key === "length")){
+		if (!(protoObj === augmentedArrayProto && key === "length")){
 			delete input[key]
 			defineAsGetSet(input, key, propVal, enumerable)
 		}
