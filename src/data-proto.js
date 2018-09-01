@@ -51,7 +51,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 		enumerable: enumerable,
 		configurable: true,
 		get: function(){
-            changeWatcher = addWatcher
+            callbackAdder = addWatcher
 			return value
 		},
 		set: function(input){
@@ -65,6 +65,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 		}
 	})
 
+	callbackAdder = addWatcher
     onNextEventCycle(executeWatchers, "set")
 }
 
