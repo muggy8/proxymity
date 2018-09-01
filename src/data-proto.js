@@ -204,7 +204,6 @@ function getSecretProps(proxiedObject, prop){
 	return blankFunction
 }
 
-
 var secretAddWatcher = generateId(randomInt(32, 48))
 var secretExecuteWatchers = generateId(randomInt(32, 48))
 function migrateData(protoObj, input){
