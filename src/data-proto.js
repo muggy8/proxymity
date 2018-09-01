@@ -29,7 +29,6 @@ function defineAsGetSet(to, key, value, enumerable = false){
 	}
 
 	// console.log(key, value, to)
-	proxify(value)
     var watchers = []
     var executeWatchers = function(eventType){
         var waiters = watchers.slice()
@@ -67,6 +66,8 @@ function defineAsGetSet(to, key, value, enumerable = false){
 
 	callbackAdder = addWatcher
     onNextEventCycle(executeWatchers, "set")
+
+	return proxify(value)
 }
 
 function maskProtoMethods(mask, proto, method){
