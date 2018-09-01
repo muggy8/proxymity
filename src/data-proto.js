@@ -16,60 +16,8 @@ function proxify(value){
 		// console.log("arr", value)
 		proxyArray(value) // defined below
 	}
-	// else {
-	//	 console.log("wut", value)
-	// }
 	return value
 }
-
-// function isArrayOrObject(obj){
-// 	var objProto = obj && Object.getPrototypeOf(obj)
-// 	if (objProto === Array.prototype || objProto === Object.prototype || objProto === augmentedArrayProto || objProto === augmentedObjectProto){
-// 		return true
-// 	}
-// 	return false
-// }
-//
-// function internalMethod(f){
-// 	Object.setPrototypeOf(f, internalMethod.prototype)
-// 	return f
-// }
-// internalMethod.prototype = Object.create(Function.prototype)
-//
-// var hiddenIds = generateId(randomInt(32, 48))
-// var internalIdCounter = 0
-// function initializeKeyStore(obj){
-// 	if (isArrayOrObject(obj) && !obj.hasOwnProperty(Symbol.toPrimitive)){
-// 		var hiddenIdObject = {}
-//
-// 		if (Array.isArray(obj)){
-// 			hiddenIdObject.length = (++internalIdCounter).toString()
-// 		}
-//
-// 		Object.defineProperty(obj, Symbol.toPrimitive, {
-// 			value: function(hint){
-// 				switch(hint){
-// 					case "number": return propsIn(this).length
-// 					case "string": return propsIn(this).length ? JSON.stringify(this) : ""
-// 					case hiddenIds: return hiddenIdObject
-// 					default: return !!propsIn(this).length
-// 				}
-// 			}
-// 		})
-// 	}
-// }
-// function getKeyStore(obj){
-// 	if (isArrayOrObject(obj)){
-// 		if (!obj.hasOwnProperty(Symbol.toPrimitive) || !isFunction(obj[Symbol.toPrimitive])){
-// 			initializeKeyStore(obj)
-// 		}
-// 		var hiddenObj = obj[Symbol.toPrimitive](hiddenIds)
-// 		return (typeof hiddenObj === "object") ? hiddenObj : false
-// 	}
-// 	return {}
-// }
-// var getSecretEmitter = false;
-
 
 var recursiveEmitter = function(){},
     callbackAdder = function(){}
@@ -79,40 +27,6 @@ function defineAsGetSet(to, key, value, enumerable = false){
 	if (to.hasOwnProperty(key)){
 		return
 	}
-
-	// var toPropIds = getKeyStore(to)
-	// var secretId = toPropIds[key] = toPropIds[key] || (++internalIdCounter).toString()
-
-	// before we get onto the actual code we want to set up all of our internal methods and what not.
-	// generateId(randomInt(32, 48)) // this secret id represents the relationship between this item's parent and this item's children as a result, the secret will not change even if the value is saved
-
-	// var emitEventRecursively = internalMethod(function(eventName, emitSelf = true){
-	// 	emitSelf && events.async(eventName + ":" + secretId)
-	// 	var selfProps = isArrayOrObject(value) && propsIn(value)
-    //     if (selfProps) {
-    //
-    //         // we need to do this first cuz the length prop is the last item in an array so this will elevate it
-    //         if (Array.isArray(value)) {
-    //             var valHiddenKeys = getKeyStore(value)
-    //             if (valHiddenKeys && isString(valHiddenKeys.length)){
-    //                 events.async(eventName + ":" + valHiddenKeys.length, {
-    //                     priority: 1
-    //                 })
-    //             }
-    //         }
-    //
-    //         // after we can do the rest of the numbers
-    //         forEach(selfProps, function(key){
-    // 			getSecretEmitter = true
-    // 			var emitterFn = value[key]
-    // 			getSecretEmitter = false
-    // 			if (emitterFn instanceof internalMethod) {
-    // 				emitterFn(eventName)
-    // 			}
-    // 		})
-    //
-    //     }
-	// })
 
 	// console.log(key, value, to)
 	proxify(value)
