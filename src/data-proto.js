@@ -22,20 +22,20 @@ function proxify(value){
 	return value
 }
 
-function isArrayOrObject(obj){
-	var objProto = obj && Object.getPrototypeOf(obj)
-	if (objProto === Array.prototype || objProto === Object.prototype || objProto === augmentedArrayProto || objProto === augmentedObjectProto){
-		return true
-	}
-	return false
-}
-
-function internalMethod(f){
-	Object.setPrototypeOf(f, internalMethod.prototype)
-	return f
-}
-internalMethod.prototype = Object.create(Function.prototype)
-
+// function isArrayOrObject(obj){
+// 	var objProto = obj && Object.getPrototypeOf(obj)
+// 	if (objProto === Array.prototype || objProto === Object.prototype || objProto === augmentedArrayProto || objProto === augmentedObjectProto){
+// 		return true
+// 	}
+// 	return false
+// }
+//
+// function internalMethod(f){
+// 	Object.setPrototypeOf(f, internalMethod.prototype)
+// 	return f
+// }
+// internalMethod.prototype = Object.create(Function.prototype)
+//
 // var hiddenIds = generateId(randomInt(32, 48))
 // var internalIdCounter = 0
 // function initializeKeyStore(obj){
@@ -117,11 +117,11 @@ function defineAsGetSet(to, key, value, enumerable = false){
 	// console.log(key, value, to)
 	proxify(value)
     var watchers = []
-    var executeWatchers = function(){
+    var executeWatchers = function(eventType){
         var waiters = watchers.slice()
         for(var i = 0; waiters && i < waiters.length; i++){
 			if (watchers.indexOf(waiters[i]) > -1){
-				waiters[i](value)
+				waiters[i](eventType, value)
 			}
 		}
     }
@@ -145,13 +145,13 @@ function defineAsGetSet(to, key, value, enumerable = false){
 				return value
 			}
 
-			onNextEventCycle(executeWatchers)
+			onNextEventCycle(executeWatchers, "set")
 
 			return value = proxify(input)
 		}
 	})
 
-    onNextEventCycle(executeWatchers)
+    onNextEventCycle(executeWatchers, "set")
 }
 
 function maskProtoMethods(mask, proto, method){
