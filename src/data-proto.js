@@ -36,122 +36,122 @@ function internalMethod(f){
 }
 internalMethod.prototype = Object.create(Function.prototype)
 
-var hiddenIds = generateId(randomInt(32, 48))
-var internalIdCounter = 0
-function initializeKeyStore(obj){
-	if (isArrayOrObject(obj) && !obj.hasOwnProperty(Symbol.toPrimitive)){
-		var hiddenIdObject = {}
+// var hiddenIds = generateId(randomInt(32, 48))
+// var internalIdCounter = 0
+// function initializeKeyStore(obj){
+// 	if (isArrayOrObject(obj) && !obj.hasOwnProperty(Symbol.toPrimitive)){
+// 		var hiddenIdObject = {}
+//
+// 		if (Array.isArray(obj)){
+// 			hiddenIdObject.length = (++internalIdCounter).toString()
+// 		}
+//
+// 		Object.defineProperty(obj, Symbol.toPrimitive, {
+// 			value: function(hint){
+// 				switch(hint){
+// 					case "number": return propsIn(this).length
+// 					case "string": return propsIn(this).length ? JSON.stringify(this) : ""
+// 					case hiddenIds: return hiddenIdObject
+// 					default: return !!propsIn(this).length
+// 				}
+// 			}
+// 		})
+// 	}
+// }
+// function getKeyStore(obj){
+// 	if (isArrayOrObject(obj)){
+// 		if (!obj.hasOwnProperty(Symbol.toPrimitive) || !isFunction(obj[Symbol.toPrimitive])){
+// 			initializeKeyStore(obj)
+// 		}
+// 		var hiddenObj = obj[Symbol.toPrimitive](hiddenIds)
+// 		return (typeof hiddenObj === "object") ? hiddenObj : false
+// 	}
+// 	return {}
+// }
+// var getSecretEmitter = false;
 
-		if (Array.isArray(obj)){
-			hiddenIdObject.length = (++internalIdCounter).toString()
-		}
 
-		Object.defineProperty(obj, Symbol.toPrimitive, {
-			value: function(hint){
-				switch(hint){
-					case "number": return propsIn(this).length
-					case "string": return propsIn(this).length ? JSON.stringify(this) : ""
-					case hiddenIds: return hiddenIdObject
-					default: return !!propsIn(this).length
-				}
-			}
-		})
-	}
-}
-function getKeyStore(obj){
-	if (isArrayOrObject(obj)){
-		if (!obj.hasOwnProperty(Symbol.toPrimitive) || !isFunction(obj[Symbol.toPrimitive])){
-			initializeKeyStore(obj)
-		}
-		var hiddenObj = obj[Symbol.toPrimitive](hiddenIds)
-		return (typeof hiddenObj === "object") ? hiddenObj : false
-	}
-	return {}
-}
-var getSecretEmitter = false;
+var recursiveEmitter = function(){},
+    callbackAdder = function(){}
+
 function defineAsGetSet(to, key, value, enumerable = false){
 	// we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
 	if (to.hasOwnProperty(key)){
 		return
 	}
 
-	var toPropIds = getKeyStore(to)
-	var secretId = toPropIds[key] = toPropIds[key] || (++internalIdCounter).toString()
+	// var toPropIds = getKeyStore(to)
+	// var secretId = toPropIds[key] = toPropIds[key] || (++internalIdCounter).toString()
 
 	// before we get onto the actual code we want to set up all of our internal methods and what not.
 	// generateId(randomInt(32, 48)) // this secret id represents the relationship between this item's parent and this item's children as a result, the secret will not change even if the value is saved
 
-	var emitEventRecursively = internalMethod(function(eventName, emitSelf = true){
-		emitSelf && events.async(eventName + ":" + secretId)
-		var selfProps = isArrayOrObject(value) && propsIn(value)
-        if (selfProps) {
-
-            // we need to do this first cuz the length prop is the last item in an array so this will elevate it
-            if (Array.isArray(value)) {
-                var valHiddenKeys = getKeyStore(value)
-                if (valHiddenKeys && isString(valHiddenKeys.length)){
-                    events.async(eventName + ":" + valHiddenKeys.length, {
-                        priority: 1
-                    })
-                }
-            }
-
-            // after we can do the rest of the numbers
-            forEach(selfProps, function(key){
-    			getSecretEmitter = true
-    			var emitterFn = value[key]
-    			getSecretEmitter = false
-    			if (emitterFn instanceof internalMethod) {
-    				emitterFn(eventName)
-    			}
-    		})
-
-        }
-	})
+	// var emitEventRecursively = internalMethod(function(eventName, emitSelf = true){
+	// 	emitSelf && events.async(eventName + ":" + secretId)
+	// 	var selfProps = isArrayOrObject(value) && propsIn(value)
+    //     if (selfProps) {
+    //
+    //         // we need to do this first cuz the length prop is the last item in an array so this will elevate it
+    //         if (Array.isArray(value)) {
+    //             var valHiddenKeys = getKeyStore(value)
+    //             if (valHiddenKeys && isString(valHiddenKeys.length)){
+    //                 events.async(eventName + ":" + valHiddenKeys.length, {
+    //                     priority: 1
+    //                 })
+    //             }
+    //         }
+    //
+    //         // after we can do the rest of the numbers
+    //         forEach(selfProps, function(key){
+    // 			getSecretEmitter = true
+    // 			var emitterFn = value[key]
+    // 			getSecretEmitter = false
+    // 			if (emitterFn instanceof internalMethod) {
+    // 				emitterFn(eventName)
+    // 			}
+    // 		})
+    //
+    //     }
+	// })
 
 	// console.log(key, value, to)
 	proxify(value)
+    var watchers = []
+    var executeWatchers = function(){
+        var waiters = watchers.slice()
+        for(var i = 0; waiters && i < waiters.length; i++){
+			if (watchers.indexOf(waiters[i]) > -1){
+				waiters[i](value)
+			}
+		}
+    }
+    var addWatcher = function(callback){
+        watchers.push(callback)
+        return function(){
+            watchers.splice(watchers.indexOf(callback), 1)
+        }
+    }
 
 	// right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
 	Object.defineProperty(to, key, {
 		enumerable: enumerable,
 		configurable: true,
 		get: function(){
-			if (getSecretEmitter){
-				getSecretEmitter = false
-				return emitEventRecursively
-			} else {
-				if (Array.isArray(value)){
-					events.emit("get", getKeyStore(value).length)
-				} else {
-					events.emit("get", secretId)
-				}
-				return value
-			}
+            changeWatcher = addWatcher
+			return value
 		},
 		set: function(input){
 			if (input === value){
 				return value
 			}
 
-			// tell the current object in the data to be remapped if needed
-			// objectToPrimitiveCaller(value, recursiveEmitter, "remap", false)
-			emitEventRecursively("remap", false)
+			onNextEventCycle(executeWatchers)
 
-			// the remap call must happen to the current prop value if the current prop is an object of some kind and after we can check if the delete procuedure is triggered. this is because we cannot hook into the delete key word with getters and setters so we just tell users to set a value as undefined effectively delete it and thus we'll be able to do any required deletion procedure before doing the regular delete.
-			if (typeof input === "undefined"){
-				events.async("del:" + secretId)
-				return delete to[key]
-			}
-
-			// if it's not a delete opperation, well update the value of the current property and we set it, this still lets us use NULL as a empty since we're effectively overriding undefined
-			events.async("set:" + secretId)
-			// attachSecretMethods(input)
 			return value = proxify(input)
 		}
 	})
 
-	events.async("set:" + secretId)
+    onNextEventCycle(executeWatchers)
 }
 
 function maskProtoMethods(mask, proto, method){
