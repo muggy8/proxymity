@@ -51,7 +51,14 @@ var proxymity = (function(safeEval){
 	define(publicUse, "on", {})
 
 	getSet(publicUse.on, "asyncEnd", getAsyncPromise.bind(this, "asyncEnd"), setAsyncPromise.bind(this, "asyncEnd"))
+
 	getSet(publicUse.on, "renderEnd", getAsyncPromise.bind(this, "renderEnd"), setAsyncPromise.bind(this, "renderEnd"))
+
+	define(publicUse, "random", {})
+
+	define(publicUse.random, "number", randomInt)
+
+	define(publicUse.random, "string", generateId)
 	return publicUse
 })(function(s, sv = {}, t = false){
 	try {
