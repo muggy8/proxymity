@@ -26,11 +26,11 @@ function isNumber(val){
 }
 
 function isObject(val){
-	return typeof val === "object"
+	return val && typeof val === "object"
 }
 
 function propsIn(obj){
-	return (isObject(obj) || isFunction(obj)) ? Object.getOwnPropertyNames(obj) : []
+	return Object.getOwnPropertyNames(obj)
 }
 
 function randomInt(start, stop){
