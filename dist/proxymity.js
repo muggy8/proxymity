@@ -108,7 +108,11 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 			emitted = true
 		}
 		fn.res = false // make sure reused events wont be skipped over
-		queue.push({
+		var method = "push"
+		if (fn.priority){
+			method = "unshift"
+		}
+		queue[method]({
 			fn: fn,
 			args: args,
 		})
@@ -393,6 +397,7 @@ function migrateData(protoObj, input){
 		watchers = []
 		addWatcher = internalMethod(addWatcherSource.bind(watchers))
 		executeWatchers = internalMethod(executeWatchersSource.bind(watchers))
+		executeWatchers.priority = true
 	}
 	Object.defineProperty(input, Symbol.toPrimitive, {
 		value: function(hint){
