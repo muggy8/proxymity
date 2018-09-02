@@ -659,7 +659,7 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 		}
 		stubKey.in = function(arr){
 			secretWatcher = getSecretProps(arr, secretAddWatcher)
-			if (!hiddenKeys || !secretWatcher instanceof internalMethod){
+			if (!secretWatcher || !secretWatcher instanceof internalMethod){
 				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root evaluating [" + repeatBody.insertAfter.textContent + "]")
 			}
 			repeatBody.source = arr
@@ -1061,9 +1061,9 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 
 	define(publicUse, "on", {})
 
-	getSet(publicUse.on, "asyncEnd", getAsyncPromise.bind(this, "asyncEnd"), setAsyncPromise.bind(this, "asyncEnd"))
+	getSet(publicUse.on, "asyncend", getAsyncPromise.bind(this, "asyncEnd"), setAsyncPromise.bind(this, "asyncEnd"))
 
-	getSet(publicUse.on, "renderEnd", getAsyncPromise.bind(this, "renderEnd"), setAsyncPromise.bind(this, "renderEnd"))
+	getSet(publicUse.on, "renderend", getAsyncPromise.bind(this, "renderEnd"), setAsyncPromise.bind(this, "renderEnd"))
 
 	define(publicUse, "random", {})
 
