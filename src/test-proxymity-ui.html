@@ -57,12 +57,12 @@
 			<pre>{:JSON.stringify(this.app, null, "	"):}</pre>
 			<style>
 				pre {
-					background-color: {:this.app.background.toString() || 'initial':};
-					color: {:this.app.color.toString() || 'initial':};
-					padding: {:this.app.padding.toString() || 'initial':};
-					border: {:this.app.border.toString() || 'initial':};
-					font-size: {:this.app.fontSize.toString() || 'inherit':};
-					font-family: {:this.app.fontFace.toString() || 'sans-serif':}, sans-serif;
+					background-color: {:this.app.background.toString() || 'initial':}|{background}|;
+					color: {:this.app.color.toString() || 'initial':}|{color}|;
+					padding: {:this.app.padding.toString() || 'initial':}|{padding}|;
+					border: {:this.app.border.toString() || 'initial':}|{border}|;
+					font-size: {:this.app.fontSize.toString() || 'inherit':}|{fontSize}|;
+					font-family: {:this.app.fontFace.toString() || 'sans-serif':}|{fontFace}|, sans-serif;
 				}
 				.block {
 					display: block
