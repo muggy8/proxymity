@@ -78,18 +78,18 @@ define(appendableArrayProto, "unlink", function(){
 	destroyListeners(this)
 	return this
 })
-var whitelistedWhen = ["renderend"]
-define(appendableArrayProto, "when", function(whatHappens){
-	if (whitelistedWhen.indexOf(whatHappens) === -1){
-		throw new Error("Cannot subscribe to " + whatHappens)
-	}
-	return new Promise(function(accept){
-		var once = events.watch(whatHappens, function(){
-			once()
-			accept()
-		})
-	})
-})
+// var whitelistedWhen = ["renderend"]
+// define(appendableArrayProto, "when", function(whatHappens){
+// 	if (whitelistedWhen.indexOf(whatHappens) === -1){
+// 		throw new Error("Cannot subscribe to " + whatHappens)
+// 	}
+// 	return new Promise(function(accept){
+// 		var once = events.watch(whatHappens, function(){
+// 			once()
+// 			accept()
+// 		})
+// 	})
+// })
 
 function forEveryElement(source, callback){
 	forEach(source, function(item){
@@ -180,17 +180,18 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
     }
 
 	return observe(function(){
-	    if (repeatBody.eventId){
-	        events.emit("get", repeatBody.eventId)
-	        return delete repeatBody.eventId // this is so we dont run the foreach script the first time since it's ran in the beginning
+	    if (repeatBody.watcher){
+			callbackAdder = getSecretProps(repeatBody.source, secretAddWatcher)
+			callbackExecuter = getSecretProps(repeatBody.source, secretExecuteWatchers)
+	        return delete repeatBody.watcher // this is so we dont run the foreach script the first time since it's ran in the beginning
 	    }
-		var hiddenKeys
+		var secretWatcher
 		var stubKey = function(){
 			return stubKey
 		}
 		stubKey.in = function(arr){
-			hiddenKeys = getKeyStore(arr)
-			if (!hiddenKeys || !isString(hiddenKeys.length)){
+			secretWatcher = getSecretProps(arr, secretAddWatcher)
+			if (!hiddenKeys || !secretWatcher instanceof internalMethod){
 				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root evaluating [" + repeatBody.insertAfter.textContent + "]")
 			}
 			repeatBody.source = arr
@@ -200,7 +201,8 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 			key: stubKey
 		}, true)
 
-		events.emit("get", hiddenKeys.length)
+		callbackAdder = getSecretProps(repeatBody.source, secretAddWatcher)
+		callbackExecuter = getSecretProps(repeatBody.source, secretExecuteWatchers)
 	}, lengthSet)
 }
 
@@ -252,12 +254,12 @@ function transformList(elementList, model, propertyToDefine, parentRepeatIndexDe
 			throw new Error("Improper usage of key(string).in(array): in(array) called before key")
 		}
 
-		var hiddenKeys = getKeyStore(array)
-		if (!hiddenKeys || !isString(hiddenKeys.length)){
+		var secretWatcher = getSecretProps(array, secretAddWatcher)
+		if (!secretWatcher || !secretWatcher instanceof internalMethod){
 			throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
 		}
 
-		repeatBody.eventId = hiddenKeys.length
+		repeatBody.watcher = secretWatcher
 		repeatBody.source = array
 		repeatBody.elements = []
 	}
