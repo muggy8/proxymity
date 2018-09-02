@@ -198,6 +198,9 @@ function augmentProto(originalProto){
 	var replacementProto = {}
 	// before we go nuts we need to set up our public api for methods on objects and what not
 	defineAsGetSet(replacementProto, "watch", watchChange)
+	defineAsGetSet(replacementProto, "toString", function(){
+		return getSecretProps(this, "string")
+	})
 
 	// first we copy everything over to the new proto object that will sit above the proxy object. this object will catch any calls to the existing that would normally have to drill down the prototype chain so we can bypass the need to use the proxy since proxy is slow af
 	var getKeysFrom = originalProto
@@ -222,7 +225,7 @@ internalMethod.prototype = Object.create(Function.prototype)
 function getSecretProps(proxiedObject, prop){
 	if (isFunction(proxiedObject[Symbol.toPrimitive])){
 		var potentiallyHiddenMethod = proxiedObject[Symbol.toPrimitive](prop)
-		if (potentiallyHiddenMethod instanceof internalMethod){
+		if (typeof potentiallyHiddenMethod !== "undefined"){
 			return potentiallyHiddenMethod
 		}
 	}
