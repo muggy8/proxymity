@@ -16,142 +16,96 @@ function proxify(value){
 		// console.log("arr", value)
 		proxyArray(value) // defined below
 	}
-	// else {
-	//	 console.log("wut", value)
-	// }
 	return value
 }
 
-function isArrayOrObject(obj){
-	var objProto = obj && Object.getPrototypeOf(obj)
-	if (objProto === Array.prototype || objProto === Object.prototype || objProto === augmentedArrayProto || objProto === augmentedObjectProto){
-		return true
-	}
-	return false
-}
-
-function internalMethod(f){
-	Object.setPrototypeOf(f, internalMethod.prototype)
-	return f
-}
-internalMethod.prototype = Object.create(Function.prototype)
-
-var hiddenIds = generateId(randomInt(32, 48))
-var internalIdCounter = 0
-function initializeKeyStore(obj){
-	if (isArrayOrObject(obj) && !obj.hasOwnProperty(Symbol.toPrimitive)){
-		var hiddenIdObject = {}
-
-		if (Array.isArray(obj)){
-			hiddenIdObject.length = (++internalIdCounter).toString()
-		}
-
-		Object.defineProperty(obj, Symbol.toPrimitive, {
-			value: function(hint){
-				switch(hint){
-					case "number": return propsIn(this).length
-					case "string": return propsIn(this).length ? JSON.stringify(this) : ""
-					case hiddenIds: return hiddenIdObject
-					default: return !!propsIn(this).length
-				}
+var blankFunction = function(){},
+    callbackAdder = blankFunction,
+	callbackExecuter = blankFunction,
+    executeWatchersSource = function(eventType){
+		var watchers = this
+        var waiters = watchers.slice()
+        for(var i = 0; waiters && i < waiters.length; i++){
+			if (watchers.indexOf(waiters[i]) > -1){
+				waiters[i](eventType)
 			}
+		}
+    },
+	addWatcherSource = function(callback){
+		var watchers = this
+        watchers.push(callback)
+        return function(){
+            watchers.splice(watchers.indexOf(callback), 1)
+        }
+    },
+	recursiveEmitter = function(value, eventName, cache = []){
+		// this function does not emit the event for the current item but it does emit the event for all child props of the current obj
+		isObject(value) && forEach(propsIn(value), function(key){
+			var target = value[key]
+			var executer = callbackExecuter
+			if (cache.indexOf(executer) > -1){
+				return
+			}
+			onNextEventCycle(executer, eventName)
+			cache.push(executer)
+			recursiveEmitter(target, eventName, cache)
 		})
 	}
-}
-function getKeyStore(obj){
-	if (isArrayOrObject(obj)){
-		if (!obj.hasOwnProperty(Symbol.toPrimitive) || !isFunction(obj[Symbol.toPrimitive])){
-			initializeKeyStore(obj)
-		}
-		var hiddenObj = obj[Symbol.toPrimitive](hiddenIds)
-		return (typeof hiddenObj === "object") ? hiddenObj : false
-	}
-	return {}
-}
-var getSecretEmitter = false;
 function defineAsGetSet(to, key, value, enumerable = false){
 	// we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
 	if (to.hasOwnProperty(key)){
 		return
 	}
 
-	var toPropIds = getKeyStore(to)
-	var secretId = toPropIds[key] = toPropIds[key] || (++internalIdCounter).toString()
-
-	// before we get onto the actual code we want to set up all of our internal methods and what not.
-	// generateId(randomInt(32, 48)) // this secret id represents the relationship between this item's parent and this item's children as a result, the secret will not change even if the value is saved
-
-	var emitEventRecursively = internalMethod(function(eventName, emitSelf = true){
-		emitSelf && events.async(eventName + ":" + secretId)
-		var selfProps = isArrayOrObject(value) && propsIn(value)
-        if (selfProps) {
-
-            // we need to do this first cuz the length prop is the last item in an array so this will elevate it
-            if (Array.isArray(value)) {
-                var valHiddenKeys = getKeyStore(value)
-                if (valHiddenKeys && isString(valHiddenKeys.length)){
-                    events.async(eventName + ":" + valHiddenKeys.length, {
-                        priority: 1
-                    })
-                }
-            }
-
-            // after we can do the rest of the numbers
-            forEach(selfProps, function(key){
-    			getSecretEmitter = true
-    			var emitterFn = value[key]
-    			getSecretEmitter = false
-    			if (emitterFn instanceof internalMethod) {
-    				emitterFn(eventName)
-    			}
-    		})
-
-        }
-	})
-
 	// console.log(key, value, to)
-	proxify(value)
+    var watchers = []
+	var addWatcher = addWatcherSource.bind(watchers)
+	var executeWatchers = executeWatchersSource.bind(watchers)
 
 	// right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
 	Object.defineProperty(to, key, {
 		enumerable: enumerable,
 		configurable: true,
 		get: function(){
-			if (getSecretEmitter){
-				getSecretEmitter = false
-				return emitEventRecursively
+			if (Array.isArray(value)) {
+				callbackAdder = getSecretProps(value, secretAddWatcher)
+				callbackExecuter = getSecretProps(value, secretExecuteWatchers)
 			} else {
-				if (Array.isArray(value)){
-					events.emit("get", getKeyStore(value).length)
-				} else {
-					events.emit("get", secretId)
-				}
-				return value
+				callbackAdder = addWatcher
+				callbackExecuter = executeWatchers
 			}
+			return value
 		},
 		set: function(input){
 			if (input === value){
 				return value
 			}
 
-			// tell the current object in the data to be remapped if needed
-			// objectToPrimitiveCaller(value, recursiveEmitter, "remap", false)
-			emitEventRecursively("remap", false)
+			recursiveEmitter(value, "remap")
 
-			// the remap call must happen to the current prop value if the current prop is an object of some kind and after we can check if the delete procuedure is triggered. this is because we cannot hook into the delete key word with getters and setters so we just tell users to set a value as undefined effectively delete it and thus we'll be able to do any required deletion procedure before doing the regular delete.
 			if (typeof input === "undefined"){
-				events.async("del:" + secretId)
+				onNextEventCycle(executeWatchers, "del")
 				return delete to[key]
 			}
+			else {
+				onNextEventCycle(executeWatchers, "set")
+			}
 
-			// if it's not a delete opperation, well update the value of the current property and we set it, this still lets us use NULL as a empty since we're effectively overriding undefined
-			events.async("set:" + secretId)
-			// attachSecretMethods(input)
 			return value = proxify(input)
 		}
 	})
 
-	events.async("set:" + secretId)
+
+	proxify(value)
+	if (Array.isArray(value)) {
+		callbackAdder = getSecretProps(value, secretAddWatcher)
+		callbackExecuter = getSecretProps(value, secretExecuteWatchers)
+		onNextEventCycle(getSecretProps(value, secretExecuteWatchers), "set")
+	} else {
+		callbackAdder = addWatcher
+		callbackExecuter = executeWatchers
+    	onNextEventCycle(executeWatchers, "set")
+	}
 }
 
 function maskProtoMethods(mask, proto, method){
@@ -167,9 +121,10 @@ function maskProtoMethods(mask, proto, method){
 			var output = proto[method].apply(this, Array.from(arguments))
 
 			if (isNumber(preCallLength) && preCallLength !== this.length){
-				events.async("set:" + getKeyStore(this).length, {
-                    priority: 1
-                })
+				// figure out how to create a callback listener for this thing
+				if (Array.isArray(this)) {
+					onNextEventCycle(getSecretProps(this, secretExecuteWatchers), "set")
+				}
 			}
 			return output
 		}
@@ -214,7 +169,7 @@ var proxyTraps = {
 		}
 		defineAsGetSet(calledOn, prop, value, true)
 		if (calledOnArray && calledOn.length !== beforeLength){
-			events.async("set:" + getKeyStore(calledOn).length)
+			onNextEventCycle(getSecretProps(calledOn, secretExecuteWatchers), "set")
 		}
 		return true
 	}
@@ -224,13 +179,13 @@ function watchChange(path, callback){
 	var context = this
 	var perviousCall
 	return observe(function(){
-		createMode = true;
+		createMode = true
 		perviousCall = safeEval.call(context, "this" + evalScriptConcatinator(path) + path)
-		createMode = false;
+		createMode = false
 	}, function(){
-		createMode = true; // incase it's been deleted for some reason
+		createMode = true // incase it's been deleted for some reason
 		var thisCall = safeEval.call(context, "this" + evalScriptConcatinator(path) + path)
-		createMode = false;
+		createMode = false
 
 		if (thisCall !== perviousCall){
 			perviousCall = thisCall
@@ -244,10 +199,7 @@ function augmentProto(originalProto){
 	// before we go nuts we need to set up our public api for methods on objects and what not
 	defineAsGetSet(replacementProto, "watch", watchChange)
 	defineAsGetSet(replacementProto, "toString", function(){
-		if (Object.getOwnPropertyNames(this).length){
-			return JSON.stringify(this)
-		}
-		return ''
+		return getSecretProps(this, "string")
 	})
 
 	// first we copy everything over to the new proto object that will sit above the proxy object. this object will catch any calls to the existing that would normally have to drill down the prototype chain so we can bypass the need to use the proxy since proxy is slow af
@@ -264,11 +216,46 @@ function augmentProto(originalProto){
 	return replacementProto
 }
 
+function internalMethod(f){
+	Object.setPrototypeOf(f, internalMethod.prototype)
+	return f
+}
+internalMethod.prototype = Object.create(Function.prototype)
+
+function getSecretProps(proxiedObject, prop){
+	if (isFunction(proxiedObject[Symbol.toPrimitive])){
+		var potentiallyHiddenMethod = proxiedObject[Symbol.toPrimitive](prop)
+		if (typeof potentiallyHiddenMethod !== "undefined"){
+			return potentiallyHiddenMethod
+		}
+	}
+	return blankFunction
+}
+
+var secretAddWatcher = generateId(randomInt(32, 48))
+var secretExecuteWatchers = generateId(randomInt(32, 48))
 function migrateData(protoObj, input){
+	var watchers, addWatcher, executeWatchers
+	if (protoObj === augmentedArrayProto){
+		watchers = []
+		addWatcher = internalMethod(addWatcherSource.bind(watchers))
+		executeWatchers = internalMethod(executeWatchersSource.bind(watchers))
+	}
+	Object.defineProperty(input, Symbol.toPrimitive, {
+		value: function(hint){
+			switch(hint){
+				case "number": return propsIn(this).length
+				case "string": return propsIn(this).length ? JSON.stringify(this) : ""
+				case secretAddWatcher: return protoObj === augmentedArrayProto && addWatcher
+				case secretExecuteWatchers: return protoObj === augmentedArrayProto && executeWatchers
+				default: return !!propsIn(this).length
+			}
+		}
+	})
 	forEach(Object.getOwnPropertyNames(input), function(key){
 		var propVal = input[key]
 		var enumerable = input.propertyIsEnumerable(key)
-		if (!(Array.isArray(input) && key === "length")){
+		if (!(protoObj === augmentedArrayProto && key === "length")){
 			delete input[key]
 			defineAsGetSet(input, key, propVal, enumerable)
 		}
