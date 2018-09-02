@@ -50,9 +50,9 @@ var proxymity = (function(safeEval){
 
 	define(publicUse, "on", {})
 
-	getSet(publicUse.on, "asyncEnd", getAsyncPromise.bind(this, "asyncEnd"), setAsyncPromise.bind(this, "asyncEnd"))
+	getSet(publicUse.on, "asyncend", getAsyncPromise.bind(this, "asyncEnd"), setAsyncPromise.bind(this, "asyncEnd"))
 
-	getSet(publicUse.on, "renderEnd", getAsyncPromise.bind(this, "renderEnd"), setAsyncPromise.bind(this, "renderEnd"))
+	getSet(publicUse.on, "renderend", getAsyncPromise.bind(this, "renderEnd"), setAsyncPromise.bind(this, "renderEnd"))
 
 	define(publicUse, "random", {})
 
