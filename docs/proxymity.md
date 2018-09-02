@@ -11,6 +11,65 @@ The proxymity() function (all lower case) is the only export and only publicly a
 -returns: proxyified object.
 Much like the proxymity method that can convert any data into a proxy that can be watched and so on, this method will let you turn any javascript object into a proxymity object which will let you do stuff like watch properties on it, and access random props on it without defining it and so on.
 
+## proxymity.on.asyncend
+- a Promise that resolves when the next render tick ends
+
+This property contains a Promise that will resolve once the next rendering segment is complete and always contains a reference to the promise that will resolve when the next render tick resolves for larger more complex render chains, use renderend
+
+## proxymity.on.renderend
+- a Promise that resolves when the next render sequence ends
+
+This property contains a Promise that will resolve once the next render sequence resolves. The main differnece between this property and asyncend is that this will not resolve if the previous render segment initiated another render sequence while resolving
+
+eg: ```HTML
+<div id="lunch" data-script="{:this.app.chosen = this.app.options[this.app.lunch]:}|{lunch}|">
+	Lunch Options:
+	<select name="lunch">
+		<option value="0">--</option>
+		<option value="1">Sushi</option>
+		<option value="2">Pizza</option>
+		<option value="3">Pasta</option>
+	</select>
+</div>
+```
+```JavaScript
+var view = proxymity(document.querySelector("#lunch"), {
+	options: [
+		{},
+		{
+			name: "Sushi",
+			price: "$$$"
+		},
+		{
+			name: "Pizza",
+			price: "$"
+		},
+		{
+			name: "Pasta",
+			price: "$$"
+		}
+	]
+})
+```
+
+asyncend will resolve once the choice for the select is resolved but a rednerend will resolve when the property for chosen is updated since the `data-script` of the containing div will trigger another re-render after the curren render process is finished
+
+## proxymity.random.number([lowerLimit,] upperLimit)
+- upperLimit (required): an integer that specifies the upper limit inclusive
+- lowerLimit (optional): an integer that specifies the lower limit
+
+This function returns a random integer from 0 to the upper limit or from the lower limit to the upper limit inclusive of both numbers.
+
+```JavaScript
+proxymity.random.number(15) // random number between 0 - 15 inclusive
+proxymity.random.number(5, 15) // random number between 5 - 15 inclusive
+```
+
+## proxymity.random.string([length])
+- length (optional): declare the length of your random string default is 16 characters long
+
+This function returns a string containing `a-z`, `A-Z`, `0-9`, and `_` that is of the declared length. The first character is always a character of `a-z` or `A-Z` to ensure that the string that is generated is safe as accessible string for property names in case you need to use them when `eval` and maybe using `with` (please dont...)
+
 ## elementsList.appendTo(selectorOrElement)
 - selectorOrElement (required): string that can be passed to document.queryselector or a DOM element
 
@@ -27,11 +86,6 @@ The detach function tries to detach the elements it's associated with from the d
 - returns: elementsList
 
 The unlink method is used to detach the view template from the proxied object. This will not destroy the current state of the object nor will it revert the template to the previous state. this is especially useful for pre-rendering any component that is used in alot of places that has the same data everywhere (EG: a select option list. that is in alot of places). This is also useful for live reloading of modules / components as it allows you to detach a view and get rid of it from memory as well as get rid of any reference proxymity is keeping internally on the object.
-
-## elementsList.when(someEventToWatchFor)
-- returns: a promise
-
-The when method is to watch for any special internal events that are triggered and sharable. the current events that you can listen to is renderend and the promis will resolve when renderend is reached.
 
 ## elementsList[nameOfDataProperty]
 the element property that you defined for the proxied data is also available under the elementsList as the same property that you defined. see [Proxymity Data](proxymity-data.md)
