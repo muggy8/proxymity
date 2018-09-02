@@ -1048,7 +1048,7 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 			return onNextEventCycle[propPromiseVar]
 		}
 		return onNextEventCycle[propPromiseVar] = new Promise(function(accept){
-			onNextEventCycle.prop = accept
+			onNextEventCycle[prop] = accept
 		})
 	}
 

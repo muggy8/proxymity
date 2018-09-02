@@ -37,7 +37,7 @@ var proxymity = (function(safeEval){
 			return onNextEventCycle[propPromiseVar]
 		}
 		return onNextEventCycle[propPromiseVar] = new Promise(function(accept){
-			onNextEventCycle.prop = accept
+			onNextEventCycle[prop] = accept
 		})
 	}
 
