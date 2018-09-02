@@ -76,6 +76,15 @@ function define(obj, key, val){
 	})
 	return val
 }
+function getSet(obj, key, get, set){
+	defineConfigs = {
+		get: get
+	}
+	if (set){
+		defineConfigs.set = set
+	}
+	return Object.defineProperty(obj, key, defineConfigs)
+}
 
 function evalScriptConcatinator(targetLocation){
 	if (targetLocation.trim()[0].match(/[\w\_\$]/)){

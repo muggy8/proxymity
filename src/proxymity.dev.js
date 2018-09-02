@@ -30,6 +30,26 @@ var proxymity = (function(safeEval){
 		return ui
 	}
 	define(publicUse, "convert", proxify)
+
+	var getAsyncPromise = function(prop){
+		var propPromiseVar = prop + "Promise"
+		if (onNextEventCycle[propPromiseVar]){
+			return onNextEventCycle[propPromiseVar]
+		}
+		return onNextEventCycle[propPromiseVar] = new Promise(function(accept){
+			onNextEventCycle.prop = accept
+		})
+	}
+
+	var setAsyncPromise = function(prop, val){
+		var propPromiseVar = prop + "Promise"
+		if (isFunction(val)){
+			onNextEventCycle[propPromiseVar].then(val)
+		}
+	}
+
+	getSet(publicUse.on, "asyncEnd", getAsyncPromise.bind(this, "asyncEnd"), setAsyncPromise.bind(this, "asyncEnd"))
+	getSet(publicUse.on, "renderEnd", getAsyncPromise.bind(this, "renderEnd"), setAsyncPromise.bind(this, "renderEnd"))
 	return publicUse
 })(function(s, sv = {}, t = false){
 	try {
