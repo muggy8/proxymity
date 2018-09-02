@@ -20,8 +20,8 @@ function proxify(value){
 }
 
 var blankFunction = function(){},
-	recursiveEmitter = blankFunction,
     callbackAdder = blankFunction,
+	callbackExecuter = blankFunction,
     executeWatchersSource = function(eventType){
 		var watchers = this
         var waiters = watchers.slice()
@@ -37,7 +37,20 @@ var blankFunction = function(){},
         return function(){
             watchers.splice(watchers.indexOf(callback), 1)
         }
-    }
+    },
+	recursiveEmitter = function(value, eventName, cache = []){
+		// this function does not emit the event for the current item but it does emit the event for all child props of the current obj
+		isObject(value) && forEach(propsIn(value), function(key){
+			var target = value[key]
+			var executer = callbackExecuter
+			if (cache.indexOf(executer) > -1){
+				return
+			}
+			onNextEventCycle(executer, eventName)
+			cache.push(executer)
+			recursiveEmitter(target, eventName, cache)
+		})
+	}
 function defineAsGetSet(to, key, value, enumerable = false){
 	// we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
 	if (to.hasOwnProperty(key)){
@@ -56,8 +69,10 @@ function defineAsGetSet(to, key, value, enumerable = false){
 		get: function(){
 			if (Array.isArray(value)) {
 				callbackAdder = getSecretProps(value, secretAddWatcher)
+				callbackExecuter = getSecretProps(value, secretExecuteWatchers)
 			} else {
 				callbackAdder = addWatcher
+				callbackExecuter = executeWatchers
 			}
 			return value
 		},
@@ -66,7 +81,15 @@ function defineAsGetSet(to, key, value, enumerable = false){
 				return value
 			}
 
-			onNextEventCycle(executeWatchers, "set")
+			recursiveEmitter(value, "remap")
+
+			if (typeof input === "undefined"){
+				onNextEventCycle(executeWatchers, "del")
+				return delete to[key]
+			}
+			else {
+				onNextEventCycle(executeWatchers, "set")
+			}
 
 			return value = proxify(input)
 		}
@@ -76,9 +99,11 @@ function defineAsGetSet(to, key, value, enumerable = false){
 	proxify(value)
 	if (Array.isArray(value)) {
 		callbackAdder = getSecretProps(value, secretAddWatcher)
+		callbackExecuter = getSecretProps(value, secretExecuteWatchers)
 		onNextEventCycle(getSecretProps(value, secretExecuteWatchers), "set")
 	} else {
 		callbackAdder = addWatcher
+		callbackExecuter = executeWatchers
     	onNextEventCycle(executeWatchers, "set")
 	}
 }
@@ -154,13 +179,13 @@ function watchChange(path, callback){
 	var context = this
 	var perviousCall
 	return observe(function(){
-		createMode = true;
+		createMode = true
 		perviousCall = safeEval.call(context, "this" + evalScriptConcatinator(path) + path)
-		createMode = false;
+		createMode = false
 	}, function(){
-		createMode = true; // incase it's been deleted for some reason
+		createMode = true // incase it's been deleted for some reason
 		var thisCall = safeEval.call(context, "this" + evalScriptConcatinator(path) + path)
-		createMode = false;
+		createMode = false
 
 		if (thisCall !== perviousCall){
 			perviousCall = thisCall
