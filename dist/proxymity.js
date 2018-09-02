@@ -79,6 +79,15 @@ function define(obj, key, val){
 	})
 	return val
 }
+function getSet(obj, key, get, set){
+	defineConfigs = {
+		get: get
+	}
+	if (set){
+		defineConfigs.set = set
+	}
+	return Object.defineProperty(obj, key, defineConfigs)
+}
 
 function evalScriptConcatinator(targetLocation){
 	if (targetLocation.trim()[0].match(/[\w\_\$]/)){
@@ -87,108 +96,24 @@ function evalScriptConcatinator(targetLocation){
 	return ""
 }
 
-// src/subscribable.js
-var events = (function(){
-	var listenerLibrary = {}
-	var listenerWildcards = {}
-	var output = {}
-
-	var watch = output.watch = function(nameOrCallback, callbackOrOptions, options){
-		var name, callback, maybeDeleteGroup
-		if (isFunction(callbackOrOptions)){
-			name = nameOrCallback
-			callback = callbackOrOptions
-			options = options || {}
-		}
-		else {
-			name = "**"
-			callback = nameOrCallback
-			options = callbackOrOptions || {}
-		}
-
-		for(var key in options){
-			callback.key = options.key
-		}
-
-		if (name.indexOf("*") > -1){
-			var regexName = name
-				.replace(/([!@#$%^&*(){}[\]\<\>:'"`\-_,./\\+-])/g, "\\$1")
-				.replace(/\\\*\\\*/g, ".*")
-				.replace(/\\\*/, "[^\:\.]+")
-
-			var wiledcards = listenerWildcards[name] = listenerWildcards[name] || {
-				regex: new RegExp(regexName),
-				listeners: []
-			}
-			var addTo = wiledcards.listeners
-			maybeDeleteGroup = function(){
-				if (!wiledcards.listeners.length){
-					delete listenerWildcards[name]
-				}
-			}
-		}
-		else {
-			var addTo = listenerLibrary[name] = listenerLibrary[name] || []
-			maybeDeleteGroup = function(){
-				if (!listenerLibrary[name]){
-					delete listenerLibrary[name]
-				}
-			}
-		}
-
-		addTo.push(callback)
-		return function(){
-			addTo.splice(addTo.indexOf(callback), 1)
-			maybeDeleteGroup()
-		}
-	}
-
-	var lastEmitLog = {}
-	var emit = output.emit = function(name, payload = {}){
-		// for optimization we are going to seperate listeners with wiled cards and without wiled cards into their own catagories. when an event is emited, we emit to the named listeners first then we looop through the wiled cards and do them and check for matches. we do this so we can skip alot of named listeners that we know wont match and therefore saving clock cycles
-		var waiters = listenerLibrary[name] && listenerLibrary[name].slice()
-		for (var i = 0; waiters && i < waiters.length; i++){
-			if (listenerLibrary[name].indexOf(waiters[i]) > -1){
-				waiters[i](payload, name)
-			}
-		}
-
-
-		// join the callback name and the wiledcard listeners (if they exist) and call the callbacks of both listeners
-		for (var key in listenerWildcards){
-			var set = listenerWildcards[key]
-			if (name.match(set.regex)){
-				forEach(set.listeners, function(callback){
-					callback(payload, name)
-				})
-			}
-		}
-		return lastEmitLog[name] = payload
-	}
-
-	var queue = {}
-	var order = 0
-
+// src/on-next-event-cycle.js
+var onNextEventCycle = (function(){ // we are doing this here because this function leaves a TON of artifacts that only it uses
 	var nextEvent = generateId(randomInt(32, 48))
-	var nextEventSet = false
-	var async = output.async = function(name, payload = {}){
-		if (!nextEventSet){
-			window.postMessage(nextEvent, '*')
-			nextEventSet = true
+	var emitted = false
+	var queue = []
+	function onNextEventCycle(fn){
+		var args = Array.prototype.slice.call(arguments, 1)
+		if (!emitted){
+			window.postMessage(nextEvent, '*');
+			emitted = true
 		}
-
-		queue[name] = payload
-		payload.order = order = order + 1
-        payload.priority = payload.priority || 0
+		fn.res = false // make sure reused events wont be skipped over
+		queue.push({
+			fn: fn,
+			args: args,
+		})
 	}
 
-	// this is how we get the queue to resolve on the next event cycle instead of immediately
-	function renderEndProcedure(){
-		emit("renderend")
-		for(var key in lastEmitLog){ // this is going to be how we make sure that we dont get a memory leak hopefully
-			delete lastEmitLog[key]
-		}
-	}
 	window.addEventListener("message", function(ev){
 		if (ev.data !== nextEvent){
 			return
@@ -196,59 +121,33 @@ var events = (function(){
 
 		ev.stopPropagation()
 
-		// create a reference to the queue and reset the current queue in the system so we can prep for future events that may result from resolving the current queue
 		var workingQueue = queue
-		nextEventSet = false
-		queue = {}
-		order = 0
+		nextEvent = generateId(randomInt(32, 48)) // we really dont want someone else outside triggering this on accident or on purpose. this way when we recieve a message, we're going to expect a different message next time which means even if there are eves droppers on the message channel, we'll be fine
+		emitted = false
+		queue = []
 
-		var emitOrder = propsIn(workingQueue)
-		emitOrder.sort(function(a, b){
-			if (workingQueue[a].priority > workingQueue[b].priority){
-				return -1
+		forEach(workingQueue, function(item){
+			if (item.fn.res){
+				return
 			}
-			else if (workingQueue[a].priority < workingQueue[b].priority){
-				return 1
-			}
-
-			if (workingQueue[a].order > workingQueue[b].order){
-				return 1
-			}
-			else if (workingQueue[a].order < workingQueue[b].order){
-				return -1
-			}
-			return 0
+			item.fn.apply(window, item.args)
+			item.fn.res = true
 		})
 
-		emit("asyncstart", {
-			payload: workingQueue,
-			order: emitOrder
-		})
+		if (onNextEventCycle.asyncEnd){
+			onNextEventCycle.asyncEnd()
+			delete onNextEventCycle.asyncEnd
+			delete onNextEventCycle.asyncEndPromise
+		}
 
-		forEach(emitOrder, function(name){
-			// console.log(name, workingQueue[name])
-			emit(name, workingQueue[name])
-		})
-
-		emit("asyncend", workingQueue)
-
-		// finally we can check to see if resolving this queue triggered any new events and if it didn't then we can safely reset the loop count to prep for the next render/re-render cycle to be triggered
-		if (!nextEventSet){
-			renderEndProcedure()
+		if (!emitted && onNextEventCycle.renderEnd){
+			onNextEventCycle.renderEnd()
+			delete onNextEventCycle.renderEnd
+			delete onNextEventCycle.renderEndPromise
 		}
 	})
 
-	var last = output.last = function(name){
-		// console.log("last", name, lastEmitLog[name])
-		return lastEmitLog[name]
-	}
-
-	var next = output.next = function(name){
-		// console.log("last", name, lastEmitLog[name])
-		return queue[name]
-	}
-
-	return output
+	return onNextEventCycle
 })()
 
 // src/data-proto.js
@@ -270,142 +169,96 @@ function proxify(value){
 		// console.log("arr", value)
 		proxyArray(value) // defined below
 	}
-	// else {
-	//	 console.log("wut", value)
-	// }
 	return value
 }
 
-function isArrayOrObject(obj){
-	var objProto = obj && Object.getPrototypeOf(obj)
-	if (objProto === Array.prototype || objProto === Object.prototype || objProto === augmentedArrayProto || objProto === augmentedObjectProto){
-		return true
-	}
-	return false
-}
-
-function internalMethod(f){
-	Object.setPrototypeOf(f, internalMethod.prototype)
-	return f
-}
-internalMethod.prototype = Object.create(Function.prototype)
-
-var hiddenIds = generateId(randomInt(32, 48))
-var internalIdCounter = 0
-function initializeKeyStore(obj){
-	if (isArrayOrObject(obj) && !obj.hasOwnProperty(Symbol.toPrimitive)){
-		var hiddenIdObject = {}
-
-		if (Array.isArray(obj)){
-			hiddenIdObject.length = (++internalIdCounter).toString()
-		}
-
-		Object.defineProperty(obj, Symbol.toPrimitive, {
-			value: function(hint){
-				switch(hint){
-					case "number": return propsIn(this).length
-					case "string": return propsIn(this).length ? JSON.stringify(this) : ""
-					case hiddenIds: return hiddenIdObject
-					default: return !!propsIn(this).length
-				}
+var blankFunction = function(){},
+    callbackAdder = blankFunction,
+	callbackExecuter = blankFunction,
+    executeWatchersSource = function(eventType){
+		var watchers = this
+        var waiters = watchers.slice()
+        for(var i = 0; waiters && i < waiters.length; i++){
+			if (watchers.indexOf(waiters[i]) > -1){
+				waiters[i](eventType)
 			}
+		}
+    },
+	addWatcherSource = function(callback){
+		var watchers = this
+        watchers.push(callback)
+        return function(){
+            watchers.splice(watchers.indexOf(callback), 1)
+        }
+    },
+	recursiveEmitter = function(value, eventName, cache = []){
+		// this function does not emit the event for the current item but it does emit the event for all child props of the current obj
+		isObject(value) && forEach(propsIn(value), function(key){
+			var target = value[key]
+			var executer = callbackExecuter
+			if (cache.indexOf(executer) > -1){
+				return
+			}
+			onNextEventCycle(executer, eventName)
+			cache.push(executer)
+			recursiveEmitter(target, eventName, cache)
 		})
 	}
-}
-function getKeyStore(obj){
-	if (isArrayOrObject(obj)){
-		if (!obj.hasOwnProperty(Symbol.toPrimitive) || !isFunction(obj[Symbol.toPrimitive])){
-			initializeKeyStore(obj)
-		}
-		var hiddenObj = obj[Symbol.toPrimitive](hiddenIds)
-		return (typeof hiddenObj === "object") ? hiddenObj : false
-	}
-	return {}
-}
-var getSecretEmitter = false;
 function defineAsGetSet(to, key, value, enumerable = false){
 	// we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
 	if (to.hasOwnProperty(key)){
 		return
 	}
 
-	var toPropIds = getKeyStore(to)
-	var secretId = toPropIds[key] = toPropIds[key] || (++internalIdCounter).toString()
-
-	// before we get onto the actual code we want to set up all of our internal methods and what not.
-	// generateId(randomInt(32, 48)) // this secret id represents the relationship between this item's parent and this item's children as a result, the secret will not change even if the value is saved
-
-	var emitEventRecursively = internalMethod(function(eventName, emitSelf = true){
-		emitSelf && events.async(eventName + ":" + secretId)
-		var selfProps = isArrayOrObject(value) && propsIn(value)
-        if (selfProps) {
-
-            // we need to do this first cuz the length prop is the last item in an array so this will elevate it
-            if (Array.isArray(value)) {
-                var valHiddenKeys = getKeyStore(value)
-                if (valHiddenKeys && isString(valHiddenKeys.length)){
-                    events.async(eventName + ":" + valHiddenKeys.length, {
-                        priority: 1
-                    })
-                }
-            }
-
-            // after we can do the rest of the numbers
-            forEach(selfProps, function(key){
-    			getSecretEmitter = true
-    			var emitterFn = value[key]
-    			getSecretEmitter = false
-    			if (emitterFn instanceof internalMethod) {
-    				emitterFn(eventName)
-    			}
-    		})
-
-        }
-	})
-
 	// console.log(key, value, to)
-	proxify(value)
+    var watchers = []
+	var addWatcher = addWatcherSource.bind(watchers)
+	var executeWatchers = executeWatchersSource.bind(watchers)
 
 	// right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
 	Object.defineProperty(to, key, {
 		enumerable: enumerable,
 		configurable: true,
 		get: function(){
-			if (getSecretEmitter){
-				getSecretEmitter = false
-				return emitEventRecursively
+			if (Array.isArray(value)) {
+				callbackAdder = getSecretProps(value, secretAddWatcher)
+				callbackExecuter = getSecretProps(value, secretExecuteWatchers)
 			} else {
-				if (Array.isArray(value)){
-					events.emit("get", getKeyStore(value).length)
-				} else {
-					events.emit("get", secretId)
-				}
-				return value
+				callbackAdder = addWatcher
+				callbackExecuter = executeWatchers
 			}
+			return value
 		},
 		set: function(input){
 			if (input === value){
 				return value
 			}
 
-			// tell the current object in the data to be remapped if needed
-			// objectToPrimitiveCaller(value, recursiveEmitter, "remap", false)
-			emitEventRecursively("remap", false)
+			recursiveEmitter(value, "remap")
 
-			// the remap call must happen to the current prop value if the current prop is an object of some kind and after we can check if the delete procuedure is triggered. this is because we cannot hook into the delete key word with getters and setters so we just tell users to set a value as undefined effectively delete it and thus we'll be able to do any required deletion procedure before doing the regular delete.
 			if (typeof input === "undefined"){
-				events.async("del:" + secretId)
+				onNextEventCycle(executeWatchers, "del")
 				return delete to[key]
 			}
+			else {
+				onNextEventCycle(executeWatchers, "set")
+			}
 
-			// if it's not a delete opperation, well update the value of the current property and we set it, this still lets us use NULL as a empty since we're effectively overriding undefined
-			events.async("set:" + secretId)
-			// attachSecretMethods(input)
 			return value = proxify(input)
 		}
 	})
 
-	events.async("set:" + secretId)
+
+	proxify(value)
+	if (Array.isArray(value)) {
+		callbackAdder = getSecretProps(value, secretAddWatcher)
+		callbackExecuter = getSecretProps(value, secretExecuteWatchers)
+		onNextEventCycle(getSecretProps(value, secretExecuteWatchers), "set")
+	} else {
+		callbackAdder = addWatcher
+		callbackExecuter = executeWatchers
+    	onNextEventCycle(executeWatchers, "set")
+	}
 }
 
 function maskProtoMethods(mask, proto, method){
@@ -421,9 +274,10 @@ function maskProtoMethods(mask, proto, method){
 			var output = proto[method].apply(this, Array.from(arguments))
 
 			if (isNumber(preCallLength) && preCallLength !== this.length){
-				events.async("set:" + getKeyStore(this).length, {
-                    priority: 1
-                })
+				// figure out how to create a callback listener for this thing
+				if (Array.isArray(this)) {
+					onNextEventCycle(getSecretProps(this, secretExecuteWatchers), "set")
+				}
 			}
 			return output
 		}
@@ -468,7 +322,7 @@ var proxyTraps = {
 		}
 		defineAsGetSet(calledOn, prop, value, true)
 		if (calledOnArray && calledOn.length !== beforeLength){
-			events.async("set:" + getKeyStore(calledOn).length)
+			onNextEventCycle(getSecretProps(calledOn, secretExecuteWatchers), "set")
 		}
 		return true
 	}
@@ -478,13 +332,13 @@ function watchChange(path, callback){
 	var context = this
 	var perviousCall
 	return observe(function(){
-		createMode = true;
+		createMode = true
 		perviousCall = safeEval.call(context, "this" + evalScriptConcatinator(path) + path)
-		createMode = false;
+		createMode = false
 	}, function(){
-		createMode = true; // incase it's been deleted for some reason
+		createMode = true // incase it's been deleted for some reason
 		var thisCall = safeEval.call(context, "this" + evalScriptConcatinator(path) + path)
-		createMode = false;
+		createMode = false
 
 		if (thisCall !== perviousCall){
 			perviousCall = thisCall
@@ -498,10 +352,7 @@ function augmentProto(originalProto){
 	// before we go nuts we need to set up our public api for methods on objects and what not
 	defineAsGetSet(replacementProto, "watch", watchChange)
 	defineAsGetSet(replacementProto, "toString", function(){
-		if (Object.getOwnPropertyNames(this).length){
-			return JSON.stringify(this)
-		}
-		return ''
+		return getSecretProps(this, "string")
 	})
 
 	// first we copy everything over to the new proto object that will sit above the proxy object. this object will catch any calls to the existing that would normally have to drill down the prototype chain so we can bypass the need to use the proxy since proxy is slow af
@@ -518,11 +369,46 @@ function augmentProto(originalProto){
 	return replacementProto
 }
 
+function internalMethod(f){
+	Object.setPrototypeOf(f, internalMethod.prototype)
+	return f
+}
+internalMethod.prototype = Object.create(Function.prototype)
+
+function getSecretProps(proxiedObject, prop){
+	if (isFunction(proxiedObject[Symbol.toPrimitive])){
+		var potentiallyHiddenMethod = proxiedObject[Symbol.toPrimitive](prop)
+		if (typeof potentiallyHiddenMethod !== "undefined"){
+			return potentiallyHiddenMethod
+		}
+	}
+	return blankFunction
+}
+
+var secretAddWatcher = generateId(randomInt(32, 48))
+var secretExecuteWatchers = generateId(randomInt(32, 48))
 function migrateData(protoObj, input){
+	var watchers, addWatcher, executeWatchers
+	if (protoObj === augmentedArrayProto){
+		watchers = []
+		addWatcher = internalMethod(addWatcherSource.bind(watchers))
+		executeWatchers = internalMethod(executeWatchersSource.bind(watchers))
+	}
+	Object.defineProperty(input, Symbol.toPrimitive, {
+		value: function(hint){
+			switch(hint){
+				case "number": return propsIn(this).length
+				case "string": return propsIn(this).length ? JSON.stringify(this) : ""
+				case secretAddWatcher: return protoObj === augmentedArrayProto && addWatcher
+				case secretExecuteWatchers: return protoObj === augmentedArrayProto && executeWatchers
+				default: return !!propsIn(this).length
+			}
+		}
+	})
 	forEach(Object.getOwnPropertyNames(input), function(key){
 		var propVal = input[key]
 		var enumerable = input.propertyIsEnumerable(key)
-		if (!(Array.isArray(input) && key === "length")){
+		if (!(protoObj === augmentedArrayProto && key === "length")){
 			delete input[key]
 			defineAsGetSet(input, key, propVal, enumerable)
 		}
@@ -538,7 +424,7 @@ var proxyObject = migrateData.bind(this, augmentedObjectProto)
 // src/proxymity-observe.js
 function observe(targetFinder, callbackSet, stuffToUnWatch = []){
 	targetFinder()
-	var targetId = events.last("get")
+	var addCallback = callbackAdder
 
 	if (isFunction(callbackSet)){
 		var callback = callbackSet
@@ -556,9 +442,8 @@ function observe(targetFinder, callbackSet, stuffToUnWatch = []){
 	}
 
 	forEach(callbackSet, function(callback){
-		var type = callback.to + ":" + targetId
-		stuffToUnWatch.push(events.watch(type, callback.fn))
-		callback.fn(events.last(type))
+		stuffToUnWatch.push(addCallback(callback.fn))
+		callback.fn()
 	})
 
 	var clearWatchers = function(){
@@ -568,13 +453,14 @@ function observe(targetFinder, callbackSet, stuffToUnWatch = []){
 		stuffToUnWatch.length = 0
 	}
 
-	var onReMap = function(){
-		clearWatchers()
-		observe(targetFinder, callbackSet, stuffToUnWatch)
+	var onReMap = function(type){
+		if (type === "remap" || type === "del"){
+			clearWatchers()
+			observe(targetFinder, callbackSet, stuffToUnWatch)
+		}
 	}
 
-	stuffToUnWatch.push(events.watch("remap:" + targetId, onReMap))
-	stuffToUnWatch.push(events.watch("del:" + targetId, onReMap)) // this makes sure that we always have something to listen to in case it gets re-set in the future
+	stuffToUnWatch.push(addCallback(onReMap)) // this makes sure that we always have something to listen to in case it gets re-set in the future
 
 	return clearWatchers
 }
@@ -660,18 +546,18 @@ define(appendableArrayProto, "unlink", function(){
 	destroyListeners(this)
 	return this
 })
-var whitelistedWhen = ["renderend"]
-define(appendableArrayProto, "when", function(whatHappens){
-	if (whitelistedWhen.indexOf(whatHappens) === -1){
-		throw new Error("Cannot subscribe to " + whatHappens)
-	}
-	return new Promise(function(accept){
-		var once = events.watch(whatHappens, function(){
-			once()
-			accept()
-		})
-	})
-})
+// var whitelistedWhen = ["renderend"]
+// define(appendableArrayProto, "when", function(whatHappens){
+// 	if (whitelistedWhen.indexOf(whatHappens) === -1){
+// 		throw new Error("Cannot subscribe to " + whatHappens)
+// 	}
+// 	return new Promise(function(accept){
+// 		var once = events.watch(whatHappens, function(){
+// 			once()
+// 			accept()
+// 		})
+// 	})
+// })
 
 function forEveryElement(source, callback){
 	forEach(source, function(item){
@@ -762,17 +648,18 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
     }
 
 	return observe(function(){
-	    if (repeatBody.eventId){
-	        events.emit("get", repeatBody.eventId)
-	        return delete repeatBody.eventId // this is so we dont run the foreach script the first time since it's ran in the beginning
+	    if (repeatBody.watcher){
+			callbackAdder = getSecretProps(repeatBody.source, secretAddWatcher)
+			callbackExecuter = getSecretProps(repeatBody.source, secretExecuteWatchers)
+	        return delete repeatBody.watcher // this is so we dont run the foreach script the first time since it's ran in the beginning
 	    }
-		var hiddenKeys
+		var secretWatcher
 		var stubKey = function(){
 			return stubKey
 		}
 		stubKey.in = function(arr){
-			hiddenKeys = getKeyStore(arr)
-			if (!hiddenKeys || !isString(hiddenKeys.length)){
+			secretWatcher = getSecretProps(arr, secretAddWatcher)
+			if (!hiddenKeys || !secretWatcher instanceof internalMethod){
 				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root evaluating [" + repeatBody.insertAfter.textContent + "]")
 			}
 			repeatBody.source = arr
@@ -782,7 +669,8 @@ function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner)
 			key: stubKey
 		}, true)
 
-		events.emit("get", hiddenKeys.length)
+		callbackAdder = getSecretProps(repeatBody.source, secretAddWatcher)
+		callbackExecuter = getSecretProps(repeatBody.source, secretExecuteWatchers)
 	}, lengthSet)
 }
 
@@ -834,12 +722,12 @@ function transformList(elementList, model, propertyToDefine, parentRepeatIndexDe
 			throw new Error("Improper usage of key(string).in(array): in(array) called before key")
 		}
 
-		var hiddenKeys = getKeyStore(array)
-		if (!hiddenKeys || !isString(hiddenKeys.length)){
+		var secretWatcher = getSecretProps(array, secretAddWatcher)
+		if (!secretWatcher || !secretWatcher instanceof internalMethod){
 			throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
 		}
 
-		repeatBody.eventId = hiddenKeys.length
+		repeatBody.watcher = secretWatcher
 		repeatBody.source = array
 		repeatBody.elements = []
 	}
@@ -1128,7 +1016,6 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 
 	var publicUse = function(view, initialData = {}, modelProperty = "app"){
 		var proxied = proxify(initialData)
-		events.async("set:")
 		// events.watch("asyncstart", function(ev){
 		// 	console.log(proxied.objectify())
 		// 	forEach(ev.order, function(name){
@@ -1154,6 +1041,35 @@ function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
 		return ui
 	}
 	define(publicUse, "convert", proxify)
+
+	var getAsyncPromise = function(prop){
+		var propPromiseVar = prop + "Promise"
+		if (onNextEventCycle[propPromiseVar]){
+			return onNextEventCycle[propPromiseVar]
+		}
+		return onNextEventCycle[propPromiseVar] = new Promise(function(accept){
+			onNextEventCycle.prop = accept
+		})
+	}
+
+	var setAsyncPromise = function(prop, val){
+		var propPromiseVar = prop + "Promise"
+		if (isFunction(val)){
+			onNextEventCycle[propPromiseVar].then(val)
+		}
+	}
+
+	define(publicUse, "on", {})
+
+	getSet(publicUse.on, "asyncEnd", getAsyncPromise.bind(this, "asyncEnd"), setAsyncPromise.bind(this, "asyncEnd"))
+
+	getSet(publicUse.on, "renderEnd", getAsyncPromise.bind(this, "renderEnd"), setAsyncPromise.bind(this, "renderEnd"))
+
+	define(publicUse, "random", {})
+
+	define(publicUse.random, "number", randomInt)
+
+	define(publicUse.random, "string", generateId)
 	return publicUse
 })(function(s, sv = {}, t = false){
 	try {
