@@ -240,6 +240,7 @@ function migrateData(protoObj, input){
 		watchers = []
 		addWatcher = internalMethod(addWatcherSource.bind(watchers))
 		executeWatchers = internalMethod(executeWatchersSource.bind(watchers))
+		executeWatchers.priority = true
 	}
 	Object.defineProperty(input, Symbol.toPrimitive, {
 		value: function(hint){

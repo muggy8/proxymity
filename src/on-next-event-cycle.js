@@ -9,7 +9,11 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 			emitted = true
 		}
 		fn.res = false // make sure reused events wont be skipped over
-		queue.push({
+		var method = "push"
+		if (fn.priority){
+			method = "unshift"
+		}
+		queue[method]({
 			fn: fn,
 			args: args,
 		})
