@@ -34,6 +34,18 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 			item.fn.apply(window, item.args)
 			item.fn.res = true
 		})
+
+		if (onNextEventCycle.asyncEnd){
+			onNextEventCycle.asyncEnd()
+			delete onNextEventCycle.asyncEnd
+			delete onNextEventCycle.asyncEndPromise
+		}
+
+		if (!emitted && onNextEventCycle.renderEnd){
+			onNextEventCycle.renderEnd()
+			delete onNextEventCycle.renderEnd
+			delete onNextEventCycle.renderEndPromise
+		}
 	})
 
 	return onNextEventCycle
