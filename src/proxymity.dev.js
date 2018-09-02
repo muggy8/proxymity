@@ -5,7 +5,6 @@ var proxymity = (function(safeEval){
 
 	var publicUse = function(view, initialData = {}, modelProperty = "app"){
 		var proxied = proxify(initialData)
-		events.async("set:")
 		// events.watch("asyncstart", function(ev){
 		// 	console.log(proxied.objectify())
 		// 	forEach(ev.order, function(name){
@@ -31,6 +30,35 @@ var proxymity = (function(safeEval){
 		return ui
 	}
 	define(publicUse, "convert", proxify)
+
+	var getAsyncPromise = function(prop){
+		var propPromiseVar = prop + "Promise"
+		if (onNextEventCycle[propPromiseVar]){
+			return onNextEventCycle[propPromiseVar]
+		}
+		return onNextEventCycle[propPromiseVar] = new Promise(function(accept){
+			onNextEventCycle[prop] = accept
+		})
+	}
+
+	var setAsyncPromise = function(prop, val){
+		var propPromiseVar = prop + "Promise"
+		if (isFunction(val)){
+			onNextEventCycle[propPromiseVar].then(val)
+		}
+	}
+
+	define(publicUse, "on", {})
+
+	getSet(publicUse.on, "asyncend", getAsyncPromise.bind(this, "asyncEnd"), setAsyncPromise.bind(this, "asyncEnd"))
+
+	getSet(publicUse.on, "renderend", getAsyncPromise.bind(this, "renderEnd"), setAsyncPromise.bind(this, "renderEnd"))
+
+	define(publicUse, "random", {})
+
+	define(publicUse.random, "number", randomInt)
+
+	define(publicUse.random, "string", generateId)
 	return publicUse
 })(function(s, sv = {}, t = false){
 	try {

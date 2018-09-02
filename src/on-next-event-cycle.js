@@ -3,14 +3,16 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 	var emitted = false
 	var queue = []
 	function onNextEventCycle(fn){
+		var args = Array.prototype.slice.call(arguments, 1)
 		if (!emitted){
 			window.postMessage(nextEvent, '*');
 			emitted = true
 		}
-
-		if (queue.indexOf(fn) === -1){
-			queue.push(fn)
-		}
+		fn.res = false // make sure reused events wont be skipped over
+		queue.push({
+			fn: fn,
+			args: args,
+		})
 	}
 
 	window.addEventListener("message", function(ev){
@@ -25,9 +27,25 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 		emitted = false
 		queue = []
 
-		forEach(workingQueue, function(fn){
-			fn()
+		forEach(workingQueue, function(item){
+			if (item.fn.res){
+				return
+			}
+			item.fn.apply(window, item.args)
+			item.fn.res = true
 		})
+
+		if (onNextEventCycle.asyncEnd){
+			onNextEventCycle.asyncEnd()
+			delete onNextEventCycle.asyncEnd
+			delete onNextEventCycle.asyncEndPromise
+		}
+
+		if (!emitted && onNextEventCycle.renderEnd){
+			onNextEventCycle.renderEnd()
+			delete onNextEventCycle.renderEnd
+			delete onNextEventCycle.renderEndPromise
+		}
 	})
 
 	return onNextEventCycle

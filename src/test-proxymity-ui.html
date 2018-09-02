@@ -4,7 +4,7 @@
 		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
 		<!-- <script src="proxy-bind.js"></script> -->
 		<script src="proxymity-util.js"></script>
-		<script src="subscribable.js"></script>
+		<script src="on-next-event-cycle.js"></script>
 		<script src="data-proto.js"></script>
 		<script src="proxymity-observe.js"></script>
 		<script src="proxymity-ui.js"></script>
@@ -57,18 +57,17 @@
 			<pre>{:JSON.stringify(this.app, null, "	"):}</pre>
 			<style>
 				pre {
-					background-color: {:this.app.background.toString() || 'initial':};
-					color: {:this.app.color.toString() || 'initial':};
-					padding: {:this.app.padding.toString() || 'initial':};
-					border: {:this.app.border.toString() || 'initial':};
-					font-size: {:this.app.fontSize.toString() || 'inherit':};
-					font-family: {:this.app.fontFace.toString() || 'sans-serif':}, sans-serif;
+					background-color: {:this.app.background.toString() || 'initial':}|{background}|;
+					color: {:this.app.color.toString() || 'initial':}|{color}|;
+					padding: {:this.app.padding.toString() || 'initial':}|{padding}|;
+					border: {:this.app.border.toString() || 'initial':}|{border}|;
+					font-size: {:this.app.fontSize.toString() || 'inherit':}|{fontSize}|;
+					font-family: {:this.app.fontFace.toString() || 'sans-serif':}|{fontFace}|, sans-serif;
 				}
 				.block {
 					display: block
 				}
 			</style>`, proxify({}), "app")
-			events.async("set:")
 			console.log(appendable.appendTo("body"))
 			console.log(document.querySelector("input").attributes)
 		</script>
