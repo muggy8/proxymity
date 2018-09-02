@@ -5,7 +5,6 @@ var proxymity = (function(safeEval){
 
 	var publicUse = function(view, initialData = {}, modelProperty = "app"){
 		var proxied = proxify(initialData)
-		events.async("set:")
 		// events.watch("asyncstart", function(ev){
 		// 	console.log(proxied.objectify())
 		// 	forEach(ev.order, function(name){
