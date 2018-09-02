@@ -27,7 +27,7 @@ function isObject(val){
 }
 
 function propsIn(obj){
-	return Object.getOwnPropertyNames(obj)
+	return (isObject(obj) || isFunction(obj)) ? Object.getOwnPropertyNames(obj) : []
 }
 
 function randomInt(start, stop){
