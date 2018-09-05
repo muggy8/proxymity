@@ -60,11 +60,14 @@ var proxymity = (function(safeEval){
 
 	define(publicUse.random, "string", generateId)
 	return publicUse
-})(function(s, sv = {}, t = false){
+})(function(s, sv, t = false){
 	try {
-		with(sv){
-			return eval(s)
+		if (sv){ // dont always use sv cuz it's expensive D:
+			with(sv){
+				return eval(s)
+			}	
 		}
+		return eval(s)
 	}
 	catch(o3o){
 		if (!t){
