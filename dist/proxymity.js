@@ -224,8 +224,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
 		enumerable: enumerable,
 		configurable: true,
 		get: function(){
-			if (Array.isArray(value)) {
-				callbackAdder = getSecretProps(value, secretAddWatcher)
+			if (value && (callbackAdder = getSecretProps(value, secretAddWatcher))) {
 				callbackExecuter = getSecretProps(value, secretExecuteWatchers)
 			} else {
 				callbackAdder = addWatcher
@@ -254,10 +253,9 @@ function defineAsGetSet(to, key, value, enumerable = false){
 
 
 	proxify(value)
-	if (Array.isArray(value)) {
-		callbackAdder = getSecretProps(value, secretAddWatcher)
+	if (value && (callbackAdder = getSecretProps(value, secretAddWatcher))) {
 		callbackExecuter = getSecretProps(value, secretExecuteWatchers)
-		onNextEventCycle(getSecretProps(value, secretExecuteWatchers), "set")
+		onNextEventCycle(callbackExecuter, "set")
 	} else {
 		callbackAdder = addWatcher
 		callbackExecuter = executeWatchers
@@ -271,7 +269,8 @@ function maskProtoMethods(mask, proto, method){
 		toDefine = function(){
 			// since we are overriding all the default methods we might as well overrid the default array methods to inform us that the length has changed when they're called
 
-			if (Array.isArray(this)){
+			var calledOnArray = Array.isArray(this)
+			if (calledOnArray){
 				var preCallLength = this.length
 			}
 
@@ -279,7 +278,7 @@ function maskProtoMethods(mask, proto, method){
 
 			if (isNumber(preCallLength) && preCallLength !== this.length){
 				// figure out how to create a callback listener for this thing
-				if (Array.isArray(this)) {
+				if (calledOnArray) {
 					onNextEventCycle(getSecretProps(this, secretExecuteWatchers), "set")
 				}
 			}
@@ -382,11 +381,10 @@ internalMethod.prototype = Object.create(Function.prototype)
 function getSecretProps(proxiedObject, prop){
 	if (isFunction(proxiedObject[Symbol.toPrimitive])){
 		var potentiallyHiddenMethod = proxiedObject[Symbol.toPrimitive](prop)
-		if (typeof potentiallyHiddenMethod !== "undefined"){
+		if (potentiallyHiddenMethod !== undefined){
 			return potentiallyHiddenMethod
 		}
 	}
-	return blankFunction
 }
 
 var secretAddWatcher = generateId(randomInt(32, 48))
