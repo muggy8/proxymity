@@ -1,6 +1,6 @@
-function observe(targetFinder, callbackSet, stuffToUnWatch = []){
+function observe(targetFinder, callbackSet, stuffToUnWatch = [], addCallback){
 	targetFinder()
-	var addCallback = callbackAdder
+	addCallback = addCallback || callbackAdder
 
 	if (isFunction(callbackSet)){
 		var callback = callbackSet
@@ -31,8 +31,11 @@ function observe(targetFinder, callbackSet, stuffToUnWatch = []){
 
 	var onReMap = function(type){
 		if (type === "remap" || type === "del"){
-			clearWatchers()
-			observe(targetFinder, callbackSet, stuffToUnWatch)
+			targetFinder()
+			if (addCallback !== callbackAdder){
+				clearWatchers()
+				observe(targetFinder, callbackSet, stuffToUnWatch, callbackAdder)
+			}
 		}
 	}
 

@@ -38,19 +38,20 @@ var blankFunction = function(){},
             watchers.splice(watchers.indexOf(callback), 1)
         }
     },
-	recursiveEmitter = function(value, eventName, cache = []){
+	recursiveEmitter = function(value, eventName, cache = {}){
 		// this function does not emit the event for the current item but it does emit the event for all child props of the current obj
 		isObject(value) && forEach(propsIn(value), function(key){
 			var target = value[key]
 			var executer = callbackExecuter
-			if (cache.indexOf(executer) > -1){
+			if (cache[executer.i]){
 				return
 			}
 			onNextEventCycle(executer, eventName)
-			cache.push(executer)
+			cache[executer.i] = true
 			recursiveEmitter(target, eventName, cache)
 		})
-	}
+	},
+	executerIndex = 0
 function defineAsGetSet(to, key, value, enumerable = false){
 	// we do this check because this method is defines a getter / setter. because this is only triggered by the proxy this can only happen when we are creating new keys in the object. Thats why we never want to overwrite any values that are already on the object. if someone is updating the property, JS will make use of the setter defined below as this method would never becalled more than once per property string unless they delete the property in which case cool
 	if (to.hasOwnProperty(key)){
@@ -61,6 +62,7 @@ function defineAsGetSet(to, key, value, enumerable = false){
     var watchers = []
 	var addWatcher = addWatcherSource.bind(watchers)
 	var executeWatchers = executeWatchersSource.bind(watchers)
+	executeWatchers.i = executerIndex++
 
 	// right here we are defining a property as a getter/setter on the source object which will override the need to hit the proxy for getting or setting any properties of an object
 	Object.defineProperty(to, key, {
@@ -239,6 +241,7 @@ function migrateData(protoObj, input){
 		addWatcher = internalMethod(addWatcherSource.bind(watchers))
 		executeWatchers = internalMethod(executeWatchersSource.bind(watchers))
 		executeWatchers.priority = true
+		executeWatchers.i = executerIndex++
 	}
 	Object.defineProperty(input, Symbol.toPrimitive, {
 		value: function(hint){
