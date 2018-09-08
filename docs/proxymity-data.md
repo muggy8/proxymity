@@ -3,7 +3,11 @@ As of version 0.2.0 Proxymity's internal data has been updated
 
 Proxymity transforms any plane object and javascript array into a ProxymityData object. This is an in place transformation and does not create any new objects.
 
-This will convert all properties into a getter and setter and replacing the object's prototype with a special prototype designed for proxymity. Functionally, you should still be able to use the object the exact same way that you normally would. This is also true for added properties as well and additional properties will be converted into getters and setters as well. 
+This will convert all properties into a getter and setter and replacing the object's prototype with a special prototype designed for proxymity. Functionally, you should still be able to use the object the exact same way that you normally would. This is also true for added properties as well and additional properties will be converted into getters and setters as well.
+
+This is done by replacing the Object.prototype method that is common to all objects in javascript with a Proxy that is able to achieve more functionalities. Additionally, a mask is provided on top of this proxy object that has a copy of every property on the base Object.prototype object to prevent the Proxy from being accessed directly as often as Proxys are generally quite slow and costly on performance.
+
+One of the primary funcitons of the proxy object is to set different values on the parent object and also converting them into getters and setters as well. This ensures that new properties added to the objects are also watchable. 
 
 There are currently no additional methods that you can access within the proxymity data. Do note that if you want to watch for changes on an array. you no longer watch the length property but instead watch the array itself.
 
@@ -41,4 +45,3 @@ view.app.watch("user.name", function(name){
 	}
 })
 ```
-
