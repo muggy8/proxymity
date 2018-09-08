@@ -269,3 +269,4 @@ var augmentedArrayProto = augmentProto(Array.prototype)
 var augmentedObjectProto = augmentProto(Object.prototype)
 var proxyArray = migrateData.bind(this, augmentedArrayProto)
 var proxyObject = migrateData.bind(this, augmentedObjectProto)
+proxify.prototype = augmentedObjectProto
