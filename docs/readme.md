@@ -4,7 +4,7 @@ Welcome to the Proxymity Documentations where you will find out how to use the v
 - [Proxymity templates API](template-api.md)
 - [Proxymity data object](proxymity-data.md)
 - [Proxymity render cycle](render-cycle.md)
-- [Creating watchable classes](observeable-classes.md)
+- [Creating watchable classes](observable-classes.md)
 
 ## Philosophy
 The primary guiding principle of Poxymity is to be minimalistic and easy to learn and use. Currently, the front end landscape is filled with large and complex frameworks and libraries that do a mind blowing amount of things and requires a sizeable bandwidth to deliver. Not only that, they also have specialized ways of doing things and the learning curve for some of them is so steep that being able to use them is a marketable skill in and of itself. This, I feel, defeats the purpose of frameworks and libraries.
