@@ -1,0 +1,27 @@
+{
+  "name": "proxymity",
+  "version": "0.0.0",
+  "description": "Proxymity is a 2 way binding library that can be used to renderer ad manage complex views.",
+  "main": "dist/proxymity.min.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/muggy8/proxymity.git"
+  },
+  "keywords": [
+    "Data_Bindiig",
+    "UI"
+  ],
+  "author": "Muggy Ate",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/muggy8/proxymity/issues"
+  },
+  "homepage": "https://github.com/muggy8/proxymity#readme"
+}
