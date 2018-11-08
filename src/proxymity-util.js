@@ -92,3 +92,36 @@ function evalScriptConcatinator(targetLocation){
 	}
 	return ""
 }
+
+function betweenBrackets(str, startAt = 0, brackets = "[]"){
+    var foundFirst = false
+    var startingIndex = startAt
+    var currentIndex = startingIndex
+    var endingIndex = currentIndex
+    var bracketsLevel = 0
+    while (str[currentIndex] && (!foundFirst || bracketsLevel !== 0)) {
+        var currentCharacter = str[currentIndex]
+        if (currentCharacter === brackets[0]){
+            if (!foundFirst) {
+                startingIndex = currentIndex
+            }
+            foundFirst = true
+            bracketsLevel ++
+        }
+        else if (currentCharacter === brackets[1]){
+            bracketsLevel --
+
+        }
+        endingIndex = currentIndex
+        currentIndex++
+    }
+    if (bracketsLevel === 0){
+        return {
+            start: startingIndex,
+            end: endingIndex,
+            matched: str.substring(startingIndex + 1, endingIndex),
+            before: str.substring(0, startingIndex),
+            after: str.substring(endingIndex+1),
+        }
+    }
+}
