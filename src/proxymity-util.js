@@ -102,8 +102,11 @@ function splitPath(str = ""){
 	function torwSyntaxError(){
 		throw new Error("Potential Syntax Error within code: \n" + str)
 	}
-	function addSegment(currentIndex, quoted = false){
+	function addSegment(currentIndex, quoted = true){
 		var segment = str.substring(startSubstringIndex, currentIndex)
+		if (!segment){
+			return startSubstringIndex = currentIndex + 1
+		}
 		if (quoted){
 			segment = '"' + segment + '"'
 		}
@@ -112,11 +115,11 @@ function splitPath(str = ""){
 	}
 	for(var i = 0; i < str.length; i++){
 		if (str[i] === "." && !withinBrace){
-			addSegment(i, true)
+			addSegment(i)
 		}
 		else if (!withinBrace){
 			if (str[i] === openBrace){
-				addSegment(i, true)
+				addSegment(i)
 				withinBrace++
 			}
 			else if (str[i] === closingBrace){
@@ -132,14 +135,14 @@ function splitPath(str = ""){
 			}
 
 			if (!withinBrace){
-				addSegment(i)
+				addSegment(i, false)
 			}
 		}
 	}
 	if (startSubstringIndex !== str.length){
 		// var segment = str.substring(startSubstringIndex)
 		// segments.push(segment)
-		addSegment(str.length - 1)
+		addSegment(str.length)
 	}
 	if (withinBrace){
 		torwSyntaxError()
