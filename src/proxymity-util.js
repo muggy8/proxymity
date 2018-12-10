@@ -56,18 +56,16 @@ function generateId(length = 16){
 
 function softCopy(from, to){
 	var toKeys = propsIn(to)
+	var toIsArray = Array.isArray(to)
 	for(var key in from){
 		to[key] = from[key]
 		toKeys.splice(toKeys.indexOf(key), 1)
 	}
-	forEach(toKeys, function(isArray, key){
-		if (!isArray && key !== "length"){
+	forEach(toKeys, function(key){
+		if (!toIsArray && key !== "length"){
 			delete to[key]
 		}
-	}.bind(null, Array.isArray(to)))
-	// if (Array.isArray(to)){
-	// 	to.length = to.length // this is to trigger the set:lengthId for this object just in case it is something depends on it (which something does)
-	// }
+	})
 }
 
 function define(obj, key, val){
