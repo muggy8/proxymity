@@ -22,11 +22,11 @@ function watch(source, path, callback){
 
 		// if the property doesn't exist we can create it here
 		if (typeof descriptor === "undefined"){
-			propertyDescriptor = createWatchableProp(source, key, {})
+			propertyDescriptor = createWatchableProp(source, key)
 		}
 
 		// our non-standard descriptors are the special since they are also ment to be accessed via this method and we can pass in parameters that are normally not
-		else if (descriptor.get && descriptor.get.length){
+		else if (isInternalDescriptor(descriptor)){
 			propertyDescriptor = descriptor
 		}
 
@@ -42,8 +42,15 @@ function watch(source, path, callback){
 	return propertyDescriptor.get(callback)
 }
 
-function createWatchableProp(obj, prop, value){
+function isInternalDescriptor(descriptor){
+	return descriptor.get && descriptor.get.length
+}
+
+function createWatchableProp(obj, prop, value = {}){
 	var callbacks = []
+	if (typeof value === "undefined"){
+		value = valueAsObject
+	}
 	var descriptor
 	Object.defineProperty(obj, prop, descriptor = {
 		enumerable: true,
@@ -66,6 +73,9 @@ function createWatchableProp(obj, prop, value){
 					if (item.next){
 						item.next.pervious = item.previous
 					}
+					if (item.previous){
+						item.previous.next = item.next
+					}
 				}
 			}
 			else {
@@ -78,10 +88,27 @@ function createWatchableProp(obj, prop, value){
 				return val
 			}
 
-			value = val
+			if (typeof val === "undefined"){
+				// someone is trying to delete this value
+			}
 
-			for(var current = callbacks[0]; current; current = current.next){
-				current.exe(val, beforeValue)
+			var storageIsObject = isObject(value)
+			var replacementIsObject = isObject(val)
+
+			// we only wan to do the replacement if we're replacing the object with a non-object or vice versa or we are doing replacements of basic values
+			if (
+				(storageIsObject && !replacementIsObject) ||
+				(!storageIsObject && replacementIsObject) ||
+				(!storageIsObject && !replacementIsObject)
+			){
+				value = val
+				for(var current = callbacks[0]; current; current = current.next){
+					current.exe(val, beforeValue)
+				}
+			}
+			// in the case that we are replacing an object with another object we don't want to just overwrite the value reference and as a result we maintain everything in the current reference so the callback/watch stack is preserved. This would result in some really weird interactions but this is the simplest way to do this internally without having to re-initialize the entire inserted value and having to somehow move the right callbacks to the matching place on the new structure somehow
+			else if (storageIsObject && replacementIsObject){
+
 			}
 		},
 	})
