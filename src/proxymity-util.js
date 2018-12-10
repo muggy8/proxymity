@@ -116,7 +116,7 @@ function splitPath(str = ""){
 		}
 		else if (!withinBrace){
 			if (str[i] === openBrace){
-				addSegment(i)
+				addSegment(i, true)
 				withinBrace++
 			}
 			else if (str[i] === closingBrace){
