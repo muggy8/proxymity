@@ -48,10 +48,8 @@ function isInternalDescriptor(descriptor){
 
 function createWatchableProp(obj, prop, value = {}){
 	var callbacks = []
-	if (typeof value === "undefined"){
-		value = valueAsObject
-	}
 	var descriptor
+
 	Object.defineProperty(obj, prop, descriptor = {
 		enumerable: true,
 		configurable: true,
@@ -76,6 +74,7 @@ function createWatchableProp(obj, prop, value = {}){
 					if (item.previous){
 						item.previous.next = item.next
 					}
+					item.unwatch && item.unwatch()
 				}
 			}
 			else {
@@ -94,9 +93,11 @@ function createWatchableProp(obj, prop, value = {}){
 				// this is the special case and this must be called with the intent to delete as such we will not delete and continue to keep things around
 				if (replacementsDescriptor){
 					forEach(callbacks, function(item){
-						replacementsDescriptor.get(item.exe)
-						item.exe(replacementsDescriptor.parent, beforeValue)
+						item.unwatch = replacementsDescriptor.get(item.exe)
 					})
+					for(var current = callbacks[0]; current; current = current.next){
+						current.exe(replacementsDescriptor.value, value)
+					}
 					return // prevent the actual deletion
 				}
 				return // do the actual deletion here
@@ -133,7 +134,7 @@ function migrateChildPropertyListeners(beforeValue, afterValue){
 			delete afterValue[beforeKey]
 			var newAfterDescriptor = createWatchableProp(afterValue, beforeKey, referencedValue)
 
-			newAfterDescriptor.parent = afterValue
+			newAfterDescriptor.value = referencedValue
 
 			beforeDescriptor.set(undefined, newAfterDescriptor)
 

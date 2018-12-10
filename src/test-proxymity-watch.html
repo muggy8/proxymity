@@ -23,6 +23,11 @@
 					}
 				}
 			}
+
+			var obj = {};watch(obj, "foo.bar", console.log)
+			obj.foo.bar = 19
+			obj.foo = {}
+
 		</script>
 	</body>
 </html>
