@@ -43,7 +43,7 @@ function watch(source, path, callback){
 }
 
 function isInternalDescriptor(descriptor){
-	return descriptor.get && descriptor.get.length
+	return descriptor && descriptor.get && descriptor.get.length && descriptor.set && descriptor.set.length > 1
 }
 
 function createWatchableProp(obj, prop, value = {}){
@@ -82,36 +82,62 @@ function createWatchableProp(obj, prop, value = {}){
 				return value
 			}
 		},
-		set: function(val){
+		set: function(val, replacementsDescriptor){
 			var beforeValue = value
 			if (beforeValue === val){ // lets not waste clock cycles calculating stuff we know didn't change
 				return val
 			}
 
+			// someone is trying to delete this value
 			if (typeof val === "undefined"){
-				// someone is trying to delete this value
-			}
 
-			var storageIsObject = isObject(value)
-			var replacementIsObject = isObject(val)
-
-			// we only wan to do the replacement if we're replacing the object with a non-object or vice versa or we are doing replacements of basic values
-			if (
-				(storageIsObject && !replacementIsObject) ||
-				(!storageIsObject && replacementIsObject) ||
-				(!storageIsObject && !replacementIsObject)
-			){
-				value = val
-				for(var current = callbacks[0]; current; current = current.next){
-					current.exe(val, beforeValue)
+				// this is the special case and this must be called with the intent to delete as such we will not delete and continue to keep things around
+				if (replacementsDescriptor){
+					forEach(callbacks, function(item){
+						replacementsDescriptor.get(item.exe)
+						item.exe(replacementsDescriptor.parent, beforeValue)
+					})
+					return // prevent the actual deletion
 				}
+				return // do the actual deletion here
 			}
-			// in the case that we are replacing an object with another object we don't want to just overwrite the value reference and as a result we maintain everything in the current reference so the callback/watch stack is preserved. This would result in some really weird interactions but this is the simplest way to do this internally without having to re-initialize the entire inserted value and having to somehow move the right callbacks to the matching place on the new structure somehow
-			else if (storageIsObject && replacementIsObject){
 
+			value = val
+
+			// if the the before val is an object, we need to do the
+			if (isObject(beforeValue) && isObject(value)){
+				migrateChildPropertyListeners(beforeValue, value)
+			}
+
+			// after we did all the crazy stuff we did, we can now call all the callbacks that needs to be called
+			for(var current = callbacks[0]; current; current = current.next){
+				current.exe(val, beforeValue)
 			}
 		},
 	})
 
 	return descriptor
+}
+
+function migrateChildPropertyListeners(beforeValue, afterValue){
+	var beforeKeys = Object.getOwnPropertyNames(beforeValue)
+	forEach(beforeKeys, function(beforeKey){
+		var beforeDescriptor = Object.getOwnPropertyDescriptor(beforeValue, beforeKey)
+		var afterDescriptor =  Object.getOwnPropertyDescriptor(afterValue, beforeKey)
+
+		if (isInternalDescriptor(beforeDescriptor) && !isInternalDescriptor(afterDescriptor)){
+			var referencedValue = afterValue[afterDescriptor]
+			if (typeof referencedValue === "undefined"){
+				referencedValue = {}
+			}
+			delete afterValue[beforeKey]
+			var newAfterDescriptor = createWatchableProp(afterValue, beforeKey, referencedValue)
+
+			newAfterDescriptor.parent = afterValue
+
+			beforeDescriptor.set(undefined, newAfterDescriptor)
+
+			migrateChildPropertyListeners(beforeValue[beforeKey], afterValue[beforeKey])
+		}
+	})
 }
