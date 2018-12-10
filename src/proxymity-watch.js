@@ -127,7 +127,7 @@ function migrateChildPropertyListeners(beforeValue, afterValue){
 		var afterDescriptor =  Object.getOwnPropertyDescriptor(afterValue, beforeKey)
 
 		if (isInternalDescriptor(beforeDescriptor) && !isInternalDescriptor(afterDescriptor)){
-			var referencedValue = afterValue[afterDescriptor]
+			var referencedValue = afterValue[beforeKey]
 			if (typeof referencedValue === "undefined"){
 				referencedValue = {}
 			}
