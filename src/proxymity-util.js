@@ -93,35 +93,56 @@ function evalScriptConcatinator(targetLocation){
 	return ""
 }
 
-function betweenBrackets(str, startAt = 0, brackets = "[]"){
-    var foundFirst = false
-    var startingIndex = startAt
-    var currentIndex = startingIndex
-    var endingIndex = currentIndex
-    var bracketsLevel = 0
-    while (str[currentIndex] && (!foundFirst || bracketsLevel !== 0)) {
-        var currentCharacter = str[currentIndex]
-        if (currentCharacter === brackets[0]){
-            if (!foundFirst) {
-                startingIndex = currentIndex
-            }
-            foundFirst = true
-            bracketsLevel ++
-        }
-        else if (currentCharacter === brackets[1]){
-            bracketsLevel --
+function splitPath(str = ""){
+	var startSubstringIndex = 0
+	var segments = []
+	var openBrace = "["
+	var closingBrace = "]"
+	var withinBrace = 0
+	function torwSyntaxError(){
+		throw new Error("Potential Syntax Error within code: \n" + str)
+	}
+	function addSegment(currentIndex, quoted = false){
+		var segment = str.substring(startSubstringIndex, currentIndex)
+		if (quoted){
+			segment = '"' + segment + '"'
+		}
+		segments.push(segment)
+		startSubstringIndex = currentIndex + 1
+	}
+	for(var i = 0; i < str.length; i++){
+		if (str[i] === "." && !withinBrace){
+			addSegment(i, true)
+		}
+		else if (!withinBrace){
+			if (str[i] === openBrace){
+				addSegment(i)
+				withinBrace++
+			}
+			else if (str[i] === closingBrace){
+				torwSyntaxError()
+			}
+		}
+		else if (withinBrace){
+			if (str[i] === openBrace){
+				withinBrace++
+			}
+			else if (str[i] === closingBrace){
+				withinBrace--
+			}
 
-        }
-        endingIndex = currentIndex
-        currentIndex++
-    }
-    if (bracketsLevel === 0){
-        return {
-            start: startingIndex,
-            end: endingIndex,
-            matched: str.substring(startingIndex + 1, endingIndex),
-            before: str.substring(0, startingIndex),
-            after: str.substring(endingIndex+1),
-        }
-    }
+			if (!withinBrace){
+				addSegment(i)
+			}
+		}
+	}
+	if (startSubstringIndex !== str.length){
+		// var segment = str.substring(startSubstringIndex)
+		// segments.push(segment)
+		addSegment(str.length - 1)
+	}
+	if (withinBrace){
+		torwSyntaxError()
+	}
+	return segments
 }
