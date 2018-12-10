@@ -138,8 +138,6 @@ function splitPath(str = ""){
 		}
 	}
 	if (startSubstringIndex !== str.length){
-		// var segment = str.substring(startSubstringIndex)
-		// segments.push(segment)
 		addSegment(str.length)
 	}
 	if (withinBrace){
