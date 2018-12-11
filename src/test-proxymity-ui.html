@@ -1,0 +1,33 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+		<script src="proxymity-util.js"></script>
+		<script src="on-next-event-cycle.js"></script>
+		<script src="proxymity-watch.js"></script>
+		<script src="proxymity-ui.js"></script>
+	</head>
+	<body>
+		<script>
+			// stubbing safeEval for now
+			var safeEval = function(s, sv = {}, t = false){
+				try {
+					with(sv){
+						return eval(s)
+					}
+				}
+				catch(o3o){
+					if (!t){
+						console.error("failed to evaluate expression [" + s + "]", this, o3o)
+						return ""
+					}
+					else {
+						throw o3o
+					}
+				}
+			}
+
+			var testTemp = proxyUI("<div></div>", {foo: 15}, "app")
+			console.log(testTemp)
+		</script>
+	</body>
+</html>
