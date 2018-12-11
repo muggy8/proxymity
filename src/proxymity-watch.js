@@ -55,6 +55,13 @@ function createWatchableProp(obj, prop, value = {}){
 		configurable: true,
 		get: function(addedCallback){ // this is called this way when the method is being called by the watch function from the property descriptor function
 			if (addedCallback){
+				var alreadyExists = callbacks.some(function(item){
+					return item.exe === addedCallback
+				})
+				if (alreadyExists){
+					return function(){}
+				}
+
 				// we are doing this to create a simple linked list because executing the list of callbacks is much easier with a linked list while it is being potentially modified during each call to the list. and it seems that when combining a linked list and array together is pretty good for actually being kind of efficient as far as accessing data and writing data goes
 				var item = {exe: addedCallback}
 
