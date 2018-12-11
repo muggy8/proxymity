@@ -26,7 +26,7 @@
 				}
 			}
 
-			var testTemp = proxyUI("<div></div>", {foo: 15}, "app")
+			var testTemp = proxyUI("<div>{:console.log('foo'):}</div>", {foo: 15}, "app")
 			console.log(testTemp)
 		</script>
 	</body>

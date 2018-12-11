@@ -37,6 +37,14 @@ function transformNode(node, data, propName){
 		delete node[propName]
 	})
 
+	if (node instanceof CharacterData){
+		var stopSyntaxRender = continiousSyntaxRender(node, node, propertyToDefine)
+		stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
+	}
+	else {
+		transformList(arrayFrom(node.childNodes), data, propName)
+	}
+
 	return node
 }
 
