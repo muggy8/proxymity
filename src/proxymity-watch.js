@@ -47,7 +47,11 @@ function watch(source, path, callback){
 
 		source = source[key]
 	})
-	return propertyDescriptor.get(callback)
+	var wrappedCallback = function(){
+		var args = Array.prototype.slice.call(arguments)
+		return callback.apply(this, args)
+	}
+	return propertyDescriptor.get(wrappedCallback)
 }
 
 function isInternalDescriptor(descriptor){
@@ -72,6 +76,14 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 				}
 
 				// we are doing this to create a simple linked list because executing the list of callbacks is much easier with a linked list while it is being potentially modified during each call to the list. and it seems that when combining a linked list and array together is pretty good for actually being kind of efficient as far as accessing data and writing data goes
+				// var item = function(updated, previous){
+				// 	// here we are trying to prevent updates to things where the value is change to something else then changed back to normal from causing a re-render
+				// 	if (value !== updated){
+				// 		// by now it's the update step so the values should match and we want to only execute the last item in the list to execute
+				// 		// return
+				// 	}
+				// 	addedCallback(updated, previous)
+				// }
 				var item = {exe: addedCallback}
 
 				var previousItem = callbacks[callbacks.length - 1]
@@ -112,7 +124,7 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 						item.unwatch = replacementsDescriptor.get(item.exe)
 					})
 					for(var current = callbacks[0]; current; current = current.next){
-						current.exe(replacementsDescriptor.value, value)
+						onNextEventCycle(current.exe, replacementsDescriptor.value, value)
 					}
 					return // prevent the actual deletion
 				}
@@ -128,7 +140,7 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 
 			// after we did all the crazy stuff we did, we can now call all the callbacks that needs to be called
 			for(var current = callbacks[0]; current; current = current.next){
-				current.exe(val, beforeValue)
+				onNextEventCycle(current.exe, val, beforeValue)
 			}
 		},
 	})

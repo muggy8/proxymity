@@ -8,15 +8,21 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 			window.postMessage(nextEvent, '*');
 			emitted = true
 		}
-		fn.res = false // make sure reused events wont be skipped over
-		var method = "push"
-		if (fn.priority){
-			method = "unshift"
+
+		if (
+			!queue.some(function(item){
+				if (item.fn === fn){
+					item.args = args
+					return true
+				}
+				return false
+			})
+		){
+			queue.push({
+				fn: fn,
+				args: args,
+			})
 		}
-		queue[method]({
-			fn: fn,
-			args: args,
-		})
 	}
 
 	window.addEventListener("message", function(ev){
@@ -32,11 +38,7 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 		queue = []
 
 		forEach(workingQueue, function(item){
-			if (item.fn.res){
-				return
-			}
 			item.fn.apply(window, item.args)
-			item.fn.res = true
 		})
 
 		if (onNextEventCycle.asyncEnd){
