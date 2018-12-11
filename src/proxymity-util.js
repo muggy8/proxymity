@@ -26,6 +26,10 @@ function isObject(val){
 	return val && typeof val === "object"
 }
 
+function isArray(val){
+	return Array.isArray(val)
+}
+
 function propsIn(obj){
 	return Object.getOwnPropertyNames(obj)
 }

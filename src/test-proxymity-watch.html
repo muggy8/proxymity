@@ -24,10 +24,17 @@
 				}
 			}
 
-			var obj = {};watch(obj, "foo.bar", console.log)
+			var obj = {}
+			watch(obj, "foo.bar", console.log)
 			obj.foo.bar = 19
 			obj.foo = {bar: 12}
 			console.log(obj)
+
+			console.log('testing array')
+			var arr = []
+			watch(arr, 'len', console.log)
+			arr.push({})
+			console.log(arr)
 		</script>
 	</body>
 </html>

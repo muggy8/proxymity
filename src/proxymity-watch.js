@@ -1,3 +1,7 @@
+function hasProp(obj, prop){
+	return Object.hasOwnProperty.call(obj, prop)
+}
+
 function watch(source, path, callback){
 	var context = this || {}
 	var pathsToEval = splitPath(path)
@@ -18,6 +22,10 @@ function watch(source, path, callback){
 
 	var propertyDescriptor
 	forEach(pathsStrings, function(key){
+		if (key === 'len'){
+			overrideArrayFunctions(source)
+		}
+
 		var descriptor = Object.getOwnPropertyDescriptor(source, key)
 
 		// if the property doesn't exist we can create it here
@@ -46,13 +54,14 @@ function isInternalDescriptor(descriptor){
 	return descriptor && descriptor.get && descriptor.get.length && descriptor.set && descriptor.set.length > 1
 }
 
-function createWatchableProp(obj, prop, value = {}){
+function createWatchableProp(obj, prop, value = {}, config = {}){
 	var callbacks = []
 	var descriptor
+	overrideArrayFunctions(value)
 
 	Object.defineProperty(obj, prop, descriptor = {
-		enumerable: true,
-		configurable: true,
+		enumerable: hasProp(config, "enumerable") ? config.enumerable : true,
+		configurable: hasProp(config, "configurable") ? config.configurable : true,
 		get: function(addedCallback){ // this is called this way when the method is being called by the watch function from the property descriptor function
 			if (addedCallback){
 				var alreadyExists = callbacks.some(function(item){
@@ -110,7 +119,7 @@ function createWatchableProp(obj, prop, value = {}){
 				return // do the actual deletion here
 			}
 
-			value = val
+			overrideArrayFunctions(value = val)
 
 			// if the the before val is an object, we need to do the
 			if (isObject(beforeValue) && isObject(value)){
@@ -147,5 +156,30 @@ function migrateChildPropertyListeners(beforeValue, afterValue){
 
 			migrateChildPropertyListeners(beforeValue[beforeKey], afterValue[beforeKey])
 		}
+	})
+}
+
+
+var replacementFunctions = {}
+forEach(Object.getOwnPropertyNames(Array.prototype), function(prop){
+	var wrappedFunction = Array.prototype[prop]
+	if (typeof wrappedFunction !== "function"){
+		return
+	}
+	replacementFunctions[prop] = function(){
+		var args = Array.prototype.slice.call(arguments)
+		var res = wrappedFunction.apply(this, args)
+		this.len = this.length
+		return res
+	}
+})
+function overrideArrayFunctions(arr){
+	if (!arr || !isArray(arr) || hasProp(arr, 'len')){
+		return
+	}
+	createWatchableProp(arr, "len", arr.length, {enumerable: false})
+	forEach(Object.getOwnPropertyNames(replacementFunctions), function(prop){
+		var fn = replacementFunctions[prop]
+		define(arr, prop, fn)
 	})
 }
