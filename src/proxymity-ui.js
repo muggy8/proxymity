@@ -38,7 +38,7 @@ function transformNode(node, data, propName){
 	})
 
 	if (node instanceof CharacterData){
-		var stopSyntaxRender = continiousSyntaxRender(node, node, propertyToDefine)
+		var stopSyntaxRender = continiousSyntaxRender(node, node, propName)
 		stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
 	}
 	else {
