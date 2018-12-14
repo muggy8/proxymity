@@ -89,5 +89,6 @@ function addOutputApi(transformedList, data, propName){
 
 // this function is responsible for rendering our handlebars and watching the paths that needs to be watched
 function continiousSyntaxRender(textSource, node, data){
-
+	var text = textSource.textContent
+	console.log(textSource, node, data)
 }
