@@ -90,5 +90,30 @@ function addOutputApi(transformedList, data, propName){
 // this function is responsible for rendering our handlebars and watching the paths that needs to be watched
 function continiousSyntaxRender(textSource, node, data){
 	var text = textSource.textContent
-	console.log(textSource, node, data)
+	console.log(text, textSource, node, data)
+
+	var clusters = []
+	forEach(text.split("{:"), function(chunk, index){
+		forEach(chunk.split(":}"), function(subChunk, subIndex){
+			clusters.push({
+				text: subChunk,
+				code: !subIndex && !!index
+			})
+		})
+	})
+
+	forEach(clusters, function(chunk, index){
+		if (chunk.text.length > 2 && chunk.text[0] === "|" && chunk.text[1] === "{"){
+			var endWatchSyntax =  chunk.text.indexOf("}|")
+			var watchSyntax = chunk.text.slice(1, endWatchSyntax + 1)
+			chunk.text = chunk.text.slice(endWatchSyntax + 2)
+			clusters[index - 1].watchProps = watchSyntax.split(",").map(function(str){
+				return str.trim().slice(1, -1)
+			}).filter(function(item){
+				return item
+			})
+		}
+	})
+
+	console.log(clusters)
 }
