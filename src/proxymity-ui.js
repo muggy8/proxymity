@@ -88,10 +88,11 @@ function addOutputApi(transformedList, data, propName){
 	}
 
 // this function is responsible for rendering our handlebars and watching the paths that needs to be watched
-function continiousSyntaxRender(textSource, node, data){
+function continiousSyntaxRender(textSource, node, propName){
 	var text = textSource.textContent
-	console.log(text, textSource, node, data)
+	console.log(text, textSource, node, propName)
 
+	// split the string by "{:" and ":}" and sort them into code segments and text segments
 	var clusters = []
 	forEach(text.split("{:"), function(chunk, index){
 		forEach(chunk.split(":}"), function(subChunk, subIndex){
@@ -102,12 +103,13 @@ function continiousSyntaxRender(textSource, node, data){
 		})
 	})
 
+	// move the watchers into the code that they belong with
 	forEach(clusters, function(chunk, index){
 		if (chunk.text.length > 2 && chunk.text[0] === "|" && chunk.text[1] === "{"){
 			var endWatchSyntax =  chunk.text.indexOf("}|")
 			var watchSyntax = chunk.text.slice(1, endWatchSyntax + 1)
 			chunk.text = chunk.text.slice(endWatchSyntax + 2)
-			clusters[index - 1].watchProps = watchSyntax.split(",").map(function(str){
+			clusters[index - 1].watching = watchSyntax.split(",").map(function(str){
 				return str.trim().slice(1, -1)
 			}).filter(function(item){
 				return item
@@ -115,5 +117,40 @@ function continiousSyntaxRender(textSource, node, data){
 		}
 	})
 
+	// render the code that doesn't have watchers
+	var onDestroyCallbacks = []
+	forEach(clusters, function(chunk){
+		if (!chunk.code){
+			chunk.val = chunk.text
+		}
+		else{
+			if (!chunk.watching){
+				chunk.val = safeEval.call(node, chunk.text)
+			}
+			else{
+				// observer the property that is to be watched
+				function updateChunkVal(){
+					chunk.val = safeEval.call(node, chunk.text)
+					renderString(textSource, clusters)
+				}
+				forEach(chunk.watching, function(prop){
+					console.log(node[propName], prop)
+					onDestroyCallbacks.push(watch(node[propName], prop, updateChunkVal))
+				})
+				updateChunkVal()
+			}
+		}
+	})
+
+	renderString(textSource, clusters)
+
 	console.log(clusters)
+}
+
+function renderString(textSource, clusters){
+	var string = ""
+	forEach(clusters, function(chunk){
+		string += chunk.val
+	})
+	textSource.textContent = string
 }

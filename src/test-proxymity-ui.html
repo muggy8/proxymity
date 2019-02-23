@@ -27,6 +27,7 @@
 			}
 
 			var testTemp = proxyUI("<div>the number I am thinking of is {:this.app.foo:}|{foo}| and the result of this script is {:console.log('foo'):}</div>", {foo: 15}, "app")
+			testTemp.appendTo(document.body)
 			console.log(testTemp)
 		</script>
 	</body>
