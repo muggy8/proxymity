@@ -42,6 +42,13 @@ function transformNode(node, data, propName){
 		stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
 	}
 	else {
+		// console.log(node.attributes)
+		let attributes = node.attributes
+		forEach(arrayFrom(attributes), function(attribute){
+			// console.log(attribute)
+			var stopSyntaxRender = continiousSyntaxRender(attribute, node, propName)
+			stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
+		})
 		transformList(arrayFrom(node.childNodes), data, propName)
 	}
 
@@ -90,7 +97,7 @@ function addOutputApi(transformedList, data, propName){
 // this function is responsible for rendering our handlebars and watching the paths that needs to be watched
 function continiousSyntaxRender(textSource, node, propName){
 	var text = textSource.textContent
-	console.log(text, textSource, node, propName)
+	// console.log(text, textSource, node, propName)
 
 	// split the string by "{:" and ":}" and sort them into code segments and text segments
 	var clusters = []
@@ -134,7 +141,7 @@ function continiousSyntaxRender(textSource, node, propName){
 					renderString(textSource, clusters)
 				}
 				forEach(chunk.watching, function(prop){
-					console.log(node[propName], prop)
+					// console.log(node[propName], prop)
 					onDestroyCallbacks.push(watch(node[propName], prop, updateChunkVal))
 				})
 				updateChunkVal()
@@ -144,13 +151,20 @@ function continiousSyntaxRender(textSource, node, propName){
 
 	renderString(textSource, clusters)
 
-	console.log(clusters)
+	// console.log(clusters)
 }
 
 function renderString(textSource, clusters){
 	var string = ""
 	forEach(clusters, function(chunk){
+		if (chunk.val === undefined){
+			return
+		}
 		string += chunk.val
 	})
+
+	if (textSource instanceof Attr && textSource.name === "value"){
+		textSource.ownerElement.value = string
+	}
 	textSource.textContent = string
 }

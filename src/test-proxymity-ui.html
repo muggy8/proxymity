@@ -26,9 +26,18 @@
 				}
 			}
 
-			var testTemp = proxyUI("<div>the number I am thinking of is {:this.app.foo:}|{foo}| and the result of this script is {:console.log('foo'):}</div>", {foo: 15}, "app")
+			var testTemp = proxyUI(`
+				<div class='foo-{:this.app.foo:}|{foo}|'>
+					the number input is {:this.app.foo:}|{foo}| and the select input is {:this.app.bar:}|{bar}|
+				</div>
+				<input value='{:this.app.foo:}|{foo}|' onkeyup='this.app.foo = this.valueAsNumber' onchange='this.app.foo = this.valueAsNumber' type='number'>
+				<select value="{:this.app.bar:}|{bar}|" onchange="this.app.bar = this.value">
+					<option value="1">1</option>
+					<option value="2">2</option>
+					<option value="3">3</option>
+				</select>`, {foo: 15, bar: "1"}, "app")
 			testTemp.appendTo(document.body)
-			console.log(testTemp)
+			// console.log(testTemp)
 		</script>
 	</body>
 </html>
