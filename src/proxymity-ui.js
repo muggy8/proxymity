@@ -23,6 +23,7 @@ function transformList(list, data, propName){
 	}), data, propName)
 }
 
+var unlinkSecretCode = generateId(randomInt(32, 48))
 function transformNode(node, data, propName){
 	var onDestroyCallbacks = []
 
@@ -51,6 +52,17 @@ function transformNode(node, data, propName){
 		})
 		transformList(arrayFrom(node.childNodes), data, propName)
 	}
+
+	onDestroyCallbacks.length && node.addEventListener(unlinkSecretCode, function(ev){
+		forEach(onDestroyCallbacks, function(callback){
+			callback()
+		})
+
+		!(node instanceof CharacterData) && forEach(arrayFrom(node.childNodes), function(childNode) {
+			var unlinkEvent = new Event(unlinkSecretCode)
+			childNode.dispatchEvent(unlinkEvent)
+		})
+	}, {once: true})
 
 	return node
 }
@@ -91,7 +103,10 @@ function addOutputApi(transformedList, data, propName){
 	}
 
 	function unlink(){
-		// work in progress
+		forEach(this, function(node){
+			var unlinkEvent = new Event(unlinkSecretCode)
+			node.dispatchEvent(unlinkEvent)
+		})
 	}
 
 // this function is responsible for rendering our handlebars and watching the paths that needs to be watched
@@ -154,6 +169,14 @@ function continiousSyntaxRender(textSource, node, propName){
 	})
 
 	renderString(textSource, clusters)
+
+	if (onDestroyCallbacks.length){
+		return function(){
+			forEach(onDestroyCallbacks, function(callback){
+				callback()
+			})
+		}
+	}
 
 	// console.log(clusters)
 }
