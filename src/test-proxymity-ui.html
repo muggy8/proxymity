@@ -30,8 +30,8 @@
 				<div class='foo-{:this.app.foo:}|{foo}|'>
 					the number input is {:this.app.foo:}|{foo}| and the select input is {:this.app.bar:}|{bar}|
 				</div>
-				<input value='{:this.app.foo:}|{foo}|' onkeyup='this.app.foo = this.valueAsNumber' onchange='this.app.foo = this.valueAsNumber' type='number'>
-				<select value="{:this.app.bar:}|{bar}|" onchange="this.app.bar = this.value">
+				<input data-script='{:this.value = this.app.foo:}|{foo}|' onkeyup='this.app.foo = this.valueAsNumber' onchange='this.app.foo = this.valueAsNumber' type='number'>
+				<select data-script="{:this.value = this.app.bar:}|{bar}|" onchange="this.app.bar = this.value">
 					<option value="1">1</option>
 					<option value="2">2</option>
 					<option value="3">3</option>

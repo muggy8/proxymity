@@ -124,6 +124,10 @@ function continiousSyntaxRender(textSource, node, propName){
 		}
 	})
 
+	clusters = clusters.filter(function(chunk){
+		return chunk.text || chunk.code
+	})
+
 	// render the code that doesn't have watchers
 	var onDestroyCallbacks = []
 	forEach(clusters, function(chunk){
@@ -155,16 +159,13 @@ function continiousSyntaxRender(textSource, node, propName){
 }
 
 function renderString(textSource, clusters){
-	var string = ""
+	var propValue = ""
 	forEach(clusters, function(chunk){
 		if (chunk.val === undefined){
 			return
 		}
-		string += chunk.val
+		propValue += chunk.val
 	})
 
-	if (textSource instanceof Attr && textSource.name === "value"){
-		textSource.ownerElement.value = string
-	}
-	textSource.textContent = string
+	textSource.textContent = propValue
 }
