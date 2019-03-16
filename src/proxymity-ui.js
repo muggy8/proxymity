@@ -58,10 +58,7 @@ function transformNode(node, data, propName){
 			callback()
 		})
 
-		!(node instanceof CharacterData) && forEach(arrayFrom(node.childNodes), function(childNode) {
-			var unlinkEvent = new Event(unlinkSecretCode)
-			childNode.dispatchEvent(unlinkEvent)
-		})
+		!(node instanceof CharacterData) && forEach(arrayFrom(node.childNodes), dispatchUnlinkEvent)
 	}, {once: true})
 
 	return node
@@ -103,10 +100,12 @@ function addOutputApi(transformedList, data, propName){
 	}
 
 	function unlink(){
-		forEach(this, function(node){
-			var unlinkEvent = new Event(unlinkSecretCode)
-			node.dispatchEvent(unlinkEvent)
-		})
+		forEach(this, dispatchUnlinkEvent)
+	}
+
+	function dispatchUnlinkEvent(node){
+		var unlinkEvent = new Event(unlinkSecretCode)
+		node.dispatchEvent(unlinkEvent)
 	}
 
 // this function is responsible for rendering our handlebars and watching the paths that needs to be watched
