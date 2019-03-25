@@ -31,9 +31,9 @@ function transformList(list, data, propName){
 
 	var withinForeach = false
 	var transformableNodes = list.filter(function(item){
-		// if (withinForeach){
-		// 	return false
-		// }
+		if (withinForeach && !(item instanceof Comment)){
+			return false
+		}
 		if(item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("foreach:") === 0){
 			attachNodeDataProp(item, data, propName)
 
@@ -41,9 +41,11 @@ function transformList(list, data, propName){
 			safeEval.call(item, item.textContent, {
 				key: key
 			})
+
+			return true
 		}
 
-		return true
+		return !withinForeach
 	})
 
 	console.log(transformableNodes)
