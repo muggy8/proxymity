@@ -18,21 +18,36 @@ function proxyUI(template, data, propName){
 }
 
 function transformList(list, data, propName){
+	forEach(list, function(item){
+		console.log(item instanceof Comment, item)
+	})
+
+	return addOutputApi([])
 	return addOutputApi(list.map(function(item){
 		return transformNode(item, data, propName)
 	}), data, propName)
 }
 
-var unlinkSecretCode = generateId(randomInt(32, 48))
-function transformNode(node, data, propName){
-	var onDestroyCallbacks = []
-
+function attachNodeDataProp(node, data, propName){
 	Object.defineProperty(node, propName, {
 		configurable: true,
 		get: function(){
 			return data
 		},
 	})
+}
+
+var unlinkSecretCode = generateId(randomInt(32, 48))
+function transformNode(node, data, propName){
+	var onDestroyCallbacks = []
+
+	attachNodeDataProp(node, data, propName)
+	// Object.defineProperty(node, propName, {
+	// 	configurable: true,
+	// 	get: function(){
+	// 		return data
+	// 	},
+	// })
 
 	onDestroyCallbacks.push(function(){
 		delete node[propName]
