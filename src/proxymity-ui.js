@@ -18,9 +18,35 @@ function proxyUI(template, data, propName){
 }
 
 function transformList(list, data, propName){
-	forEach(list, function(item){
-		console.log(item instanceof Comment, item)
+	function key(){
+		withinForeach = true
+		return key
+	}
+	key.in = function(data){
+		console.log(data)
+	}
+	key.end = function(){
+		withinForeach = false
+	}
+
+	var withinForeach = false
+	var transformableNodes = list.filter(function(item){
+		// if (withinForeach){
+		// 	return false
+		// }
+		if(item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("foreach:") === 0){
+			attachNodeDataProp(item, data, propName)
+
+			// this step may through an error
+			safeEval.call(item, item.textContent, {
+				key: key
+			})
+		}
+
+		return true
 	})
+
+	console.log(transformableNodes)
 
 	return addOutputApi([])
 	return addOutputApi(list.map(function(item){
