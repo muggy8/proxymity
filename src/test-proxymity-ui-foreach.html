@@ -27,11 +27,11 @@
 			}
 
 			var test = proxyUI(`
-				<!-- foreach: key("index").in(this.app.arr) -->
+				<!-- key: "index" -->
 					<div>
 						Item number {:this.index:}: {:this.app.arr[this.index]:}|{arr[this.index]}|
 					</div>
-				<!-- foreach: key.end() -->
+				<!-- in: arr -->
 				`, {arr: ["foo", "bar"]}, "app")
 			test.appendTo(document.body)
 			// console.log(testTemp)
