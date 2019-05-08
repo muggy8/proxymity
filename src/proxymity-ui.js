@@ -20,7 +20,8 @@ function proxyUI(template, data, propName){
 function transformList(list, data, propName){
 	var withinForeach = false
 	var startComment, endComment, repeatBody = []
-	var transformableNodes = list.filter(function(item){
+	var transformableNodes = []
+	forEach(list, function(item){
 		var keepable = true
 		if (withinForeach){
 			keepable = false
@@ -33,17 +34,23 @@ function transformList(list, data, propName){
 			keepable = true
 			withinForeach = false
 			endComment = item
+			manageRepeater(startComment, endComment, repeatBody, data, propName)
+
 		}
-		!keepable && repeatBody.push(item)
-		return keepable
+		keepable ? transformableNodes.push(item) : repeatBody.push(item)
 	})
 
 	console.log(transformableNodes)
 
-	return addOutputApi([])
-	return addOutputApi(list.map(function(item){
-		return transformNode(item, data, propName)
-	}), data, propName)
+	// return addOutputApi([])
+	forEach(transformableNodes, function(item){
+		transformNode(item, data, propName)
+	})
+	return addOutputApi(transformableNodes, data, propName)
+}
+
+function manageRepeater(startComment, endComment, repeatBody, data, propName){
+
 }
 
 function attachNodeDataProp(node, data, propName){
