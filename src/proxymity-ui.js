@@ -54,21 +54,19 @@ function transformList(listToTransform, data, propName){
 			repeatBody.unshift(item)
 		}
 	}
-	//
-	// console.log(listToTransform)
 
-	// return addOutputApi([])
 	forEach(listToTransform, function(item){
 		forEach(transformNode(item, data, propName), function(callback){
 			unlinkCallback.push(callback)
 		})
 	})
 	return unlinkCallback
-	// return addOutputApi(transformableNodes, data, propName)
 }
 
 function manageRepeater(startComment, endComment, repeatBody, componentElements, data, propName){
-	return []
+	var onDestroyCallbacks = []
+	// logic to manage the repeater goes here
+	return onDestroyCallbacks
 }
 
 function attachNodeDataProp(node, data, propName){
