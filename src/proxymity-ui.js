@@ -24,36 +24,36 @@ function transformList(listToTransform, data, propName){
 	var withinForeach = false
 	var unlinkCallback = []
 	var startComment, endComment, repeatBody = []
-	// for(var i = listToTransform.length - 1; i > -1; i--){
-	// 	var keepable = true
-	// 	var item = listToTransform[i]
-	// 	if (withinForeach){
-	// 		keepable = false
-	// 	}
-	//
-	// 	if (item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("in:") === 0){
-	// 		keepable = withinForeach = true
-	// 		endComment = item
-	// 	}
-	// 	if (item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("key:") === 0){
-	// 		keepable = true
-	// 		withinForeach = false
-	// 		startComment = item
-	// 		forEach(
-	// 			manageRepeater(startComment, endComment, repeatBody, listToTransform, data, propName),
-	// 			function(callback){
-	// 				unlinkCallback.push(callback)
-	// 			}
-	// 		)
-	// 		startComment = endComment = undefined
-	// 		repeatBody = []
-	// 	}
-	//
-	// 	if (!!keepable){
-	// 		listToTransform.splice(i, 1) // exclude it from our transform list
-	// 		repeatBody.unshift(item)
-	// 	}
-	// }
+	for(var i = listToTransform.length - 1; i > -1; i--){
+		var keepable = true
+		var item = listToTransform[i]
+		if (withinForeach){
+			keepable = false
+		}
+
+		if (item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("in:") === 0){
+			keepable = withinForeach = true
+			endComment = item
+		}
+		if (item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("key:") === 0){
+			keepable = true
+			withinForeach = false
+			startComment = item
+			forEach(
+				manageRepeater(startComment, endComment, repeatBody, listToTransform, data, propName),
+				function(callback){
+					unlinkCallback.push(callback)
+				}
+			)
+			startComment = endComment = undefined
+			repeatBody = []
+		}
+
+		if (!keepable){
+			listToTransform.splice(i, 1) // exclude it from our transform list
+			repeatBody.unshift(item)
+		}
+	}
 	//
 	// console.log(listToTransform)
 
