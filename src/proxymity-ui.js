@@ -85,12 +85,6 @@ function transformNode(node, data, propName){
 	var onDestroyCallbacks = []
 
 	attachNodeDataProp(node, data, propName)
-	// Object.defineProperty(node, propName, {
-	// 	configurable: true,
-	// 	get: function(){
-	// 		return data
-	// 	},
-	// })
 
 	onDestroyCallbacks.push(function(){
 		delete node[propName]
@@ -115,14 +109,6 @@ function transformNode(node, data, propName){
 			}
 		)
 	}
-
-	// onDestroyCallbacks.length && node.addEventListener(unlinkSecretCode, function(ev){
-	// 	forEach(onDestroyCallbacks, function(callback){
-	// 		callback()
-	// 	})
-	//
-	// 	!(node instanceof CharacterData) && forEach(arrayFrom(node.childNodes), dispatchUnlinkEvent)
-	// }, {once: true})
 
 	return onDestroyCallbacks
 }
@@ -164,11 +150,6 @@ function addOutputApi(transformedList, unlinkCallbackList, data, propName){
 		})
 
 		return this
-	}
-
-	function dispatchUnlinkEvent(node){
-		var unlinkEvent = new Event(unlinkSecretCode)
-		node.dispatchEvent(unlinkEvent)
 	}
 
 // this function is responsible for rendering our handlebars and watching the paths that needs to be watched
