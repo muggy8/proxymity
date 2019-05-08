@@ -95,9 +95,12 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 			var numberToCreate = updatedLength - cloneGroups.length
 			for(var i = 0; i < numberToCreate; i++){
 				var newGroupItem = cloneNodes(repeatBody)
-				var destroyListeners = transformList(newGroupItem)
+				var destroyListeners = []
 				forEach(newGroupItem, function(node){
 					addIndexRecursive(node, cloneGroups.length, indexProp, destroyListeners)
+				})
+				forEach(transformList(newGroupItem, data, propName), function(callback){
+					destroyListeners.push(callback)
 				})
 				addOutputApi(newGroupItem, destroyListeners, data, propName)
 				cloneGroups.push(newGroupItem)
@@ -126,7 +129,7 @@ function addIndexRecursive(node, index, indexKey, onDestroyCallbacks){
 		delete node[indexKey]
 	})
 
-	forEach(arrayFrom(node.children), function(childNode){
+	forEach(arrayFrom(node.childNodes), function(childNode){
 		addIndexRecursive(childNode, index, indexKey, onDestroyCallbacks)
 	})
 }
