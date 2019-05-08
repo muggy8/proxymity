@@ -34,7 +34,7 @@ function transformList(list, data, propName){
 			keepable = true
 			withinForeach = false
 			endComment = item
-			manageRepeater(startComment, endComment, repeatBody, data, propName)
+			manageRepeater(startComment, endComment, repeatBody, transformableNodes, data, propName)
 
 		}
 		keepable ? transformableNodes.push(item) : repeatBody.push(item)
@@ -49,7 +49,7 @@ function transformList(list, data, propName){
 	return addOutputApi(transformableNodes, data, propName)
 }
 
-function manageRepeater(startComment, endComment, repeatBody, data, propName){
+function manageRepeater(startComment, endComment, repeatBody, componentElements, data, propName){
 
 }
 
