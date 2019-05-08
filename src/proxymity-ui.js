@@ -21,9 +21,9 @@ function proxyUI(template, data, propName){
 }
 
 function transformList(listToTransform, data, propName){
-	var withinForeach = false
-	var unlinkCallback = []
+	var withinForeach = false, unlinkCallback = [], initTasks = []
 	var startComment, endComment, repeatBody = []
+
 	for(var i = listToTransform.length - 1; i > -1; i--){
 		var keepable = true
 		var item = listToTransform[i]
@@ -39,12 +39,16 @@ function transformList(listToTransform, data, propName){
 			keepable = true
 			withinForeach = false
 			startComment = item
-			forEach(
-				manageRepeater(startComment, endComment, repeatBody, listToTransform, data, propName),
-				function(callback){
-					unlinkCallback.push(callback)
-				}
-			)
+
+			initTasks.push((function(startComment, endComment, repeatBody){
+				forEach(
+					manageRepeater(startComment, endComment, repeatBody, listToTransform, data, propName),
+					function(callback){
+						unlinkCallback.push(callback)
+					}
+				)
+			}).bind(null, startComment, endComment, repeatBody))
+
 			startComment = endComment = undefined
 			repeatBody = []
 		}
@@ -53,18 +57,32 @@ function transformList(listToTransform, data, propName){
 			listToTransform.splice(i, 1) // exclude it from our transform list
 			repeatBody.unshift(item)
 		}
+		else{
+			initTasks.push((function(item){
+				forEach(
+					transformNode(item, data, propName),
+					function(callback){
+						unlinkCallback.push(callback)
+					}
+				)
+			}).bind(null, item))
+		}
 	}
 
-	forEach(listToTransform, function(item){
-		forEach(transformNode(item, data, propName), function(callback){
-			unlinkCallback.push(callback)
-		})
-	})
+	for(var i = initTasks.length - 1; i > -1; i--){
+		initTasks[i]()
+	}
+
 	return unlinkCallback
 }
 
 function manageRepeater(startComment, endComment, repeatBody, componentElements, data, propName){
 	var onDestroyCallbacks = []
+	var indexCommand = startComment.textContent.trim().slice(4)
+	var withinCommand = endComment.textContent.trim().slice(3)
+	console.log(startComment[propName])
+
+
 	// logic to manage the repeater goes here
 	return onDestroyCallbacks
 }
