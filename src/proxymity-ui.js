@@ -41,12 +41,7 @@ function transformList(listToTransform, data, propName){
 			startComment = item
 
 			initTasks.push((function(startComment, endComment, repeatBody){
-				forEach(
-					manageRepeater(startComment, endComment, repeatBody, listToTransform, data, propName),
-					function(callback){
-						unlinkCallback.push(callback)
-					}
-				)
+				unlinkCallback.push(manageRepeater(startComment, endComment, repeatBody, listToTransform, data, propName))
 			}).bind(null, startComment, endComment, repeatBody))
 
 			startComment = endComment = undefined
@@ -78,13 +73,68 @@ function transformList(listToTransform, data, propName){
 
 function manageRepeater(startComment, endComment, repeatBody, componentElements, data, propName){
 	var onDestroyCallbacks = []
+	var cloneGroups = []
 	var indexCommand = startComment.textContent.trim().slice(4)
-	var withinCommand = endComment.textContent.trim().slice(3)
-	console.log(startComment[propName])
+	var inCommand = endComment.textContent.trim().slice(3).trim()
+	var watchTarget = inCommand + ".len"
+	var indexProp = safeEval.call(startComment, indexCommand)
 
+	console.log(data, watchTarget)
+	onDestroyCallbacks.push(watch(data, watchTarget, onSourceDataChange))
+	var userList = safeEval("data." + inCommand, {data: data})
+	onSourceDataChange(userList.length)
 
-	// logic to manage the repeater goes here
-	return onDestroyCallbacks
+	return function(){
+		forEach(onDestroyCallbacks, function(callback){
+			callback()
+		})
+	}
+
+	function onSourceDataChange(updatedLength){
+		if (cloneGroups.length < updatedLength){
+			var numberToCreate = updatedLength - cloneGroups.length
+			for(var i = 0; i < numberToCreate; i++){
+				var newGroupItem = cloneNodes(repeatBody)
+				var destroyListeners = transformList(newGroupItem)
+				forEach(newGroupItem, function(node){
+					addIndexRecursive(node, cloneGroups.length, indexProp, destroyListeners)
+				})
+				addOutputApi(newGroupItem, destroyListeners, data, propName)
+				cloneGroups.push(newGroupItem)
+			}
+		}
+		else if (cloneGroups.length > updatedLength){
+			let tobeRemoved = cloneGroups.splice(cloneGroups.length - 1, cloneGroups.length - updatedLength)
+			forEach(tobeRemoved, function(group){
+				group.unlink()
+			})
+		}
+
+		console.log(cloneGroups)
+	}
+}
+
+function addIndexRecursive(node, index, indexKey, onDestroyCallbacks){
+	Object.defineProperty(node, indexKey, {
+		configurable: true,
+		get: function(){
+			return index
+		},
+	})
+
+	onDestroyCallbacks.push(function(){
+		delete node[indexKey]
+	})
+
+	forEach(arrayFrom(node.children), function(childNode){
+		addIndexRecursive(childNode, index, indexKey, onDestroyCallbacks)
+	})
+}
+
+function cloneNodes(nodes){
+	return arrayFrom(nodes).map(function(node){
+		return node.cloneNode(true)
+	})
 }
 
 function attachNodeDataProp(node, data, propName){
