@@ -9,48 +9,66 @@ function proxyUI(template, data, propName){
 	if (template instanceof NodeList || (isArray(template) && template.reduce(function(current, node){
 		return current && node instanceof Node
 	}, true))){
-		return transformList(arrayFrom(template), data, propName)
+		var templateList = arrayFrom(template)
+		var unlinkCallback = transformList(templateList, data, propName)
+		return addOutputApi(templateList, unlinkCallback, data, propName)
 	}
 
 	if (template instanceof Node){
-		return addOutputApi([transformNode(template, data, propName)], data, propName)
+		var unlinkCallback = transformNode(template, data, propName)
+		return addOutputApi([template], unlinkCallback, data, propName)
 	}
 }
 
-function transformList(list, data, propName){
+function transformList(listToTransform, data, propName){
 	var withinForeach = false
+	var unlinkCallback = []
 	var startComment, endComment, repeatBody = []
-	var transformableNodes = []
-	forEach(list, function(item){
-		var keepable = true
-		if (withinForeach){
-			keepable = false
-		}
-		if (item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("key:") === 0){
-			withinForeach = keepable = true
-			startComment = item
-		}
-		if (item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("in:") === 0){
-			keepable = true
-			withinForeach = false
-			endComment = item
-			manageRepeater(startComment, endComment, repeatBody, transformableNodes, data, propName)
-
-		}
-		keepable ? transformableNodes.push(item) : repeatBody.push(item)
-	})
-
-	console.log(transformableNodes)
+	// for(var i = listToTransform.length - 1; i > -1; i--){
+	// 	var keepable = true
+	// 	var item = listToTransform[i]
+	// 	if (withinForeach){
+	// 		keepable = false
+	// 	}
+	//
+	// 	if (item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("in:") === 0){
+	// 		keepable = withinForeach = true
+	// 		endComment = item
+	// 	}
+	// 	if (item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("key:") === 0){
+	// 		keepable = true
+	// 		withinForeach = false
+	// 		startComment = item
+	// 		forEach(
+	// 			manageRepeater(startComment, endComment, repeatBody, listToTransform, data, propName),
+	// 			function(callback){
+	// 				unlinkCallback.push(callback)
+	// 			}
+	// 		)
+	// 		startComment = endComment = undefined
+	// 		repeatBody = []
+	// 	}
+	//
+	// 	if (!!keepable){
+	// 		listToTransform.splice(i, 1) // exclude it from our transform list
+	// 		repeatBody.unshift(item)
+	// 	}
+	// }
+	//
+	// console.log(listToTransform)
 
 	// return addOutputApi([])
-	forEach(transformableNodes, function(item){
-		transformNode(item, data, propName)
+	forEach(listToTransform, function(item){
+		forEach(transformNode(item, data, propName), function(callback){
+			unlinkCallback.push(callback)
+		})
 	})
-	return addOutputApi(transformableNodes, data, propName)
+	return unlinkCallback
+	// return addOutputApi(transformableNodes, data, propName)
 }
 
 function manageRepeater(startComment, endComment, repeatBody, componentElements, data, propName){
-
+	return []
 }
 
 function attachNodeDataProp(node, data, propName){
@@ -90,29 +108,38 @@ function transformNode(node, data, propName){
 			var stopSyntaxRender = continiousSyntaxRender(attribute, node, propName)
 			stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
 		})
-		transformList(arrayFrom(node.childNodes), data, propName)
+		forEach(
+			transformList(arrayFrom(node.childNodes), data, propName),
+			function(callback){
+				onDestroyCallbacks.push(callback)
+			}
+		)
 	}
 
-	onDestroyCallbacks.length && node.addEventListener(unlinkSecretCode, function(ev){
-		forEach(onDestroyCallbacks, function(callback){
-			callback()
-		})
+	// onDestroyCallbacks.length && node.addEventListener(unlinkSecretCode, function(ev){
+	// 	forEach(onDestroyCallbacks, function(callback){
+	// 		callback()
+	// 	})
+	//
+	// 	!(node instanceof CharacterData) && forEach(arrayFrom(node.childNodes), dispatchUnlinkEvent)
+	// }, {once: true})
 
-		!(node instanceof CharacterData) && forEach(arrayFrom(node.childNodes), dispatchUnlinkEvent)
-	}, {once: true})
-
-	return node
+	return onDestroyCallbacks
 }
 
 
 // ok here we have all the other support functions that does stuff important but the main 3 is above
 
 // This is the function that adds the additional properties to the output
-function addOutputApi(transformedList, data, propName){
+function addOutputApi(transformedList, unlinkCallbackList, data, propName){
 	define(transformedList, propName, data)
 	define(transformedList, "appendTo", appendTo)
 	define(transformedList, "detach", detach)
-	define(transformedList, "unlink", unlink)
+	define(transformedList, "unlink", function(){
+		for(var i = 0; i < unlinkCallbackList.length; i++){
+			unlinkCallbackList[i]()
+		}
+	})
 	return transformedList
 }
 
@@ -137,10 +164,6 @@ function addOutputApi(transformedList, data, propName){
 		})
 
 		return this
-	}
-
-	function unlink(){
-		forEach(this, dispatchUnlinkEvent)
 	}
 
 	function dispatchUnlinkEvent(node){
