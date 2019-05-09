@@ -20,7 +20,7 @@ function proxyUI(template, data, propName){
 	}
 }
 
-function transformList(listToTransform, data, propName){
+function transformList(listToTransform, data, propName, initNodeCallback){
 	var withinForeach = false, unlinkCallback = [], initTasks = []
 	var startComment, endComment, repeatBody = []
 
@@ -41,7 +41,7 @@ function transformList(listToTransform, data, propName){
 			startComment = item
 
 			var initRepeater = (function(startComment, endComment, repeatBody){
-				unlinkCallback.push(manageRepeater(startComment, endComment, repeatBody, listToTransform, data, propName))
+				unlinkCallback.push(manageRepeater(startComment, endComment, repeatBody, listToTransform, data, propName, initNodeCallback))
 			}).bind(null, startComment, endComment, repeatBody)
 			initTasks.splice(initTasks.length - 1, 0, initRepeater)
 
@@ -57,7 +57,7 @@ function transformList(listToTransform, data, propName){
 		else{
 			initTasks.push((function(item){
 				forEach(
-					transformNode(item, data, propName),
+					transformNode(item, data, propName, initNodeCallback),
 					function(callback){
 						unlinkCallback.push(callback)
 					}
@@ -73,7 +73,7 @@ function transformList(listToTransform, data, propName){
 	return unlinkCallback
 }
 
-function manageRepeater(startComment, endComment, repeatBody, componentElements, data, propName){
+function manageRepeater(startComment, endComment, repeatBody, componentElements, data, propName, initNodeCallback){
 	var onDestroyCallbacks = []
 	var cloneGroups = []
 	var indexCommand = startComment.textContent.trim().slice(4)
@@ -97,17 +97,36 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 	function onSourceDataChange(updatedLength){
 		if (cloneGroups.length < updatedLength){
 			var numberToCreate = updatedLength - cloneGroups.length
+			if (!initNodeCallback){
+				initNodeCallback = function(node, data, propName){
+					return function(){}
+				}
+			}
+
 			for(var i = 0; i < numberToCreate; i++){
 				var newGroupItem = cloneNodes(repeatBody)
 				var destroyListeners = []
 
-				// add the index keys to all the children nodes
-				forEach(newGroupItem, function(node){
-					addIndexRecursive(node, cloneGroups.length, indexProp, destroyListeners)
-				})
+				let attachIndex = (function(index, node, data, propName){
+					// call the pervious init callback with the same props
+					var undoInheritedInit = initNodeCallback(node, data, propName)
+
+					// add the index key
+					Object.defineProperty(node, indexProp, {
+						configurable: true,
+						get: function(){
+							return index
+						},
+					})
+
+					return function(){
+						undoInheritedInit()
+						delete node[indexProp]
+					}
+				}).bind(null, cloneGroups.length)
 
 				// link the new clones with the data prop
-				forEach(transformList(newGroupItem, data, propName), function(callback){
+				forEach(transformList(newGroupItem, data, propName, attachIndex), function(callback){
 					destroyListeners.push(callback)
 				})
 
@@ -180,7 +199,7 @@ function attachNodeDataProp(node, data, propName){
 }
 
 var unlinkSecretCode = generateId(randomInt(32, 48))
-function transformNode(node, data, propName){
+function transformNode(node, data, propName, initNodeCallback){
 	var onDestroyCallbacks = []
 
 	attachNodeDataProp(node, data, propName)
@@ -188,6 +207,11 @@ function transformNode(node, data, propName){
 	onDestroyCallbacks.push(function(){
 		delete node[propName]
 	})
+
+	if (initNodeCallback){
+		var undoInitCallback = initNodeCallback(node, data, propName)
+		onDestroyCallbacks.push(undoInitCallback)
+	}
 
 	if (node instanceof CharacterData){
 		var stopSyntaxRender = continiousSyntaxRender(node, node, propName)
@@ -202,7 +226,7 @@ function transformNode(node, data, propName){
 			stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
 		})
 		forEach(
-			transformList(arrayFrom(node.childNodes), data, propName),
+			transformList(arrayFrom(node.childNodes), data, propName, initNodeCallback),
 			function(callback){
 				onDestroyCallbacks.push(callback)
 			}
