@@ -79,12 +79,14 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 	var watchTarget = inCommand + ".len"
 	var indexProp = safeEval.call(startComment, indexCommand)
 
-	console.log(data, watchTarget)
 	onDestroyCallbacks.push(watch(data, watchTarget, onSourceDataChange))
 	var userList = safeEval("data." + inCommand, {data: data})
 	onSourceDataChange(userList.length)
 
 	return function(){
+		forEach(cloneGroups, function(group){
+			group.unlink()
+		})
 		forEach(onDestroyCallbacks, function(callback){
 			callback()
 		})
@@ -96,24 +98,50 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 			for(var i = 0; i < numberToCreate; i++){
 				var newGroupItem = cloneNodes(repeatBody)
 				var destroyListeners = []
+
+				// add the index keys to all the children nodes
 				forEach(newGroupItem, function(node){
 					addIndexRecursive(node, cloneGroups.length, indexProp, destroyListeners)
 				})
+
+				// link the new clones with the data prop
 				forEach(transformList(newGroupItem, data, propName), function(callback){
 					destroyListeners.push(callback)
 				})
+
+				// add the output api for our convenience
 				addOutputApi(newGroupItem, destroyListeners, data, propName)
+
+				// keep the cone group in or groups list cuz this makes it easy to add and remove entire groups of stuff
 				cloneGroups.push(newGroupItem)
+
+				// if the end node is a child of another node, append it
+				if (endComment.parentNode){
+					forEach(newGroupItem, function(node) {
+						endComment.parentNode.insertBefore(node, endComment)
+					})
+				}
+
+				// update the entire group's overall data list so the original data group can use their attach and detach methods effectively
+				var spliceLocation = componentElements.indexOf(endComment) - 1
+				var applyArray = newGroupItem.slice()
+				applyArray.unshift(0)
+				applyArray.unshift(spliceLocation)
+				Array.prototype.splice.apply(componentElements, applyArray)
 			}
 		}
 		else if (cloneGroups.length > updatedLength){
 			let tobeRemoved = cloneGroups.splice(cloneGroups.length - 1, cloneGroups.length - updatedLength)
 			forEach(tobeRemoved, function(group){
 				group.unlink()
+				group.detach()
+				for(var i = componentElements.length - 1; i > -1; i--){
+					if (group.indexOf(componentElements[i]) !== -1){
+						componentElements.splice(i, 1)
+					}
+				}
 			})
 		}
-
-		console.log(cloneGroups)
 	}
 }
 
