@@ -4,19 +4,18 @@
 		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
 		<script src="src/proxymity-util.js"></script>
 		<script src="src/on-next-event-cycle.js"></script>
-		<script src="src/data-proto.js"></script>
-		<script src="src/proxymity-observe.js"></script>
+		<script src="src/proxymity-watch.js"></script>
 		<script src="src/proxymity-ui.js"></script>
 		<script src="src/proxymity.dev.js"></script>
 	</head>
 	<body>
 		<div id="view">
-			<input name='user.name' type='text' placeholder='name'/><br>
-			<input name='user.age' placeholder='age' type='number'/><br>
-			<input name='user.birthday' placeholder='yyyy-mm-dd' type='date'/><br>
-			<input name='user.trusted' type='checkbox'/><br>
-			<textarea name='user.bio'></textarea><br>
-			<select name='user.pronouns'>
+			<input name='user.name' type='text' placeholder='name' onkeyup="this.app.user.name = this.value" value="{:this.app.user.name:}|{user.name}|"/><br>
+			<input name='user.age' placeholder='age' type='number' onkeyup="this.app.user.age = this.value" value="{:this.app.user.age:}|{user.age}|"/><br>
+			<input name='user.birthday' placeholder='yyyy-mm-dd' type='date' onchange="this.app.user.birthday = this.valueAsDate" onkeyup="this.app.user.birthday = this.valueAsDate" value="{:this.app.user.birthday:}|{user.birthday}|"/><br>
+			<input name='user.trusted' type='checkbox' onchange="this.app.user.trusted = this.checked" checked="{:this.app.user.trusted:}|{user.trusted}|"/><br>
+			<textarea name='user.bio' onkeyup="this.app.user.age = this.value" value="{:this.app.user.bio:}|{user.bio}|"></textarea><br>
+			<select name='user.pronouns' onkeyup="this.app.user.pronouns = this.value" value="{:this.app.user.pronouns:}|{user.pronouns}|">
 				<option value="0">N/A</option>
 				<option value="1">He/Him</option>
 				<option value="2">She/Her</option>
@@ -33,16 +32,9 @@
 			</div><br>
 			<input name='user.name' type='text' placeholder='experimenting'/><br>
 
-			<pre>{:this.app.user.toString():}</pre>
+			<pre>{:JSON.stringify(this.app.user, null, "\t"):}</pre>
 
-			<!--repeat.begin(this.app.prop, "propName", function(item, index, whole){
-				// item returned is the new data obj
-				item.index = index
-				return item
-			})-->
-				<pre>{:this.app.toString():}</pre>
-			<!--repeat.end("propName")-->
-			<div>
+			<!-- <div>
 				<label class="block">
 					color: <input name="color" />
 				</label>
@@ -74,7 +66,7 @@
 				.block {
 					display: block
 				}
-			</style>
+			</style> -->
 		</div>
 		<script>
 			// gonna stub this in here
@@ -103,6 +95,8 @@
 				}
 			)
 
+
+			/*
 			var components2 = proxymity(document.querySelector("#view").innerHTML, {
 					user: {
 						name: "Muggy8"
@@ -210,6 +204,8 @@
 				<pre>{:this.app.toString():}</pre>
 			`, testRepeat.app.arr[3])
 			.appendTo("body")
+
+			*/
 
 			// events.watch(console.log)
 
