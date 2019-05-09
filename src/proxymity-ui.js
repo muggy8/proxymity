@@ -40,9 +40,10 @@ function transformList(listToTransform, data, propName){
 			withinForeach = false
 			startComment = item
 
-			initTasks.push((function(startComment, endComment, repeatBody){
+			var initRepeater = (function(startComment, endComment, repeatBody){
 				unlinkCallback.push(manageRepeater(startComment, endComment, repeatBody, listToTransform, data, propName))
-			}).bind(null, startComment, endComment, repeatBody))
+			}).bind(null, startComment, endComment, repeatBody)
+			initTasks.splice(initTasks.length - 1, 0, initRepeater)
 
 			startComment = endComment = undefined
 			repeatBody = []
@@ -79,7 +80,7 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 	var watchTarget = inCommand + ".len"
 	var indexProp = safeEval.call(startComment, indexCommand)
 
-	onDestroyCallbacks.push(watch(data, watchTarget, onSourceDataChange))
+	onDestroyCallbacks.push(watch.call(endComment, data, watchTarget, onSourceDataChange))
 	var userList = safeEval("data." + inCommand, {data: data})
 	onSourceDataChange(userList.length)
 
@@ -301,7 +302,7 @@ function continiousSyntaxRender(textSource, node, propName){
 				}
 				forEach(chunk.watching, function(prop){
 					// console.log(node[propName], prop)
-					onDestroyCallbacks.push(watch(node[propName], prop, updateChunkVal))
+					onDestroyCallbacks.push(watch.call(node, node[propName], prop, updateChunkVal))
 				})
 				updateChunkVal()
 			}
