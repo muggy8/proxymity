@@ -166,23 +166,6 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 	}
 }
 
-function addIndexRecursive(node, index, indexKey, onDestroyCallbacks){
-	Object.defineProperty(node, indexKey, {
-		configurable: true,
-		get: function(){
-			return index
-		},
-	})
-
-	onDestroyCallbacks.push(function(){
-		delete node[indexKey]
-	})
-
-	forEach(arrayFrom(node.childNodes), function(childNode){
-		addIndexRecursive(childNode, index, indexKey, onDestroyCallbacks)
-	})
-}
-
 function cloneNodes(nodes){
 	return arrayFrom(nodes).map(function(node){
 		return node.cloneNode(true)
@@ -235,7 +218,6 @@ function transformNode(node, data, propName, initNodeCallback){
 
 	return onDestroyCallbacks
 }
-
 
 // ok here we have all the other support functions that does stuff important but the main 3 is above
 
