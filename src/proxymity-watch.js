@@ -21,15 +21,18 @@ function watch(source, path, callback){
 	// finally, we just have to repeat the above 3 steps over and over until we get to where we need to be
 
 	var propertyDescriptor
+	var location = ""
 	forEach(pathsStrings, function(key){
 		if (key === 'len'){
 			overrideArrayFunctions(source)
 		}
+		location = location + (location ? " -> " + key : key)
 
 		var descriptor = Object.getOwnPropertyDescriptor(source, key)
 
 		// if the property doesn't exist we can create it here
 		if (typeof descriptor === "undefined"){
+			console.warn(location + " not defined in data source and is initiated as {}. \n\tOriginal: " + path)
 			propertyDescriptor = createWatchableProp(source, key)
 		}
 
