@@ -27,12 +27,20 @@
 			}
 
 			var test = proxyUI(`
-				<!-- key: "index" -->
+				<!-- key: "outside" -->
 					<div>
-						Item number {:this.index:}: {:this.app.arr[this.index]:}|{arr[this.index]}|
+						Outside [{:this.outside:}]:
+						<!-- key: "inside" -->
+							<div>
+								Inside {:this.inside:}: {:this.app.arr[this.outside][this.inside]:}|{arr[this.outside][this.inside]}|
+							</div>
+						<!-- in: arr[this.outside] -->
 					</div>
 				<!-- in: arr -->
-				`, {arr: ["foo", "bar"]}, "app")
+				`, {arr: [
+					["a", "b", "c"],
+					["x", "y", "z"]
+				]}, "app")
 			test.appendTo(document.body)
 			// console.log(testTemp)
 		</script>

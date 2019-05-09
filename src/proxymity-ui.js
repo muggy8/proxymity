@@ -81,7 +81,7 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 	var indexProp = safeEval.call(startComment, indexCommand)
 
 	onDestroyCallbacks.push(watch.call(endComment, data, watchTarget, onSourceDataChange))
-	var userList = safeEval("data." + inCommand, {data: data})
+	var userList = safeEval.call(endComment, "data." + inCommand, {data: data})
 	onSourceDataChange(userList.length)
 
 	return function(){
