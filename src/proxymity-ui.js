@@ -51,6 +51,7 @@ function transformList(listToTransform, data, propName){
 
 		if (!keepable){
 			listToTransform.splice(i, 1) // exclude it from our transform list
+			item.parentNode && item.parentNode.removeChild(item)
 			repeatBody.unshift(item)
 		}
 		else{
