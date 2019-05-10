@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/muggy8/proxymity/issues"
   },
-  "homepage": "https://github.com/muggy8/proxymity#readme"
+  "homepage": "https://github.com/muggy8/proxymity#readme",
+  "dependencies": {
+    "uglify-es": "^3.3.9"
+  }
 }
