@@ -309,7 +309,7 @@ function continiousSyntaxRender(textSource, node, propName){
 				}
 				forEach(chunk.watching, function(prop){
 					// console.log(node[propName], prop)
-					onDestroyCallbacks.push(watch.call(node, node[propName], prop, updateChunkVal))
+					onDestroyCallbacks.push(watch.call(node, node[propName], prop.trim(), updateChunkVal))
 				})
 				updateChunkVal()
 			}
