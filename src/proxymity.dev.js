@@ -19,7 +19,7 @@ var proxymity = (function(safeEval){
 
 	var setAsyncPromise = function(prop, val){
 		var propPromiseVar = prop + "Promise"
-		if (isFunction(val)){
+		if (typeof val === "function"){
 			getAsyncPromise(prop).then(val)
 		}
 	}

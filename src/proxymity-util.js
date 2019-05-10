@@ -6,16 +6,8 @@ function forEach(arrayLike, callback){
 	return arrayLike && isNumber(arrayLike.length) && Array.prototype.forEach.call(arrayLike, callback)
 }
 
-function isFunction(val){
-	return typeof val === "function"
-}
-
 function isString(val){
 	return typeof val === "string"
-}
-
-function isBool(val){
-	return typeof val === "boolean"
 }
 
 function isNumber(val){
@@ -28,10 +20,6 @@ function isObject(val){
 
 function isArray(val){
 	return Array.isArray(val)
-}
-
-function propsIn(obj){
-	return Object.getOwnPropertyNames(obj)
 }
 
 function randomInt(start, stop){
@@ -56,20 +44,6 @@ function generateId(length = 16){
 		id += allowedCharacters[randomInt(62)]
 	}
 	return id
-}
-
-function softCopy(from, to){
-	var toKeys = propsIn(to)
-	var toIsArray = Array.isArray(to)
-	for(var key in from){
-		to[key] = from[key]
-		toKeys.splice(toKeys.indexOf(key), 1)
-	}
-	forEach(toKeys, function(key){
-		if (!toIsArray && key !== "length"){
-			delete to[key]
-		}
-	})
 }
 
 function define(obj, key, val){
