@@ -5,11 +5,45 @@
 
 - returns: elementsList (A special array of elements that is the connected template)
 
-The proxymity() function (all lower case) is the only export and only publicly accessible property that proxymity.min.js provides. The function returns an array of HTML elements. This list of elements is also the list that Proxymity will use to keep track of any repeating elements if there are any on the current level. You are not limited to 1 root element with the template.
+The proxymity() function (all lower case) is the only export and only publicly accessible property that proxymity.min.js provides. The function returns an array of HTML elements. This list of elements is also the list that Proxymity will use to keep track of any repeating elements if there are any on the current level. You can have as many root element within the template as you want.
 
-## proxymity.convert(regularDataObject)
--returns: proxyified object.
-Much like the proxymity method that can convert any data into a proxy that can be watched and so on, this method will let you turn any javascript object into a proxymity object which will let you do stuff like watch properties on it, and access random props on it without defining it and so on.
+## proxymity.watch(dataSource, pathToDataPointFromDataSource, onChangeCallback)
+- dataSource (required): this is any JavaScript object.
+- pathToDataPointFromDataSource (required): a string in data access notation that denotes where the watched prop is
+- onChangeCallback (required): a function that can accept up to 2 parameters
+ 	- param 1: the current value (after the change)
+	- param 2: the previous value (before the change)
+
+- returns: unwatch function
+
+The watch function can operate on any javascript object. the only special case is when watching for the length of an array. instead of watching for the `length` property, instead watch for the `len` property. This function replaces all properties of the object down the chain with getters and setters as such if any property along the way cannot be replaced, the operation will fail. Please read [Watching Data](watch.md) for a detailed explnanation
+
+```JavaScript
+var foo = {
+	bar: function(){
+		return "baz"
+	},
+	meh: {
+		baz: 15,
+		ban: 19
+	}
+}
+
+proxymity.watch(foo, "meh[foo.bar()]", function(current, previous){
+	console.log("something changed in meh")
+})
+
+proxymity.watch(window, "foo.bar", function(current, previous){
+	console.log("bar function got changed")
+})
+
+foo.meh.baz = 99 // something changed in meh
+
+foo.bar = function(){
+	return ""
+} // bar function got changed
+
+```
 
 ## proxymity.on.asyncend
 - a Promise that resolves when the next render tick ends
@@ -19,12 +53,12 @@ This property contains a Promise that will resolve once the next rendering segme
 ## proxymity.on.renderend
 - a Promise that resolves when the next render sequence ends
 
-This property contains a Promise that will resolve once the next render sequence resolves. The main differnece between this property and asyncend is that this will not resolve if the previous render segment initiated another render sequence while resolving
+This property contains a Promise that will resolve once the next render sequence resolves. The main difference between this property and asyncend is that this will not resolve if the previous render segment initiated another render sequence while resolving
 
 eg: ```HTML
 <div id="lunch" data-script="{:this.app.chosen = this.app.options[this.app.lunch]:}|{lunch}|">
 	Lunch Options:
-	<select name="lunch">
+	<select name="lunch" onchange="this.app.lunch = this.value" data-init="{:this.value = 0:}" value="{:this.app.lunch:}|{lunch}|">
 		<option value="0">--</option>
 		<option value="1">Sushi</option>
 		<option value="2">Pizza</option>
@@ -85,7 +119,7 @@ The detach function tries to detach the elements it's associated with from the d
 ## elementsList.unlink()
 - returns: elementsList
 
-The unlink method is used to detach the view template from the proxied object. This will not destroy the current state of the object nor will it revert the template to the previous state. this is especially useful for pre-rendering any component that is used in alot of places that has the same data everywhere (EG: a select option list. that is in alot of places). This is also useful for live reloading of modules / components as it allows you to detach a view and get rid of it from memory as well as get rid of any reference proxymity is keeping internally on the object.
+The unlink method is used to detach the view template from the data object. This will not destroy the current state of the object nor will it revert the template to the previous state. this is especially useful for pre-rendering any component that is used in alot of places that has the same data everywhere (EG: a select option list. that is in alot of places). This is also useful for live reloading of modules / components as it allows you to detach a view and get rid of it from memory as well as get rid of any reference proxymity is keeping internally on the object.
 
 ## elementsList[nameOfDataProperty]
-the element property that you defined for the proxied data is also available under the elementsList as the same property that you defined. see [Proxymity Data](proxymity-data.md)
+the element property that you defined for the proxied data is also available under the elementsList as the same property that you defined. 
