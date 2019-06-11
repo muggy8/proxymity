@@ -53,7 +53,7 @@ function define(obj, key, val){
 	return val
 }
 function getSet(obj, key, get, set){
-	defineConfigs = {
+	var defineConfigs = {
 		get: get
 	}
 	if (set){
