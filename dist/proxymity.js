@@ -735,7 +735,7 @@ function renderString(textSource, clusters){
 	if (textSource instanceof Attr){
 		var ownerElement = textSource.ownerElement
 		var attributeName = textSource.name
-		attributeName in ownerElement && (ownerElement[attributeName] = propValue)
+		(attributeName in ownerElement) && (ownerElement[attributeName] = propValue)
 	}
 }
 
