@@ -339,4 +339,10 @@ function renderString(textSource, clusters){
 	})
 
 	textSource.textContent = propValue
+
+	if (textSource instanceof Attr){
+		var ownerElement = textSource.ownerElement
+		var attributeName = textSource.name
+		hasProp(ownerElement, attributeName) && (ownerElement[attributeName] = propValue)
+	}
 }
