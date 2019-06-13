@@ -22,12 +22,18 @@ If you have an array of items, you can use a foreach repeater to replicate the e
 <div>
 	<img src="{:this.app.player.units[this.itemIndex].avatar:}">
 	<div>
-		<input type="text" value="{:this.app.player.units[this.itemIndex].name:}|{player.units[this.itemIndex].name}|" onchange="this.app.player.units[this.itemIndex].name = this.value">
-		<input type="text" value="{:this.app.player.units[this.itemIndex].health:}|{player.units[this.itemIndex].health}|" onchange="this.app.player.units[this.itemIndex].health = this.value">
+		<input type="text" data-value="{:this.app.player.units[this.itemIndex].name:}|{player.units[this.itemIndex].name}|" onchange="this.app.player.units[this.itemIndex].name = this.value">
+		<input type="text" data-value="{:this.app.player.units[this.itemIndex].health:}|{player.units[this.itemIndex].health}|" onchange="this.app.player.units[this.itemIndex].health = this.value">
 	</div>
 </div>
 <!-- in: this.app.player.units -->
 ```
 
 ## input data binding
-As of version 2.0.0 the data binding of inputs are no longer automatic. instead it is done manually sorta. You can assign any type of listeners to it that you wish and update as a property. During the app build, for any property that you put a binding syntax in, during the time it builds that element and binds the syntax to its attribute, it will check if the attribute that is being bound is a property that exists on the element and if so, update that element with the string value as well. This is especially useful for the "value" property on form elements. of course you can also resort to a more primitive approach of adding a bidning syntax to a data-* property and within that syntax, you can use it to update the element. this is useful for scenarios where a string value is not desired for the element (eg: `<input type="date" />`)
+As of version 2.0.0 the data binding of inputs are no longer automatic. instead it is done manually sorta. any `data-` property will have that property's value checked against the element's javascript properties and if it exists, then it will place that stirng value also into the element's property.
+
+eg:
+
+```HTML
+<input type="text" data-value="{:this.app.name:}|{name}|" onchange="this.app.name = this.value"/>
+```
