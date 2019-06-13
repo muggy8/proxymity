@@ -734,8 +734,12 @@ function renderString(textSource, clusters){
 
 	if (textSource instanceof Attr){
 		var ownerElement = textSource.ownerElement
-		var attributeName = textSource.name
-		;(attributeName in ownerElement) && (ownerElement[attributeName] = propValue)
+		if (textSource.name.slice(0, 5) !== "data-"){
+			return
+		}
+		var attributeName = textSource.name.slice(5)
+
+		attributeName in ownerElement && (ownerElement[attributeName] = propValue)
 	}
 }
 

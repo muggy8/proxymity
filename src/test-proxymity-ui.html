@@ -36,7 +36,7 @@
 					<option value="2">2</option>
 					<option value="3">3</option>
 				</select>
-				<input value="{:this.app.foo:}|{foo}|" onkeyup='this.app.foo = this.valueAsNumber' onchange='this.app.foo = this.valueAsNumber' type='number'/>`, {foo: 15, bar: "1"}, "app")
+				<input data-value="{:this.app.foo:}|{foo}|" onkeyup='this.app.foo = this.valueAsNumber' onchange='this.app.foo = this.valueAsNumber' type='number'/>`, {foo: 15, bar: "1"}, "app")
 			testTemp.appendTo(document.body)
 			// console.log(testTemp)
 		</script>
