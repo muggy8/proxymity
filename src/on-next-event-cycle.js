@@ -38,6 +38,14 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 		queue = []
 
 		forEach(workingQueue, function(item){
+			if (typeof isInternalDescriptor !== "undefined"){
+				item.args = item.args.map(function(prop){
+					if (isInternalDescriptor(prop)){
+						return prop.get()
+					}
+					return prop
+				})
+			}
 			item.fn.apply(window, item.args)
 		})
 

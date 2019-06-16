@@ -127,7 +127,7 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 						item.unwatch = replacementsDescriptor.get(item.exe)
 					})
 					for(var current = callbacks[0]; current; current = current.next){
-						onNextEventCycle(current.exe, replacementsDescriptor.value, value)
+						onNextEventCycle(current.exe, replacementsDescriptor, value)
 					}
 					return // prevent the actual deletion
 				}
@@ -156,18 +156,27 @@ function migrateChildPropertyListeners(beforeValue, afterValue){
 	forEach(beforeKeys, function(beforeKey){
 		var beforeDescriptor = Object.getOwnPropertyDescriptor(beforeValue, beforeKey)
 		var afterDescriptor =  Object.getOwnPropertyDescriptor(afterValue, beforeKey)
+		var beforeIsInternal = isInternalDescriptor(beforeDescriptor)
+		var afterIsInternal = isInternalDescriptor(afterDescriptor)
 
-		if (isInternalDescriptor(beforeDescriptor) && !isInternalDescriptor(afterDescriptor)){
+		if (beforeIsInternal && !afterIsInternal){
 			var referencedValue = afterValue[beforeKey]
 			if (typeof referencedValue === "undefined"){
+				if (isArray(beforeValue) && isArray(afterValue)){
+					return // if replacing an array with another array, we dont want any of the sub array properties to carry over to ones that dont have stuff so we return here to prevent that
+				}
 				referencedValue = {}
 			}
 			delete afterValue[beforeKey]
 			var newAfterDescriptor = createWatchableProp(afterValue, beforeKey, referencedValue)
 
-			newAfterDescriptor.value = referencedValue
-
 			beforeDescriptor.set(undefined, newAfterDescriptor)
+
+			migrateChildPropertyListeners(beforeValue[beforeKey], afterValue[beforeKey])
+		}
+		else if (beforeIsInternal && afterIsInternal){
+			console.log("both are internal")
+			beforeDescriptor.set(undefined, afterDescriptor)
 
 			migrateChildPropertyListeners(beforeValue[beforeKey], afterValue[beforeKey])
 		}
