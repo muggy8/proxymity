@@ -168,6 +168,14 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 		queue = []
 
 		forEach(workingQueue, function(item){
+			if (typeof isInternalDescriptor !== "undefined"){
+				item.args = item.args.map(function(prop){
+					if (isInternalDescriptor(prop)){
+						return prop.get()
+					}
+					return prop
+				})
+			}
 			item.fn.apply(window, item.args)
 		})
 
@@ -317,7 +325,7 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 						item.unwatch = replacementsDescriptor.get(item.exe)
 					})
 					for(var current = callbacks[0]; current; current = current.next){
-						onNextEventCycle(current.exe, replacementsDescriptor.value, value)
+						onNextEventCycle(current.exe, replacementsDescriptor, value)
 					}
 					return // prevent the actual deletion
 				}
@@ -346,18 +354,27 @@ function migrateChildPropertyListeners(beforeValue, afterValue){
 	forEach(beforeKeys, function(beforeKey){
 		var beforeDescriptor = Object.getOwnPropertyDescriptor(beforeValue, beforeKey)
 		var afterDescriptor =  Object.getOwnPropertyDescriptor(afterValue, beforeKey)
+		var beforeIsInternal = isInternalDescriptor(beforeDescriptor)
+		var afterIsInternal = isInternalDescriptor(afterDescriptor)
 
-		if (isInternalDescriptor(beforeDescriptor) && !isInternalDescriptor(afterDescriptor)){
+		if (beforeIsInternal && !afterIsInternal){
 			var referencedValue = afterValue[beforeKey]
 			if (typeof referencedValue === "undefined"){
+				if (isArray(beforeValue) && isArray(afterValue)){
+					return // if replacing an array with another array, we dont want any of the sub array properties to carry over to ones that dont have stuff so we return here to prevent that
+				}
 				referencedValue = {}
 			}
 			delete afterValue[beforeKey]
 			var newAfterDescriptor = createWatchableProp(afterValue, beforeKey, referencedValue)
 
-			newAfterDescriptor.value = referencedValue
-
 			beforeDescriptor.set(undefined, newAfterDescriptor)
+
+			migrateChildPropertyListeners(beforeValue[beforeKey], afterValue[beforeKey])
+		}
+		else if (beforeIsInternal && afterIsInternal){
+			console.log("both are internal")
+			beforeDescriptor.set(undefined, afterDescriptor)
 
 			migrateChildPropertyListeners(beforeValue[beforeKey], afterValue[beforeKey])
 		}
@@ -544,7 +561,7 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 			}
 		}
 		else if (cloneGroups.length > updatedLength){
-			let tobeRemoved = cloneGroups.splice(cloneGroups.length - 1, cloneGroups.length - updatedLength)
+			let tobeRemoved = cloneGroups.splice(updatedLength)
 			forEach(tobeRemoved, function(group){
 				group.unlink()
 				group.detach()

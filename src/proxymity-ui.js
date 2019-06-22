@@ -152,7 +152,7 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 			}
 		}
 		else if (cloneGroups.length > updatedLength){
-			let tobeRemoved = cloneGroups.splice(cloneGroups.length - 1, cloneGroups.length - updatedLength)
+			let tobeRemoved = cloneGroups.splice(updatedLength)
 			forEach(tobeRemoved, function(group){
 				group.unlink()
 				group.detach()
