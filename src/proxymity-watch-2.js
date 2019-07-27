@@ -48,14 +48,7 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 				// attempting to delete this prop we should call the del callback of all watchers attached to this item
 				delete obj[prop]
 
-				if (isObject(value)){
-					forEach(Object.getOwnPropertyNames(value), function(name){
-						var descriptor = Object.getOwnPropertyDescriptor(value, name)
-						if (isInternalDescriptor(descriptor)){
-							value[name] = undefined
-						}
-					})
-				}
+				deleteChildrenRecursive(value)
 
 				callbackSet.each(function(set){
 					set.del()
@@ -64,11 +57,30 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 			}
 			else{
 				// updated the stuff lets call all the set callbacks
+				if (newValue !== value){
+					deleteChildrenRecursive(value)
+					callackSet.each(function(chainLink){
+						onNextEventCycle(chainLink.set, newValue, value)
+					})
+					overrideArrayFunctions(value = newValue)
+				}
+				return value
 			}
 		}
 	})
 
 	return descriptor
+}
+
+function deleteChildrenRecursive(value){
+	if (isObject(value)){
+		forEach(Object.getOwnPropertyNames(value), function(name){
+			var descriptor = Object.getOwnPropertyDescriptor(value, name)
+			if (isInternalDescriptor(descriptor)){
+				value[name] = undefined
+			}
+		})
+	}
 }
 
 function overrideArrayFunctions(arr){
