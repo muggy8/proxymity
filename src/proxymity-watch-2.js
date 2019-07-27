@@ -14,13 +14,25 @@ function watch(obj, path, onchange, ondelete = function(){}){
 }
 
 function isInternalDescriptor(descriptor){
-	return descriptor && descriptor.get && descriptor.get.length && descriptor.set && descriptor.set.length > 1
+	return descriptor && descriptor.get && descriptor.get.length === 1 && descriptor.set && descriptor.set.length === 1
 }
 
 function createWatchableProp(obj, prop, value = {}, config = {}){
-	var callbacks = []
+	var onChangeCallacks = []
+	var onDeleteCallacks = []
 	var descriptor
 	overrideArrayFunctions(value)
+
+	Object.defineProperty(obj, prop, descriptor = {
+		enumerable: hasProp(config, "enumerable") ? config.enumerable : true,
+		configurable: hasProp(config, "configurable") ? config.configurable : true,
+		get: function(onChangeCallack, onDeleteCallback){
+
+		},
+		set: function(newValue){
+
+		}
+	})
 
 
 }
