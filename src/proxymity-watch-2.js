@@ -46,7 +46,21 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 		set: function(newValue){
 			if (typeof newValue === "undefined"){
 				// attempting to delete this prop we should call the del callback of all watchers attached to this item
+				delete obj[prop]
 
+				if (isObject(value)){
+					forEach(Object.getOwnPropertyNames(value), function(name){
+						var descriptor = Object.getOwnPropertyDescriptor(value, name)
+						if (isInternalDescriptor(descriptor)){
+							value[name] = undefined
+						}
+					})
+				}
+
+				callbackSet.each(function(set){
+					set.del()
+					set.drop()
+				})
 			}
 			else{
 				// updated the stuff lets call all the set callbacks
