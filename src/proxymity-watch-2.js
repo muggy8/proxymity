@@ -18,5 +18,15 @@ function isInternalDescriptor(descriptor){
 }
 
 function createWatchableProp(obj, prop, value = {}, config = {}){
-	
+	var callbacks = []
+	var descriptor
+	overrideArrayFunctions(value)
+
+
+}
+
+function overrideArrayFunctions(arr){
+	if (!arr || !isArray(arr) || hasProp(arr, 'len')){
+		return
+	}
 }
