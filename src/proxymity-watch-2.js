@@ -105,11 +105,15 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 			else{
 				// updated the stuff lets call all the set callbacks
 				if (newValue !== value){
-					deleteChildrenRecursive(value)
+					console.log(value, newValue)
 					callbackSet.each(function(chainLink){
 						onNextEventCycle(chainLink.set, newValue, value)
 					})
-					overrideArrayFunctions(value = newValue)
+					
+					var oldVal = value
+					value = newValue
+					overrideArrayFunctions(value)
+					deleteChildrenRecursive(oldVal)
 				}
 				return value
 			}

@@ -31,9 +31,10 @@
 			}
 
 			var obj = {}
-			var beginWatching = () => watch(obj, "foo.bar", console.log, beginWatching)
+			var beginWatching = () => console.log("rewatching") + watch(obj, "foo.bar", console.log, beginWatching)
 			beginWatching()
-			obj.foo.bar = 19
+			// obj.foo.bar = 19
+			obj.foo = {bar: 66}
 			// 
 			// console.log(obj)
 			//
