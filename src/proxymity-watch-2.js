@@ -2,7 +2,7 @@ function hasProp(obj, prop){
 	return Object.prototype.hasOwnProperty.call(obj, prop)
 }
 
-function watch(obj, path, onchange, ondelete = function(){}){
+function watch(source, path, onchange, ondelete = function(){}){
 	var context = this || {}
 	var pathsToEval = splitPath(path)
 	var pathsStrings = []
@@ -10,7 +10,54 @@ function watch(obj, path, onchange, ondelete = function(){}){
 		pathsStrings.push(safeEval.call(context, pathString))
 	})
 
-	console.log(pathsStrings)
+
+	// now we have the path from the source to the target prop figured out. all we have to do now is to follow the path and replace any non-internal descriptors with internal descriptor and if it doesn't exist, initialize it as {}. once we get to the final descriptor we can add the watch props onto it and just wait for it to change
+
+	var propertyDescriptor // the thing we try to find and attach our listeners to
+	var location = "" // for debugging
+	forEach(pathsStrings, function(key){
+		if (key === "length" && isArray(source)){
+			key = "len"
+		}
+		if (key === "len"){
+			overrideArrayFunctions(source)
+		}
+		location = location + (location ? " -> " + key : key)
+
+		var descriptor = Object.getOwnPropertyDescriptor(source, key)
+
+		// if the property doesn't exist we can create it here
+		if (typeof descriptor === "undefined"){
+			console.warn(location + " not defined in data source and is initiated as {}. \n\tOriginal: " + path)
+			propertyDescriptor = createWatchableProp(source, key)
+		}
+
+		// our non-standard descriptors are the special since they are also ment to be accessed via this method and we can pass in parameters that are normally not
+		else if (isInternalDescriptor(descriptor)){
+			propertyDescriptor = descriptor
+		}
+
+		// the final case is that it exists already and we need to transfer it to a getter and a setter
+		else if (descriptor){
+			var value = source[key]
+			delete source[key]
+			propertyDescriptor = createWatchableProp(source, key, value)
+		}
+
+		source = source[key]
+
+	})
+
+	return propertyDescriptor.get(safeOnchange, safeOndelete)
+
+	function safeOnchange(){
+		var args = Array.prototype.slice.call(arguments)
+		return onchange.apply(context, args)
+	}
+	function safeOndelete(){
+		var args = Array.prototype.slice.call(arguments)
+		return ondelete.apply(context, args)
+	}
 }
 
 function isInternalDescriptor(descriptor){
@@ -59,7 +106,7 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 				// updated the stuff lets call all the set callbacks
 				if (newValue !== value){
 					deleteChildrenRecursive(value)
-					callackSet.each(function(chainLink){
+					callbackSet.each(function(chainLink){
 						onNextEventCycle(chainLink.set, newValue, value)
 					})
 					overrideArrayFunctions(value = newValue)
