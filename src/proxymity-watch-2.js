@@ -68,6 +68,18 @@ LinkedList.prototype = {
 			callback(current)
 			current = current.next
 		}
+	},
+	find: function(callback){
+		var current = this.first
+		var index = 0
+		var found = null
+		while(current && !found){
+			var hasFound = callback(current, index)
+			index++
+			hasFound && (found = current)
+			current = current.next
+		}
+		return found
 	}
 }
 
