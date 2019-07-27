@@ -7,6 +7,11 @@
 	</head>
 	<body>
 		<script>
+			var l = new LinkedList()
+			l.push({foo: "foo"})
+			l.push({foo: "bar"})
+			l.push({foo: "baz"})
+
 			// stubbing safeEval for now
 			var safeEval = function(s, sv = {}, t = false){
 				try {
