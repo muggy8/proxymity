@@ -85,6 +85,8 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 					set: onChangeCallack,
 					del: onDeleteCallback
 				}))
+				
+				onChangeCallack(value, null)
 
 				return link.drop
 			}
