@@ -133,11 +133,30 @@ function deleteChildrenRecursive(value){
 	}
 }
 
+var replacementFunctions = {}
+forEach(Object.getOwnPropertyNames(Array.prototype), function(prop){
+	var wrappedFunction = Array.prototype[prop]
+	if (typeof wrappedFunction !== "function"){
+		return
+	}
+	replacementFunctions[prop] = function(){
+		var args = Array.prototype.slice.call(arguments)
+		var res = wrappedFunction.apply(this, args)
+		this.len = this.length
+		return res
+	}
+})
 function overrideArrayFunctions(arr){
 	if (!arr || !isArray(arr) || hasProp(arr, 'len')){
 		return
 	}
+	createWatchableProp(arr, "len", arr.length, {enumerable: false})
+	forEach(Object.getOwnPropertyNames(replacementFunctions), function(prop){
+		var fn = replacementFunctions[prop]
+		define(arr, prop, fn)
+	})
 }
+
 
 function LinkedList(){
 	var context = this

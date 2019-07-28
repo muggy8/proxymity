@@ -34,14 +34,15 @@
 			var beginWatching = () => console.log("rewatching") + watch(obj, "foo.bar", console.log, beginWatching)
 			beginWatching()
 			// obj.foo.bar = 19
-			obj.foo = {bar: 66}
+			// obj.foo = {bar: 66}
 			// 
 			// console.log(obj)
 			//
-			// console.log('testing array')
-			// var arr = []
-			// watch(arr, 'len', console.log)
-			// arr.push({})
+			console.log('testing array')
+			var arr = []
+			watch(arr, 'len', console.log)
+			watch(arr, 'length', console.warn)
+			arr.push({})
 			// console.log(arr)
 		</script>
 	</body>
