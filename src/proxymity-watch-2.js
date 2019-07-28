@@ -61,7 +61,7 @@ function watch(source, path, onchange, ondelete = function(){}){
 }
 
 function isInternalDescriptor(descriptor){
-	return descriptor && descriptor.get && descriptor.get.length === 1 && descriptor.set && descriptor.set.length === 1
+	return descriptor && descriptor.get && descriptor.get.length === 2 && descriptor.set && descriptor.set.length === 1
 }
 
 function createWatchableProp(obj, prop, value = {}, config = {}){
@@ -105,7 +105,6 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 			else{
 				// updated the stuff lets call all the set callbacks
 				if (newValue !== value){
-					console.log(value, newValue)
 					callbackSet.each(function(chainLink){
 						onNextEventCycle(chainLink.set, newValue, value)
 					})
