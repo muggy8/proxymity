@@ -15,7 +15,7 @@ Please note: because proxymity runs regular javascript within the `{::}` blocks,
 ## key: indexName ... in: array
 - indexName: a string to be added to all elements of the enclosed Template
 - array: a javascript array object with a length property.
-If you have an array of items, you can use a foreach repeater to replicate the enclosed template for each item of the array. Do note that it must be an array. The foreach repeater is 2 comments that enclose a set of HTML elements and begins with a comment that starts with key: and ends with a comment that begins with in:
+If you have an array of items, you can use a `key in` repeater to replicate the enclosed template for each item of the array. Do note that it must be an array. The `key in` repeater is 2 comments that enclose a set of HTML elements and begins with a comment that starts with `key:` and ends with a comment that begins with `in:`. you are not able to stack repeaters within repeaters so if you want nested loops, you'll need to put the inner loops into an element that is within the outer loop. 
 
 ```HTML
 <!-- key: "itemIndex" -->
@@ -26,7 +26,7 @@ If you have an array of items, you can use a foreach repeater to replicate the e
 		<input type="text" data-value="{:this.app.player.units[this.itemIndex].health:}|{player.units[this.itemIndex].health}|" onchange="this.app.player.units[this.itemIndex].health = this.value">
 	</div>
 </div>
-<!-- in: this.app.player.units -->
+<!-- in: player.units -->
 ```
 
 ## input data binding
