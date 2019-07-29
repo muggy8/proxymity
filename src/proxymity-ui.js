@@ -81,9 +81,7 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 	var watchTarget = inCommand + ".len"
 	var indexProp = safeEval.call(startComment, indexCommand)
 
-	onDestroyCallbacks.push(watch.call(endComment, data, watchTarget, onSourceDataChange))
-	var userList = safeEval.call(endComment, "data." + inCommand, {data: data})
-	onSourceDataChange(userList.length)
+	subscribeToDataLocation()
 
 	return function(){
 		forEach(cloneGroups, function(group){
@@ -163,6 +161,15 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 				}
 			})
 		}
+	}
+
+	var lastWatchDestroyCallback
+	function subscribeToDataLocation(){
+		if (lastWatchDestroyCallback){
+			var spliceIndex = onDestroyCallbacks.indexOf(lastWatchDestroyCallback)
+			onDestroyCallbacks.splice(spliceIndex, 1)
+		}
+		onDestroyCallbacks.push(lastWatchDestroyCallback = watch.call(endComment, data, watchTarget, onSourceDataChange, subscribeToDataLocation))
 	}
 }
 
@@ -308,10 +315,16 @@ function continiousSyntaxRender(textSource, node, propName){
 					renderString(textSource, clusters)
 				}
 				forEach(chunk.watching, function(prop){
-					// console.log(node[propName], prop)
-					onDestroyCallbacks.push(watch.call(node, node[propName], prop.trim(), updateChunkVal))
+					var lastWatchDestroyCallback
+					function resubscribe(){
+						if (lastWatchDestroyCallback){
+							var spliceIndex = onDestroyCallbacks.indexOf(lastWatchDestroyCallback)
+							onDestroyCallbacks.splice(spliceIndex)
+						}
+						onDestroyCallbacks.push(lastWatchDestroyCallback = watch.call(node, node[propName], prop.trim(), updateChunkVal, resubscribe))
+					}
+					resubscribe()
 				})
-				updateChunkVal()
 			}
 		}
 	})
