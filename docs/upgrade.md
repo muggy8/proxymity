@@ -37,10 +37,7 @@ Becomes
     <img src="{:this.app.player.units[this.itemIndex].avatar:}"/>
     <div> 
       <input type="text" onkeyup="this.app.player.units[this.itemIndex].name = this.value" data-value="{:this.app.player.units[this.itemIndex].name:}|{player.units[this.itemIndex].name}|" /> 
-
       <input type="text" onkeyup="this.app.player.units[this.itemIndex].health = this.valueAsNumber" data-value="{:this.app.player.units[this.itemIndex].health:}|{player.units[this.itemIndex].health}|" /> 
-      <input type="text" name="player.units[this.itemIndex].health" /> 	
-    </div>
   </div>
 <!-- in: player.units -->
 ```
