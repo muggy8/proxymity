@@ -225,7 +225,7 @@ function dropLinkedItem(item, belongsTo){
 	item.prev && item.prev.next === item && ((item.prev.next = item.next) + (hasChanged = true))
 	item.next && item.next.prev === item && ((item.next.prev = item.prev) + (hasChanged = true))
 
-	if (!hasChanged){
+	if (!hasChanged && !(belongsTo.length === 1 && belongsTo.first === item && belongsTo.last === item)){
 		return
 	}
 	belongsTo.first === item && (belongsTo.first = item.next)

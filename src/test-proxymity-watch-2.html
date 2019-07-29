@@ -31,11 +31,12 @@
 			}
 
 			var obj = {}
-			var beginWatching = () => console.log("rewatching") + watch(obj, "foo.bar", console.log, beginWatching)
+			var unwatchObj
+			var beginWatching = () => console.log("rewatching") + (unwatchObj = watch(obj, "foo.bar", console.log, beginWatching))
 			beginWatching()
 			// obj.foo.bar = 19
 			// obj.foo = {bar: 66}
-			// 
+			//
 			// console.log(obj)
 			//
 			console.log('testing array')
