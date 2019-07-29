@@ -105,7 +105,7 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 				var newGroupItem = cloneNodes(repeatBody)
 				var destroyListeners = []
 
-				let attachIndex = (function(index, node, data, propName){
+				var attachIndex = (function(index, node, data, propName){
 					// call the pervious init callback with the same props
 					var undoInheritedInit = initNodeCallback(node, data, propName)
 
@@ -150,7 +150,7 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 			}
 		}
 		else if (cloneGroups.length > updatedLength){
-			let tobeRemoved = cloneGroups.splice(updatedLength)
+			var tobeRemoved = cloneGroups.splice(updatedLength)
 			forEach(tobeRemoved, function(group){
 				group.unlink()
 				group.detach()
@@ -209,7 +209,7 @@ function transformNode(node, data, propName, initNodeCallback){
 	}
 	else {
 		// console.log(node.attributes)
-		let attributes = node.attributes
+		var attributes = node.attributes
 		forEach(arrayFrom(attributes), function(attribute){
 			// console.log(attribute)
 			var stopSyntaxRender = continiousSyntaxRender(attribute, node, propName)
