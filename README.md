@@ -3,7 +3,6 @@ Proxymity is a 1 way data binding library with the aim to keep everything as sim
 
 ## Quickstart
 
-
 #### script.js
 ```javascript
 var view = proxymity(document.querySelector("body"), {}, "controller")
@@ -119,10 +118,12 @@ We could put this in a number of different places and we can implement this in a
 
 In the case of an all encompassing framework (like angular) issue arises when your code needs to do something that's not a part of the framework's supported operations (eg: Web sockets and WebAssembly) and you spend time trying to get it to play nice with your framework of choice (fortunately, angular has $apply). In the case of a pre-compiled solution, the problem is you are stuck with an overhead of learning the new language that your pre-compiler uses and whatever dev you bring onto your team either needs to learn how to work with this new intermediary language and also the overhead of trying to set everything up just right the first time around (we all know how much this sucks)
 
-Proxymity takes a different approach to both sides where it does not use a pre compiler nor does it run your code inside an all encompassing framework. Instead, it runs it's own render cycle and as long as your code is modifying data that proxymity is keeping tabs on, it will know when to re-render. This means that there is no pre-compiler in the mix and the library that connects everything only handles one thing, converting data => view and view => data. You are in control of everything else meaning there's no restrictions of what kind of other tech you can use in conjunction nor is there a major learning process associated to working with the code base.
+Proxymity takes a different approach to both sides where it does not use a pre compiler nor does it run your code inside an all encompassing framework. Instead, it runs it's own render cycle and as long as your code is modifying data that proxymity is keeping tabs on, it will know when to re-render. This means that there is no pre-compiler in the mix and the library that connects everything only handles one thing, converting data => view. You are in control of everything else meaning there's no restrictions of what kind of other tech you can use in conjunction nor is there a major learning process associated to working with the code base.
 
 ## How??
-Proxymity tries to be as small and as out of the way as possible letting you be as close to the native JavaScript and HTML. To accomplish this, Proxymity uses the [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) API in JavaScript. When a property is modified on the data object, the data object will trigger a re-render of relevant components [on the next event cycle](https://developer.mozilla.org/en-US/docs/Web/JavaScript/EventLoop) Thus allowing you to make a large sequence of changes to the data object before the view is finally re-rendered.
+Proxymity tries to be as small and as out of the way as possible letting you be as close to the native JavaScript and HTML. Earlier iterations accomplished this by using the [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) API in JavaScript which is where this library gets it's name. however, as of version 2.0.0, this is no longer the case.
+
+the magic happens in the templating language of the library where you define what the action is and what that specific segment of template should react to if anything and using this info, Proxymity's able to reconstruct the paths to watch as watchable and then watch for changes on those paths. 
 
 ## docs
 [Docs are work in progress but here you go :)](docs)
