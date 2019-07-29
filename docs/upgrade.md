@@ -41,3 +41,19 @@ Becomes
   </div>
 <!-- in: player.units -->
 ```
+
+## Proxymity Data
+Proxymity data is completely removed and all associated functions have been re-implemented else where or are dropped
+
+## Watch
+> Previousely, watch has been done from the Proxymity Data object. this function has now been moved to live on the main proxymity function. Please visit [the watch api](watch.md) for details.
+
+```javascript
+var unwatch = data.watch(path, callback)
+```
+
+Becomes
+
+```javascript
+var unwatch = proxymity.watch(data, path, callbnck)
+```
