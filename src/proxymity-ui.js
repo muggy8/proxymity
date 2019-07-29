@@ -169,6 +169,7 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 			var spliceIndex = onDestroyCallbacks.indexOf(lastWatchDestroyCallback)
 			onDestroyCallbacks.splice(spliceIndex, 1)
 		}
+		console.log("sub", data, watchTarget)
 		onDestroyCallbacks.push(lastWatchDestroyCallback = watch.call(endComment, data, watchTarget, onSourceDataChange, subscribeToDataLocation))
 	}
 }

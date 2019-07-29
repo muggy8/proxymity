@@ -77,6 +77,7 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 			// the getter function serves double duty. since the getter function is declared here, it has access to the scope of the parent function and also leaves no major residue or attack surface for people to get into the internals of this library, it's unlikely that someone is able to gain access to many of the secrets of the internals of the library at run time through this function. However because this function can be called normally outside of just using assignments, we are able to have this function serve double duty as the entry point to add callbacks to the watch method as well as being the getter under normal query and assignment operations.
 
 			if (onChangeCallack && onDeleteCallback){
+				console.log("add cb on", obj, prop)
 				var link = callbackSet.find(function(item){
 					return item.set === onChangeCallack && item.del === onDeleteCallback
 				})
@@ -85,7 +86,7 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 					set: onChangeCallack,
 					del: onDeleteCallback
 				}))
-				
+
 				onChangeCallack(value, null)
 
 				return link.drop
@@ -94,26 +95,32 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 		},
 		set: function(newValue){
 			if (typeof newValue === "undefined"){
+				console.log("del", obj, prop)
 				// attempting to delete this prop we should call the del callback of all watchers attached to this item
 				delete obj[prop]
-
-				deleteChildrenRecursive(value)
 
 				callbackSet.each(function(set){
 					set.del()
 					set.drop()
 				})
+
+				deleteChildrenRecursive(value)
 			}
 			else{
 				// updated the stuff lets call all the set callbacks
 				if (newValue !== value){
+					console.log("set", obj, prop)
 					callbackSet.each(function(chainLink){
 						onNextEventCycle(chainLink.set, newValue, value)
 					})
-					
+
 					var oldVal = value
 					value = newValue
 					overrideArrayFunctions(value)
+					console.log(oldVal)
+					if (isArray(oldVal) && hasProp(oldVal, "len")){
+						oldVal.len = undefined
+					}
 					deleteChildrenRecursive(oldVal)
 				}
 				return value
