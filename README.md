@@ -1,9 +1,7 @@
 # About
-Proxymity is a 2 way data binding library with the aim to keep everything as simple and close to vanilla javascript and html as possible. Because it's a library and not a framework, you are in control the whole way through.
+Proxymity is a 1 way data binding library with the aim to keep everything as simple and close to vanilla javascript and html as possible. Because it's a library and not a framework, you are in control the whole way through.
 
-## Basic Usage
-
-[Edit on Plunker](https://plnkr.co/edit/eBmp81IgHzK9eGAP0ghT?p=preview)
+## Quickstart
 
 #### script.js
 ```javascript
@@ -32,13 +30,13 @@ controller.fibonacci = function(n){
 		</style>
 	</head>
 
-	<body class="{:void this :}">
+	<body class="{: void this :}">
 		<h1>Welcome {:this.controller.user.name:}|{user.name}|</h1>
 		<div>
-			name: <input type="text" name="user.name">
+			name: <input type="text" onkeyup="this.controller.user.name = this.value" data-value="{:this.controller.user.name:}|{user.name}|">
 		</div>
 		<div>
-			age: <input type="number" name="user.age">
+			age: <input type="number" onkeyup="this.controller.user.age = this.valueAsNumber" data-value="{:this.controller.user.age:}|{user.age}|">
 		</div>
 		<p>
 			The Fibonacci number associated with your age is {:this.controller.fibonacci(parseInt(this.controller.user.age)):}|{user.age}|
@@ -67,23 +65,23 @@ The script tag is pretty self explanatory, you may be wondering why we have a se
 
 ### Body
 ```html
-<body class="{:void this :}">
+<body class="{: void this :}">
 	...
 </body>
 ```
 
-The body element is the first instance of when we see how we render out data from our controller to the view. the syntax for this is {: code :} and in this case the code that we are running is "void this " which runs in the global scope with `this` being a reference of the current element that the code is attached to. This means that you can call any method/variable that you'd normally be able to call from the global scope
+The body element is the first instance of when we see how we render out data from our controller to the view. the syntax for this is {: code :} and in this case the code that we are running is " void this " which runs in the global scope with `this` being a reference of the current element that the code is attached to. This means that you can call any method/variable that you'd normally be able to call from the global scope
 
-When the code gets executed the whole part will get replaced but until then, as far as the html parser is concerned, the body element has a class of "{:void", "this", and ":}" meaning we can take advantage of it
+When the code gets executed the whole part will get replaced but until then, as far as the html parser is concerned, the body element has a class of "{:", "void", "this", and ":}" meaning we can take advantage of it
 
 ### Body Continued
 ```html
 <h1>Welcome {:this.controller.user.name:}|{user.name}|</h1>
 <div>
-	name: <input type="text" name="user.name">
+	name: <input type="text" onkeyup="this.controller.user.name = this.value" data-value="{:this.controller.user.name:}|{user.name}|">
 </div>
 <div>
-	age: <input type="number" name="user.age">
+	age: <input type="number" onkeyup="this.controller.user.age = this.valueAsNumber" data-value="{:this.controller.user.age:}|{user.age}|">
 </div>
 <p>
 	The Fibonacci number associated with your age is {:this.controller.fibonacci(parseInt(this.controller.user.age)):}|{user.age}|
@@ -92,7 +90,7 @@ When the code gets executed the whole part will get replaced but until then, as 
 
 Here we see the data binding in action. The name of each input element on the input is also used to denote where on the controller object the item should look for. Because it can only be connected to the controller object, we do not need to define `this.controller` on it.
 
-You may also be noticing that the binding syntax is slightly different that there's 2 chunks. the first chunk that's wrapped inside `{: ... :}`. This chunk is the chunk that you execute. The next chunk is the chunk that is wrapped inside `|{ ... }|` which is the chunk that watches a specific path for changes. This path always starts at the root so you do not need to include `this.controller` in it. It specifies that the code within `{: ... :}` should be updated when a change to `|{ ... }|` happens.
+You may also be noticing that the binding syntax is slightly different that there's 2 chunks. the first chunk that's wrapped inside `{: ... :}`. This chunk is the chunk that you execute. The next chunk is the chunk that is wrapped inside `|{ ... }|` which is the chunk that watches a specific path for changes. This path always starts at the root so you do not need to include `this.controller` in it. It specifies that the code within `{: ... :}` should be reran when a change to `|{ ... }|` happens.
 
 However none of this actually works unless the body gets initialized.
 
@@ -120,10 +118,12 @@ We could put this in a number of different places and we can implement this in a
 
 In the case of an all encompassing framework (like angular) issue arises when your code needs to do something that's not a part of the framework's supported operations (eg: Web sockets and WebAssembly) and you spend time trying to get it to play nice with your framework of choice (fortunately, angular has $apply). In the case of a pre-compiled solution, the problem is you are stuck with an overhead of learning the new language that your pre-compiler uses and whatever dev you bring onto your team either needs to learn how to work with this new intermediary language and also the overhead of trying to set everything up just right the first time around (we all know how much this sucks)
 
-Proxymity takes a different approach to both sides where it does not use a pre compiler nor does it run your code inside an all encompassing framework. Instead, it runs it's own render cycle and as long as your code is modifying data that proxymity is keeping tabs on, it will know when to re-render. This means that there is no pre-compiler in the mix and the library that connects everything only handles one thing, converting data => view and view => data. You are in control of everything else meaning there's no restrictions of what kind of other tech you can use in conjunction nor is there a major learning process associated to working with the code base.
+Proxymity takes a different approach to both sides where it does not use a pre compiler nor does it run your code inside an all encompassing framework. Instead, it runs it's own render cycle and as long as your code is modifying data that proxymity is keeping tabs on, it will know when to re-render. This means that there is no pre-compiler in the mix and the library that connects everything only handles one thing, converting data => view. You are in control of everything else meaning there's no restrictions of what kind of other tech you can use in conjunction nor is there a major learning process associated to working with the code base.
 
 ## How??
-Proxymity tries to be as small and as out of the way as possible letting you be as close to the native JavaScript and HTML. To accomplish this, Proxymity uses the [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) API in JavaScript. When a property is modified on the data object, the data object will trigger a re-render of relevant components [on the next event cycle](https://developer.mozilla.org/en-US/docs/Web/JavaScript/EventLoop) Thus allowing you to make a large sequence of changes to the data object before the view is finally re-rendered.
+Proxymity tries to be as small and as out of the way as possible letting you be as close to the native JavaScript and HTML. Earlier iterations accomplished this by using the [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) API in JavaScript which is where this library gets it's name. however, as of version 2.0.0, this is no longer the case.
+
+the magic happens in the templating language of the library where you define what the action is and what that specific segment of template should react to if anything and using this info, Proxymity's able to reconstruct the paths to watch as watchable and then watch for changes on those paths. 
 
 ## docs
 [Docs are work in progress but here you go :)](docs)

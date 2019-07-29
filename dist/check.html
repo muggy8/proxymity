@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+	<head>
+		<meta charset="utf-8">
+		<title>Check for scope leaks</title>
+		<script>
+			foobar: {
+				let windowProps = Object.getOwnPropertyNames(window)
+
+				window.addEventListener("load", ()=>console.log(
+					Object.getOwnPropertyNames(window).filter(prop=>windowProps.indexOf(prop) === -1)
+				))
+			}
+		</script>
+		<script src="proxymity.js"></script>
+	</head>
+	<body>
+	</body>
+</html>

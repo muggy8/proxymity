@@ -1,12 +1,9 @@
 <html>
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-		<!-- <script src="https://unpkg.com/mobile-inspector"></script> -->
-		<!-- <script src="proxy-bind.js"></script> -->
 		<script src="proxymity-util.js"></script>
 		<script src="on-next-event-cycle.js"></script>
-		<script src="data-proto.js"></script>
-		<script src="proxymity-observe.js"></script>
+		<script src="proxymity-watch-2.js"></script>
 		<script src="proxymity-ui.js"></script>
 	</head>
 	<body>
@@ -29,47 +26,19 @@
 				}
 			}
 
-			var appendable = proxyUI(`
-			<!-- This is a comment with a {:this.app.color.toString():} -->
-			<div>
-				<label class="block">
-					color: <input name="color" />
-				</label>
-				<label class="block">
-					color again: <input name="color" />
-				</label>
-				<label class="block">
-					background-color: <input name="background" />
-				</label>
-				<label class="block">
-					padding: <input name="padding" />
-				</label>
-				<label class="block">
-					border: <input name="border" />
-				</label>
-				<label class="block">
-					font-size: <input name="fontSize" />
-				</label>
-				<label class="block">
-					font-family: <input name="fontFace" />
-				</label>
-			</div>
-			<pre>{:JSON.stringify(this.app, null, "	"):}</pre>
-			<style>
-				pre {
-					background-color: {:this.app.background.toString() || 'initial':}|{background}|;
-					color: {:this.app.color.toString() || 'initial':}|{color}|;
-					padding: {:this.app.padding.toString() || 'initial':}|{padding}|;
-					border: {:this.app.border.toString() || 'initial':}|{border}|;
-					font-size: {:this.app.fontSize.toString() || 'inherit':}|{fontSize}|;
-					font-family: {:this.app.fontFace.toString() || 'sans-serif':}|{fontFace}|, sans-serif;
-				}
-				.block {
-					display: block
-				}
-			</style>`, proxify({}), "app")
-			console.log(appendable.appendTo("body"))
-			console.log(document.querySelector("input").attributes)
+			var testTemp = proxyUI(`
+				<div class='foo-{:this.app.foo:}|{foo}|'>
+					the number input is {:this.app.foo:}|{foo}| and the select input is {:this.app.bar:}|{bar}|
+				</div>
+				<input data-script='{:this.value = this.app.foo:}|{foo}|' onkeyup='this.app.foo = this.valueAsNumber' onchange='this.app.foo = this.valueAsNumber' type='number'>
+				<select data-script="{:this.value = this.app.bar:}|{bar}|" onchange="this.app.bar = this.value">
+					<option value="1">1</option>
+					<option value="2">2</option>
+					<option value="3">3</option>
+				</select>
+				<input data-value="{:this.app.foo:}|{foo}|" onkeyup='this.app.foo = this.valueAsNumber' onchange='this.app.foo = this.valueAsNumber' type='number'/>`, {foo: 15, bar: "1"}, "app")
+			testTemp.appendTo(document.body)
+			// console.log(testTemp)
 		</script>
 	</body>
 </html>

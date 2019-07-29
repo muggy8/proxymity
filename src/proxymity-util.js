@@ -6,16 +6,8 @@ function forEach(arrayLike, callback){
 	return arrayLike && isNumber(arrayLike.length) && Array.prototype.forEach.call(arrayLike, callback)
 }
 
-function isFunction(val){
-	return typeof val === "function"
-}
-
 function isString(val){
 	return typeof val === "string"
-}
-
-function isBool(val){
-	return typeof val === "boolean"
 }
 
 function isNumber(val){
@@ -26,8 +18,8 @@ function isObject(val){
 	return val && typeof val === "object"
 }
 
-function propsIn(obj){
-	return Object.getOwnPropertyNames(obj)
+function isArray(val){
+	return Array.isArray(val)
 }
 
 function randomInt(start, stop){
@@ -54,22 +46,6 @@ function generateId(length = 16){
 	return id
 }
 
-function softCopy(from, to){
-	var toKeys = propsIn(to)
-	for(var key in from){
-		to[key] = from[key]
-		toKeys.splice(toKeys.indexOf(key), 1)
-	}
-	forEach(toKeys, function(isArray, key){
-		if (!isArray && key !== "length"){
-			delete to[key]
-		}
-	}.bind(null, Array.isArray(to)))
-	// if (Array.isArray(to)){
-	// 	to.length = to.length // this is to trigger the set:lengthId for this object just in case it is something depends on it (which something does)
-	// }
-}
-
 function define(obj, key, val){
 	Object.defineProperty(obj, key, {
 		value: val
@@ -77,7 +53,7 @@ function define(obj, key, val){
 	return val
 }
 function getSet(obj, key, get, set){
-	defineConfigs = {
+	var defineConfigs = {
 		get: get
 	}
 	if (set){
@@ -91,4 +67,59 @@ function evalScriptConcatinator(targetLocation){
 		return "."
 	}
 	return ""
+}
+
+function splitPath(str = ""){
+	var startSubstringIndex = 0
+	var segments = []
+	var openBrace = "["
+	var closingBrace = "]"
+	var withinBrace = 0
+	function torwSyntaxError(){
+		throw new Error("Potential Syntax Error within code: \n" + str)
+	}
+	function addSegment(currentIndex, quoted = true){
+		var segment = str.substring(startSubstringIndex, currentIndex)
+		if (!segment){
+			return startSubstringIndex = currentIndex + 1
+		}
+		if (quoted){
+			segment = '"' + segment + '"'
+		}
+		segments.push(segment)
+		startSubstringIndex = currentIndex + 1
+	}
+	for(var i = 0; i < str.length; i++){
+		if (str[i] === "." && !withinBrace){
+			addSegment(i)
+		}
+		else if (!withinBrace){
+			if (str[i] === openBrace){
+				addSegment(i)
+				withinBrace++
+			}
+			else if (str[i] === closingBrace){
+				torwSyntaxError()
+			}
+		}
+		else if (withinBrace){
+			if (str[i] === openBrace){
+				withinBrace++
+			}
+			else if (str[i] === closingBrace){
+				withinBrace--
+			}
+
+			if (!withinBrace){
+				addSegment(i, false)
+			}
+		}
+	}
+	if (startSubstringIndex !== str.length){
+		addSegment(str.length)
+	}
+	if (withinBrace){
+		torwSyntaxError()
+	}
+	return segments
 }

@@ -1,544 +1,365 @@
-function renderCustomSyntax(textSource, containingElement, appProp){
-	var sourceText = textSource.textContent
-	var onRenderEvalQueue = []
-	var outputTemplate = sourceText.replace(/\{\:([\s\S]*?)\:\}(\|(\s|\n)*\{[\s\S]*?\}(\s|\n)*\|)?/g, function(wholeMatch, evalText, dependencyText){
-		// console.log(evalText, dependencyText)
-		onRenderEvalQueue.push({
-			// drop: wholeMatch,
-			run: evalText,
-			on: dependencyText && dependencyText.replace(/^\|[\s\n]*\{|\}[\s\n]*\|$/g, "").split(/\}[\s\n]*\,[\s\n]*\{/g)
-		})
-        return "{::}"
-	}).split("{::}")
-
-	// we spliced out what we had above that we can use to render the text. if have a render queue then this text is worth parsing and running and re-running on asyncstart or whatever. other wise it's jsut regular text so we ignore it :3
-	if (onRenderEvalQueue.length){
-		var destroyCallbacks = []
-		var renderFn = function(queueIndex){
-			// textSource.textContent = evalAndReplaceExpessionQueue(sourceText, containingElement, onRenderEvalQueue, queueIndex)
-            textSource.textContent = outputTemplate.reduce(function(sum, chunk, chunkIndex) {
-                var expressionSegment = ""
-                if (onRenderEvalQueue[chunkIndex]){
-                    if (chunkIndex === queueIndex){
-                        createMode = true
-                        expressionSegment = onRenderEvalQueue[chunkIndex].cache = safeEval.call(containingElement, onRenderEvalQueue[chunkIndex].run)
-			            createMode = false
-                    }
-                    else {
-                        expressionSegment = onRenderEvalQueue[chunkIndex].cache
-                    }
-                }
-                return sum + chunk + expressionSegment
-            }, '')
-		}
-		forEach(onRenderEvalQueue, function(queuedItem, index){
-			if (queuedItem.on){
-				forEach(queuedItem.on, function(attributeToListenTo){
-					destroyCallbacks.push(observe(function(){
-						createMode = true
-						safeEval.call(containingElement, "this." + appProp + evalScriptConcatinator(attributeToListenTo) + attributeToListenTo)
-						createMode = false
-					}, function(){
-                        renderFn(index)
-                    }))
-				})
-			}
-            else {
-                renderFn(index)
-            }
-		})
-		return function(){
-			forEach(destroyCallbacks, function(fn){
-				fn()
-			})
-		}
-	}
-}
-
-var appendableArrayProto = Object.create(Array.prototype)
-define(appendableArrayProto, "appendTo", function(selectorOrElement) {
-	if (isString(selectorOrElement)){
-		return appendableArrayProto.appendTo.call(this, document.querySelector(selectorOrElement))
-	}
-	var target = selectorOrElement
-	forEach(this, function(node){
-		target.appendChild(node)
-	})
-	return this
-})
-define(appendableArrayProto, "detach", function(){
-	forEach(this, function(node){
-		var parent = node.parentElement
-		parent && parent.removeChild(node)
-	})
-
-	return this
-})
-define(appendableArrayProto, "unlink", function(){
-	destroyListeners(this)
-	return this
-})
-// var whitelistedWhen = ["renderend"]
-// define(appendableArrayProto, "when", function(whatHappens){
-// 	if (whitelistedWhen.indexOf(whatHappens) === -1){
-// 		throw new Error("Cannot subscribe to " + whatHappens)
-// 	}
-// 	return new Promise(function(accept){
-// 		var once = events.watch(whatHappens, function(){
-// 			once()
-// 			accept()
-// 		})
-// 	})
-// })
-
-function forEveryElement(source, callback){
-	forEach(source, function(item){
-		callback(item)
-		forEveryElement(item.childNodes, callback)
-	})
-}
-
-function destroyListeners(elements){
-	forEveryElement(elements, function(ele){
-		ele.dispatchEvent(new CustomEvent(destroyEventName))
-	})
-}
-
-function groupBy(itemArray, propertyToGroupBy){
-	var groups = []
-	forEach(itemArray, function(node){
-		var nodeIndex = node[propertyToGroupBy]
-		groups[nodeIndex] = groups[nodeIndex] || []
-		groups[nodeIndex].push(node)
-	})
-	return groups
-}
-
-var destroyEventName = generateId(randomInt(32, 48))
-function initializeRepeater(model, mainModelVar, repeatBody, parentIndexDefiner){
-	// console.log(repeatBody)
-	var lengthSet = function(){
-		// the flow: because we know that the output list is always gonna be here while we dont know the current state of the element and if it has a parent at all, the best that we can do is to build the output list right and then remove all the elements form the parent element if there is one then stick the output list in after.
-		var elementsList = repeatBody.outputList
-		var insertBeforeIndex = elementsList.indexOf(repeatBody.insertBefore)
-		var insertAfterIndex = elementsList.indexOf(repeatBody.insertAfter)
-		var parent = repeatBody.insertBefore.parentNode
-		var currentGroups = groupBy(elementsList.slice(insertAfterIndex + 1, insertBeforeIndex), repeatBody.key)
-		var targetCount = repeatBody.source.length
-
-		if (currentGroups.length < targetCount){
-			var toAppend = document.createDocumentFragment()
-			while (currentGroups.length !== targetCount){
-				var bodyClones = repeatBody.elements.map(function(ele){
-					return ele.cloneNode(true)
-				})
-
-				var defineIndexKey = function(index, cloneEles) {
-					parentIndexDefiner(cloneEles)
-					forEveryElement(cloneEles, function(cloneEle){
-						Object.defineProperty(cloneEle, repeatBody.key, {
-							configurable: true,
-							enumerable: false,
-							get: function(){
-								return index
-							}
-						})
-					})
-				}.bind(this, currentGroups.length)
-				defineIndexKey(bodyClones)
-
-
-				transformList(arrayFrom(bodyClones), model, mainModelVar, defineIndexKey)
-				if (parent){
-					forEach(bodyClones, function(clone){
-						toAppend.appendChild(clone)
-					})
-				}
-				repeatBody.onClone && forEach(bodyClones, function(clone){
-					clone instanceof HTMLElement && repeatBody.onClone(clone)
-				})
-
-				// add to elements list and update where to insert
-				elementsList.splice.apply(elementsList, [insertBeforeIndex, 0].concat(bodyClones))
-				insertBeforeIndex += bodyClones.length
-				currentGroups.push(bodyClones)
-			}
-			parent.insertBefore(toAppend, repeatBody.insertBefore)
-		}
-		else if (currentGroups.length > targetCount){
-			while (currentGroups.length !== targetCount){
-				var setToRemove = currentGroups.pop()
-				forEach(setToRemove, function(node){
-					elementsList.splice(elementsList.indexOf(node), 1)
-					if (node.parentNode){
-						node.parentNode.removeChild(node)
-					}
-				})
-				destroyListeners(setToRemove)
-			}
-		}
-    }
-
-	return observe(function(){
-	    if (repeatBody.watcher){
-			callbackAdder = getSecretProps(repeatBody.source, secretAddWatcher)
-			callbackExecuter = getSecretProps(repeatBody.source, secretExecuteWatchers)
-	        return delete repeatBody.watcher // this is so we dont run the foreach script the first time since it's ran in the beginning
-	    }
-		var secretWatcher
-		var stubKey = function(){
-			return stubKey
-		}
-		stubKey.in = function(arr){
-			secretWatcher = getSecretProps(arr, secretAddWatcher)
-			if (!secretWatcher || !secretWatcher instanceof internalMethod){
-				throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root evaluating [" + repeatBody.insertAfter.textContent + "]")
-			}
-			repeatBody.source = arr
-		}
-		stubKey.end = function(){}
-		safeEval.call(repeatBody.insertAfter, repeatBody.insertAfter.textContent, {
-			key: stubKey
-		}, true)
-
-		callbackAdder = getSecretProps(repeatBody.source, secretAddWatcher)
-		callbackExecuter = getSecretProps(repeatBody.source, secretExecuteWatchers)
-	}, lengthSet)
-}
-
-function createDestroylistenerCallback(arrayOfFunctions){
-	var repeaterDestroyer = function(ev){
-		ev.stopPropagation()
-		forEach(arrayOfFunctions, function(fn){
-			fn()
-		})
-	}
-	return repeaterDestroyer
-}
-
-function proxyUI(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatIndexDefiner = function(){}){
-	if (isString(nodeOrNodeListOrHTML)){
-		var template = document.createElement("template")
-		template.innerHTML = nodeOrNodeListOrHTML.trim()
-		var parsedList = template.content.childNodes
-		return proxyUI(parsedList, model, propertyToDefine, parentRepeatIndexDefiner)
+var templateEl = document.createElement("template")
+function proxyUI(template, data, propName){
+	if (isString(template)){
+		templateEl.innerHTML = template.trim()
+		var parsedList = templateEl.content.childNodes
+		return proxyUI(parsedList, data, propName)
 	}
 
-	if (nodeOrNodeListOrHTML instanceof NodeList || (nodeOrNodeListOrHTML instanceof Array && nodeOrNodeListOrHTML.reduce(function(current, node){
+	if (template instanceof NodeList || (isArray(template) && template.reduce(function(current, node){
 		return current && node instanceof Node
 	}, true))){
-		return transformList(arrayFrom(nodeOrNodeListOrHTML), model, propertyToDefine, parentRepeatIndexDefiner)
+		var templateList = arrayFrom(template)
+		var unlinkCallback = transformList(templateList, data, propName)
+		return addOutputApi(templateList, unlinkCallback, data, propName)
 	}
 
-	if (nodeOrNodeListOrHTML instanceof Node){
-		return transformNode(nodeOrNodeListOrHTML, model, propertyToDefine, parentRepeatIndexDefiner)
+	if (template instanceof Node){
+		var unlinkCallback = transformNode(template, data, propName)
+		return addOutputApi([template], unlinkCallback, data, propName)
 	}
 }
 
-function transformList(elementList, model, propertyToDefine, parentRepeatIndexDefiner){
-	var repeatBody
-	var key = function(property){
-		if (repeatBody){
-			throw new Error("Improper usage of key(string).in(array): key(string) cannot be nested on the same level")
-		}
-		repeatBody = {
-			key: property
-		}
-		return key
-	}
-	key.in = function(array){
-		if (!repeatBody){
-			throw new Error("Improper usage of key(string).in(array): key(string) not called")
-		}
-		if (repeatBody.source){
-			throw new Error("Improper usage of key(string).in(array): in(array) called before key")
+function transformList(listToTransform, data, propName, initNodeCallback){
+	var withinForeach = false, unlinkCallback = [], initTasks = []
+	var startComment, endComment, repeatBody = []
+
+	for(var i = listToTransform.length - 1; i > -1; i--){
+		var keepable = true
+		var item = listToTransform[i]
+		if (withinForeach){
+			keepable = false
 		}
 
-		var secretWatcher = getSecretProps(array, secretAddWatcher)
-		if (!secretWatcher || !secretWatcher instanceof internalMethod){
-			throw new Error("Improper usage of key(string).in(array): in(array) is not provided with a proxified object of the same root")
+		if (item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("in:") === 0){
+			keepable = withinForeach = true
+			endComment = item
+		}
+		if (item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("key:") === 0){
+			keepable = true
+			withinForeach = false
+			startComment = item
+
+			var initRepeater = (function(startComment, endComment, repeatBody){
+				unlinkCallback.push(manageRepeater(startComment, endComment, repeatBody, listToTransform, data, propName, initNodeCallback))
+			}).bind(null, startComment, endComment, repeatBody)
+			initTasks.splice(initTasks.length - 1, 0, initRepeater)
+
+			startComment = endComment = undefined
+			repeatBody = []
 		}
 
-		repeatBody.watcher = secretWatcher
-		repeatBody.source = array
-		repeatBody.elements = []
-	}
-	key.end = function(onClone){
-		if (!repeatBody || !repeatBody.key || !repeatBody.elements || !repeatBody.elements.length){
-			throw new Error("Improper usage of key.end([onClone]): key(string).in(array) is not called properly prior to calling key.end([onClone])")
+		if (!keepable){
+			listToTransform.splice(i, 1) // exclude it from our transform list
+			item.parentNode && item.parentNode.removeChild(item)
+			repeatBody.unshift(item)
 		}
-
-		repeatBody.outputList = elementList
-		repeatBody.insertBefore = repeatBody.elements.pop() // we're going to use this comment as the place where we will be inserting all of our loopy stuff before
-		if (isFunction(onClone)){
-			repeatBody.onClone = onClone
+		else{
+			initTasks.push((function(item){
+				forEach(
+					transformNode(item, data, propName, initNodeCallback),
+					function(callback){
+						unlinkCallback.push(callback)
+					}
+				)
+			}).bind(null, item))
 		}
-
-		var elementsToExclude = repeatBody.elements
-
-		// first off, we're going to need to reset everything in these elements to it's default ground state
-		// destroyListeners(repeatBody.elements)
-
-		// we're doing this here so we can clean up the body so every element between the end and the start comment are empty s we know that they are next to each other and can set where we want to do our insertions later
-		for(var i = elementList.length - 1; i >= 0; i--){
-			if (elementsToExclude.indexOf(elementList[i]) !== -1){
-				var parentNode = elementList[i].parentNode
-				if (parentNode){
-					parentNode.removeChild(elementList[i])
-				}
-				elementList.splice(i, 1)
-			}
-		}
-		var beginningComment = repeatBody.insertAfter = repeatBody.insertBefore.previousSibling
-
-		var callbackDestroyer = createDestroylistenerCallback([
-			initializeRepeater(model, propertyToDefine, repeatBody, parentRepeatIndexDefiner),
-			function(){
-				beginningComment.removeEventListener(destroyEventName, callbackDestroyer)
-			}
-		])
-		beginningComment.addEventListener(destroyEventName, callbackDestroyer)
-
-		repeatBody = undefined // this is for back to back repeats in the same lare
 	}
 
-	// first time we go through and find the comments with our special "foreach: ..." in it and calling the key, key.in and key.end functions. after doing that those functions will extract all of those elements from the list cuz they need a clean template to work with then we can continue with the proper init opperations
-	forEach(arrayFrom(elementList), function(node){
-		repeatBody && repeatBody.elements && repeatBody.elements.push(node)
-		if (node instanceof Comment && node.textContent.trim().substr(0, 8).toLowerCase() === "foreach:"){
-			transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner)
-			safeEval.call(node, node.textContent, {
-				key: key
-			})
-			if (repeatBody && (!repeatBody.key || !repeatBody.elements)){
-				throw new Error("Improper usage of key(string).in(array): in(array) not called in conjunction with key")
-			}
-			else if (repeatBody && !repeatBody.insertAfter){
-				repeatBody.insertAfter = node
-			}
-		}
-	})
+	for(var i = initTasks.length - 1; i > -1; i--){
+		initTasks[i]()
+	}
 
-	// By the time we get here, the elementList already has what it needs to slice off sliced off. so we can get strait to inserting variables that we need to insert
-	forEach(elementList, function(node){
-		if (node[propertyToDefine] !== model){ // we use this if because some elements have it defined already (above) so we save more clock cycles :3
-			transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner)
-		}
-	})
-	return Object.setPrototypeOf(
-		elementList,
-		appendableArrayProto
-	)
+	return unlinkCallback
 }
 
-function transformNode(node, model, propertyToDefine, parentRepeatIndexDefiner){
+function manageRepeater(startComment, endComment, repeatBody, componentElements, data, propName, initNodeCallback){
 	var onDestroyCallbacks = []
+	var cloneGroups = []
+	var indexCommand = startComment.textContent.trim().slice(4)
+	var inCommand = endComment.textContent.trim().slice(3).trim()
+	var watchTarget = inCommand + ".len"
+	var indexProp = safeEval.call(startComment, indexCommand)
 
-	// step 1: define the data (or any other property for that matter) onto everything
-	Object.defineProperty(node, propertyToDefine, {
+	subscribeToDataLocation()
+
+	return function(){
+		forEach(cloneGroups, function(group){
+			group.unlink()
+		})
+		forEach(onDestroyCallbacks, function(callback){
+			callback()
+		})
+	}
+
+	function onSourceDataChange(updatedLength){
+		if (cloneGroups.length < updatedLength){
+			var numberToCreate = updatedLength - cloneGroups.length
+			if (!initNodeCallback){
+				initNodeCallback = function(node, data, propName){
+					return function(){}
+				}
+			}
+
+			for(var i = 0; i < numberToCreate; i++){
+				var newGroupItem = cloneNodes(repeatBody)
+				var destroyListeners = []
+
+				var attachIndex = (function(index, node, data, propName){
+					// call the pervious init callback with the same props
+					var undoInheritedInit = initNodeCallback(node, data, propName)
+
+					// add the index key
+					Object.defineProperty(node, indexProp, {
+						configurable: true,
+						get: function(){
+							return index
+						},
+					})
+
+					return function(){
+						undoInheritedInit()
+						delete node[indexProp]
+					}
+				}).bind(null, cloneGroups.length)
+
+				// link the new clones with the data prop
+				forEach(transformList(newGroupItem, data, propName, attachIndex), function(callback){
+					destroyListeners.push(callback)
+				})
+
+				// add the output api for our convenience
+				addOutputApi(newGroupItem, destroyListeners, data, propName)
+
+				// keep the cone group in or groups list cuz this makes it easy to add and remove entire groups of stuff
+				cloneGroups.push(newGroupItem)
+
+				// if the end node is a child of another node, append it
+				if (endComment.parentNode){
+					forEach(newGroupItem, function(node) {
+						endComment.parentNode.insertBefore(node, endComment)
+					})
+				}
+
+				// update the entire group's overall data list so the original data group can use their attach and detach methods effectively
+				var spliceLocation = componentElements.indexOf(endComment) - 1
+				var applyArray = newGroupItem.slice()
+				applyArray.unshift(0)
+				applyArray.unshift(spliceLocation)
+				Array.prototype.splice.apply(componentElements, applyArray)
+			}
+		}
+		else if (cloneGroups.length > updatedLength){
+			var tobeRemoved = cloneGroups.splice(updatedLength)
+			forEach(tobeRemoved, function(group){
+				group.unlink()
+				group.detach()
+				for(var i = componentElements.length - 1; i > -1; i--){
+					if (group.indexOf(componentElements[i]) !== -1){
+						componentElements.splice(i, 1)
+					}
+				}
+			})
+		}
+	}
+
+	var lastWatchDestroyCallback
+	function subscribeToDataLocation(){
+		if (lastWatchDestroyCallback){
+			var spliceIndex = onDestroyCallbacks.indexOf(lastWatchDestroyCallback)
+			onDestroyCallbacks.splice(spliceIndex, 1)
+		}
+		onDestroyCallbacks.push(lastWatchDestroyCallback = watch.call(endComment, data, watchTarget, onSourceDataChange, subscribeToDataLocation))
+	}
+}
+
+function cloneNodes(nodes){
+	return arrayFrom(nodes).map(function(node){
+		return node.cloneNode(true)
+	})
+}
+
+function attachNodeDataProp(node, data, propName){
+	Object.defineProperty(node, propName, {
 		configurable: true,
 		get: function(){
-			return model
+			return data
 		},
-		set: function(val){
-			if (isObject(val)){
-				softCopy(val, model)
-			}
-			return model
-		}
 	})
+}
+
+var unlinkSecretCode = generateId(randomInt(32, 48))
+function transformNode(node, data, propName, initNodeCallback){
+	var onDestroyCallbacks = []
+
+	attachNodeDataProp(node, data, propName)
+
 	onDestroyCallbacks.push(function(){
-		delete node[propertyToDefine]
+		delete node[propName]
 	})
 
-	// step 2: set up continious rendering for everything that's a text element
+	if (initNodeCallback){
+		var undoInitCallback = initNodeCallback(node, data, propName)
+		onDestroyCallbacks.push(undoInitCallback)
+	}
+
 	if (node instanceof CharacterData){
-		var stopSyntaxRender = renderCustomSyntax(node, node, propertyToDefine)
+		var stopSyntaxRender = continiousSyntaxRender(node, node, propName)
 		stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
 	}
 	else {
-		transformList(arrayFrom(node.childNodes), model, propertyToDefine, parentRepeatIndexDefiner)
+		// console.log(node.attributes)
+		var attributes = node.attributes
+		forEach(arrayFrom(attributes), function(attribute){
+			// console.log(attribute)
+			var stopSyntaxRender = continiousSyntaxRender(attribute, node, propName)
+			stopSyntaxRender && onDestroyCallbacks.push(stopSyntaxRender)
+		})
+		forEach(
+			transformList(arrayFrom(node.childNodes), data, propName, initNodeCallback),
+			function(callback){
+				onDestroyCallbacks.push(callback)
+			}
+		)
 	}
 
-	// step 3: set up continious rendering for element properties but also link the names of items to the model
-	forEach(node.attributes, function(attr){
-		// we do this for everything because we want this to also be the case for stuff inside name
-		var stopPropertyRendering = renderCustomSyntax(attr, node, propertyToDefine)
-		stopPropertyRendering && onDestroyCallbacks.push(stopPropertyRendering)
+	return onDestroyCallbacks
+}
 
-		if (
-			attr.name !== "name" || (
-				node.nodeName !== "INPUT" &
-				node.nodeName !== "TEXTAREA" &
-				node.nodeName !== "SELECT"
-			)
-		){
+// ok here we have all the other support functions that does stuff important but the main 3 is above
+
+// This is the function that adds the additional properties to the output
+function addOutputApi(transformedList, unlinkCallbackList, data, propName){
+	define(transformedList, propName, data)
+	define(transformedList, "appendTo", appendTo)
+	define(transformedList, "detach", detach)
+	define(transformedList, "unlink", function(){
+		for(var i = 0; i < unlinkCallbackList.length; i++){
+			unlinkCallbackList[i]()
+		}
+	})
+	return transformedList
+}
+
+	// these are the methods that are used by the addOutputApi method to the array object.
+	function appendTo(selectorOrElement){
+		// if a selector is provided querySelect the element and append to it
+		if (isString(selectorOrElement)){
+			return appendTo.call(this, document.querySelector(selectorOrElement))
+		}
+
+		var target = selectorOrElement
+		forEach(this, function(node){
+			target.appendChild(node)
+		})
+		return this
+	}
+
+	function detach(){
+		forEach(this, function(node){
+			var parent = node.parentElement
+			parent && parent.removeChild(node)
+		})
+
+		return this
+	}
+
+// this function is responsible for rendering our handlebars and watching the paths that needs to be watched
+function continiousSyntaxRender(textSource, node, propName){
+	var text = textSource.textContent
+	// console.log(text, textSource, node, propName)
+
+	// split the string by "{:" and ":}" and sort them into code segments and text segments
+	var clusters = []
+	forEach(text.split("{:"), function(chunk, index){
+		forEach(chunk.split(":}"), function(subChunk, subIndex){
+			clusters.push({
+				text: subChunk,
+				code: !subIndex && !!index
+			})
+		})
+	})
+
+	// move the watchers into the code that they belong with
+	forEach(clusters, function(chunk, index){
+		if (chunk.text.length > 2 && chunk.text[0] === "|" && chunk.text[1] === "{"){
+			var endWatchSyntax =  chunk.text.indexOf("}|")
+			var watchSyntax = chunk.text.slice(1, endWatchSyntax + 1)
+			chunk.text = chunk.text.slice(endWatchSyntax + 2)
+			clusters[index - 1].watching = watchSyntax.split(",").map(function(str){
+				return str.trim().slice(1, -1)
+			}).filter(function(item){
+				return item
+			})
+		}
+	})
+
+	clusters = clusters.filter(function(chunk){
+		return chunk.text || chunk.code
+	})
+
+	// render the code that doesn't have watchers
+	var onDestroyCallbacks = []
+	forEach(clusters, function(chunk){
+		if (!chunk.code){
+			chunk.val = chunk.text
+		}
+		else{
+			if (!chunk.watching){
+				chunk.val = safeEval.call(node, chunk.text)
+			}
+			else{
+				// observer the property that is to be watched
+				function updateChunkVal(){
+					chunk.val = safeEval.call(node, chunk.text)
+					renderString(textSource, clusters)
+				}
+				forEach(chunk.watching, function(prop){
+					var lastWatchDestroyCallback
+					function resubscribe(){
+						if (lastWatchDestroyCallback){
+							var spliceIndex = onDestroyCallbacks.indexOf(lastWatchDestroyCallback)
+							onDestroyCallbacks.splice(spliceIndex)
+						}
+						onDestroyCallbacks.push(lastWatchDestroyCallback = watch.call(node, node[propName], prop.trim(), updateChunkVal, resubscribe))
+					}
+					resubscribe()
+				})
+			}
+		}
+	})
+
+	renderString(textSource, clusters)
+
+	if (onDestroyCallbacks.length){
+		return function(){
+			forEach(onDestroyCallbacks, function(callback){
+				callback()
+			})
+		}
+	}
+
+	// console.log(clusters)
+}
+
+function renderString(textSource, clusters){
+	var propValue = ""
+	forEach(clusters, function(chunk){
+		if (chunk.val === undefined){
 			return
 		}
-
-		// we are gonna get rid of del listeners cuz they cause more trouble than they're worth. instead the only 2 events that will be emmited by the data object is set and remap. since remap wild find the last/next item on resolve anyways, we need to handle that that here.
-		// the different situations we expect is
-
-		// getting a payload with a matching value => update
-		// getting a payload with unmatching values => clear (eg we get a proxy object instead of a number)
-		// getting no payload => clear
-
-		// this is the default setter and deleter for this property that we'll use if it's not overwritten in the if statements below
-		var setListener = function(){
-			// toString is for incase we get an object here for some reason which will happen when we initialize the whole process and when we do that at least the toString method of proxied objects is going to return "" if it's empty
-			try {
-				createMode = true
-				var payloadString = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
-				createMode = false
-				if (payloadString !== node.value){
-					node.value = payloadString
-				}
-			}
-			catch(o3o){ // this means the payload must be undefined or null
-				node.value = null
-				createMode = false
-			}
-		}
-		var uiDataVal = "value"
-
-		var nodeTypeLowercase = node.type.toLowerCase()
-		if (
-			nodeTypeLowercase === "number" ||
-			nodeTypeLowercase === "range"
-		){
-			uiDataVal = "valueAsNumber"
-			setListener = function(){
-				try{
-					createMode = true
-					var payloadNum = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
-					createMode = false
-					if (isNumber(payloadNum) && payloadNum !== node.valueAsNumber){
-						node.valueAsNumber = payloadNum
-					}
-					else if (payloadNum !== node.valueAsNumber){
-						node.value = null
-					}
-				}
-				catch(o3o){
-					node.value = null
-					createMode = false
-				}
-			}
-		}
-		else if (nodeTypeLowercase === "checkbox"){
-			uiDataVal = "checked"
-			setListener = function(){
-				try{
-					createMode = true
-					var payloadBool = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
-					createMode = false
-
-					if (isBool(payloadBool) && payloadBool !== node.checked){
-						node.checked = payloadBool
-					}
-					else if (payloadBool !== node.checked) {
-						node.checked = false
-					}
-				}
-				catch(o3o){
-					node.checked = false
-					createMode = false
-				}
-			}
-		}
-		else if (nodeTypeLowercase === "radio"){
-			setListener = function(){
-				try{
-					createMode = true
-					var payloadString = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
-					createMode = false
-
-
-					if (node.value === payloadString && !node.checked) {
-						node.checked = true
-					}
-					else if (node.value !== payloadString && node.checked){
-						node.checked = false
-					}
-				}
-				catch(o3o){
-					node.checked = false
-					createMode = false
-				}
-			}
-		}
-		else if (
-			nodeTypeLowercase === "date" ||
-			nodeTypeLowercase === "month" ||
-			nodeTypeLowercase === "week" ||
-			nodeTypeLowercase === "time" ||
-			nodeTypeLowercase === "datetime-local"
-		){
-			uiDataVal = "valueAsDate"
-			setListener = function(){
-				try{
-					createMode = true
-					var payloadDate = safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value, {}, true)
-					createMode = false
-
-					if (payloadDate instanceof Date && payloadDate.getTime() !== node.valueAsDate.getTime()){
-						node.valueAsDate = payloadDate
-					}
-					else if (!(payloadDate instanceof Date)) {
-						node.value = null
-					}
-				}
-				catch(o3o){
-					node.value = null
-					createMode = false
-				}
-			}
-		}
-
-		// setListener.to = "set"
-
-		onDestroyCallbacks.push(
-			observe(function(){
-				createMode = true
-				safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value)
-				createMode = false
-			}, [
-				{
-					to: "del",
-					fn: setListener
-				},
-				{
-					to: "set",
-					fn: setListener
-				}
-			])
-		)
-
-		var changeListeners = ["change", "keyup", "click"]
-		var onChange = function(ev){
-			var secretValue = generateId(randomInt(32, 48))
-			safeEval.call(node, "this." + propertyToDefine + evalScriptConcatinator(attr.value) + attr.value + " = " + secretValue, {
-				[secretValue]: node[uiDataVal]
-			})
-		}
-
-		forEach(changeListeners, function(listenTo){
-			node.addEventListener(listenTo, onChange)
-		})
-		onDestroyCallbacks.push(function(){
-			forEach(changeListeners, function(listenTo){
-				node.removeEventListener(listenTo, onChange)
-			})
-		})
+		propValue += chunk.val
 	})
 
-	onDestroyCallbacks.push(function(){
-		node.removeEventListener(destroyEventName, destroyListener)
-	})
-	var destroyListener = createDestroylistenerCallback(onDestroyCallbacks)
+	textSource.textContent = propValue
 
-	node.addEventListener(destroyEventName, destroyListener)
+	if (textSource instanceof Attr){
+		var ownerElement = textSource.ownerElement
+		if (textSource.name.slice(0, 5) !== "data-"){
+			return
+		}
+		var attributeName = textSource.name.slice(5)
 
-
-	return Object.setPrototypeOf([node], appendableArrayProto)
+		attributeName in ownerElement && (ownerElement[attributeName] = propValue)
+	}
 }

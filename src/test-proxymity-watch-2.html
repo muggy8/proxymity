@@ -1,0 +1,50 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+		<script src="proxymity-util.js"></script>
+		<script src="on-next-event-cycle.js"></script>
+		<script src="proxymity-watch-2.js"></script>
+	</head>
+	<body>
+		<script>
+			var l = new LinkedList()
+			l.push({foo: "foo"})
+			l.push({foo: "bar"})
+			l.push({foo: "baz"})
+
+			// stubbing safeEval for now
+			var safeEval = function(s, sv = {}, t = false){
+				try {
+					with(sv){
+						return eval(s)
+					}
+				}
+				catch(o3o){
+					if (!t){
+						console.error("failed to evaluate expression [" + s + "]", this, o3o)
+						return ""
+					}
+					else {
+						throw o3o
+					}
+				}
+			}
+
+			var obj = {}
+			var unwatchObj
+			var beginWatching = () => console.log("rewatching") + (unwatchObj = watch(obj, "foo.bar", console.log, beginWatching))
+			beginWatching()
+			// obj.foo.bar = 19
+			// obj.foo = {bar: 66}
+			//
+			// console.log(obj)
+			//
+			console.log('testing array')
+			var arr = []
+			watch(arr, 'len', console.log)
+			watch(arr, 'length', console.warn)
+			arr.push({})
+			// console.log(arr)
+		</script>
+	</body>
+</html>
