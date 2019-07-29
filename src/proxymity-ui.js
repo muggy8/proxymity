@@ -93,6 +93,7 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 	}
 
 	function onSourceDataChange(updatedLength){
+		console.log("new length", updatedLength)
 		if (cloneGroups.length < updatedLength){
 			var numberToCreate = updatedLength - cloneGroups.length
 			if (!initNodeCallback){
@@ -152,6 +153,7 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 		else if (cloneGroups.length > updatedLength){
 			let tobeRemoved = cloneGroups.splice(updatedLength)
 			forEach(tobeRemoved, function(group){
+				console.log("removing group", group)
 				group.unlink()
 				group.detach()
 				for(var i = componentElements.length - 1; i > -1; i--){

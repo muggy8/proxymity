@@ -24,7 +24,13 @@ function watch(source, path, onchange, ondelete = function(){}){
 		}
 		location = location + (location ? " -> " + key : key)
 
-		var descriptor = Object.getOwnPropertyDescriptor(source, key)
+		try{
+			var descriptor = Object.getOwnPropertyDescriptor(source, key)
+		}
+		catch(uwu){
+			console.log(location, source, path, pathsStrings)
+			throw uwu
+		}
 
 		// if the property doesn't exist we can create it here
 		if (typeof descriptor === "undefined"){
@@ -115,12 +121,7 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 					})
 
 					var oldVal = value
-					value = newValue
-					overrideArrayFunctions(value)
-					console.log(oldVal)
-					if (isArray(oldVal) && hasProp(oldVal, "len")){
-						oldVal.len = undefined
-					}
+					overrideArrayFunctions(value = newValue)
 					deleteChildrenRecursive(oldVal)
 				}
 				return value
@@ -133,8 +134,13 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 
 function deleteChildrenRecursive(value){
 	if (isObject(value)){
-		forEach(Object.getOwnPropertyNames(value), function(name){
+		if (isArray(value) && hasProp(value, "len")){
+			value.len = undefined
+		}
+		console.log("deleteChildrenRecursive", value, Object.keys(value))
+		forEach(Object.keys(value), function(name){
 			var descriptor = Object.getOwnPropertyDescriptor(value, name)
+			console.log("deleting", name, isInternalDescriptor(descriptor))
 			if (isInternalDescriptor(descriptor)){
 				value[name] = undefined
 			}
