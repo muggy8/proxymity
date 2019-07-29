@@ -57,3 +57,6 @@ Becomes
 ```javascript
 var unwatch = proxymity.watch(data, path, callbnck)
 ```
+
+## Proxymity.convert
+this function no longer exists as watching props is done differently now
