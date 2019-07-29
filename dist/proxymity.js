@@ -195,12 +195,12 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 	return onNextEventCycle
 })()
 
-// src/proxymity-watch.js
+// src/proxymity-watch-2.js
 function hasProp(obj, prop){
 	return Object.prototype.hasOwnProperty.call(obj, prop)
 }
 
-function watch(source, path, callback){
+function watch(source, path, onchange, ondelete = function(){}){
 	var context = this || {}
 	var pathsToEval = splitPath(path)
 	var pathsStrings = []
@@ -208,20 +208,16 @@ function watch(source, path, callback){
 		pathsStrings.push(safeEval.call(context, pathString))
 	})
 
-	// alright now we have the paths we need we need to do some stuff with it. first off if the path isn't already set up, we need to set up the paths. There's a few different ways we can go about it.
 
-	// if it's not a path, we can create it
+	// now we have the path from the source to the target prop figured out. all we have to do now is to follow the path and replace any non-internal descriptors with internal descriptor and if it doesn't exist, initialize it as {}. once we get to the final descriptor we can add the watch props onto it and just wait for it to change
 
-	// if the path is an actual property we will try to replace it with our getter and setter, which will result in the same value. This will not work for some objects and some props namely native props on javascript native objects
-
-	// if the path exists already and is a getter / setter that we defined, all we have to do is to add the callback to it or continue from it.
-
-	// finally, we just have to repeat the above 3 steps over and over until we get to where we need to be
-
-	var propertyDescriptor
-	var location = ""
+	var propertyDescriptor // the thing we try to find and attach our listeners to
+	var location = "" // for debugging
 	forEach(pathsStrings, function(key){
-		if (key === 'len'){
+		if (key === "length" && isArray(source)){
+			key = "len"
+		}
+		if (key === "len"){
 			overrideArrayFunctions(source)
 		}
 		location = location + (location ? " -> " + key : key)
@@ -247,140 +243,97 @@ function watch(source, path, callback){
 		}
 
 		source = source[key]
+
 	})
-	var wrappedCallback = function(){
+
+	return propertyDescriptor.get(safeOnchange, safeOndelete)
+
+	function safeOnchange(){
 		var args = Array.prototype.slice.call(arguments)
-		return callback.apply(this, args)
+		return onchange.apply(context, args)
 	}
-	return propertyDescriptor.get(wrappedCallback)
+	function safeOndelete(){
+		var args = Array.prototype.slice.call(arguments)
+		return ondelete.apply(context, args)
+	}
 }
 
 function isInternalDescriptor(descriptor){
-	return descriptor && descriptor.get && descriptor.get.length && descriptor.set && descriptor.set.length > 1
+	return descriptor && descriptor.get && descriptor.get.length === 2 && descriptor.set && descriptor.set.length === 1
 }
 
 function createWatchableProp(obj, prop, value = {}, config = {}){
-	var callbacks = []
+	var callbackSet = new LinkedList()
 	var descriptor
 	overrideArrayFunctions(value)
 
+	// the scope of this function is where the value of the properties are stored. in here we can also watch for state changes via the getters and setters allowing us to update the view when the view updates as we can detect it with this pair of getters and setters.
 	Object.defineProperty(obj, prop, descriptor = {
 		enumerable: hasProp(config, "enumerable") ? config.enumerable : true,
 		configurable: hasProp(config, "configurable") ? config.configurable : true,
-		get: function(addedCallback){ // this is called this way when the method is being called by the watch function from the property descriptor function
-			if (addedCallback){
-				var alreadyExists = callbacks.some(function(item){
-					return item.exe === addedCallback
+		get: function(onChangeCallack, onDeleteCallback){
+			// the getter function serves double duty. since the getter function is declared here, it has access to the scope of the parent function and also leaves no major residue or attack surface for people to get into the internals of this library, it's unlikely that someone is able to gain access to many of the secrets of the internals of the library at run time through this function. However because this function can be called normally outside of just using assignments, we are able to have this function serve double duty as the entry point to add callbacks to the watch method as well as being the getter under normal query and assignment operations.
+
+			if (onChangeCallack && onDeleteCallback){
+				var link = callbackSet.find(function(item){
+					return item.set === onChangeCallack && item.del === onDeleteCallback
 				})
-				if (alreadyExists){
-					return function(){}
-				}
 
-				// we are doing this to create a simple linked list because executing the list of callbacks is much easier with a linked list while it is being potentially modified during each call to the list. and it seems that when combining a linked list and array together is pretty good for actually being kind of efficient as far as accessing data and writing data goes
-				// var item = function(updated, previous){
-				// 	// here we are trying to prevent updates to things where the value is change to something else then changed back to normal from causing a re-render
-				// 	if (value !== updated){
-				// 		// by now it's the update step so the values should match and we want to only execute the last item in the list to execute
-				// 		// return
-				// 	}
-				// 	addedCallback(updated, previous)
-				// }
-				var item = {exe: addedCallback}
+				!link && (link = callbackSet.push({
+					set: onChangeCallack,
+					del: onDeleteCallback
+				}))
 
-				var previousItem = callbacks[callbacks.length - 1]
-				if (previousItem){
-					previousItem.next = item
-					item.previous = previousItem
-				}
-				callbacks.push(item)
+				onChangeCallack(value, null)
 
-				// we want to return the unwatch function here instead of the value
-				return function(){
-					callbacks.splice(callbacks.indexOf(item), 1)
-					if (item.next){
-						item.next.pervious = item.previous
-					}
-					if (item.previous){
-						item.previous.next = item.next
-					}
-					item.unwatch && item.unwatch()
-				}
+				return link.drop
 			}
-			else {
+			return value
+		},
+		set: function(newValue){
+			if (typeof newValue === "undefined"){
+				// attempting to delete this prop we should call the del callback of all watchers attached to this item
+				delete obj[prop]
+
+				callbackSet.each(function(set){
+					set.del()
+					set.drop()
+				})
+
+				deleteChildrenRecursive(value)
+			}
+			else{
+				// updated the stuff lets call all the set callbacks
+				if (newValue !== value){
+					callbackSet.each(function(chainLink){
+						onNextEventCycle(chainLink.set, newValue, value)
+					})
+
+					var oldVal = value
+					overrideArrayFunctions(value = newValue)
+					deleteChildrenRecursive(oldVal)
+				}
 				return value
 			}
-		},
-		set: function(val, replacementsDescriptor){
-			var beforeValue = value
-			if (beforeValue === val){ // lets not waste clock cycles calculating stuff we know didn't change
-				return val
-			}
-
-			// someone is trying to delete this value
-			if (typeof val === "undefined"){
-
-				// this is the special case and this must be called with the intent to delete as such we will not delete and continue to keep things around
-				if (replacementsDescriptor){
-					forEach(callbacks, function(item){
-						item.unwatch = replacementsDescriptor.get(item.exe)
-					})
-					for(var current = callbacks[0]; current; current = current.next){
-						onNextEventCycle(current.exe, replacementsDescriptor, value)
-					}
-					return // prevent the actual deletion
-				}
-				return // do the actual deletion here
-			}
-
-			overrideArrayFunctions(value = val)
-
-			// if the the before val is an object, we need to do the
-			if (isObject(beforeValue) && isObject(value)){
-				migrateChildPropertyListeners(beforeValue, value)
-			}
-
-			// after we did all the crazy stuff we did, we can now call all the callbacks that needs to be called
-			for(var current = callbacks[0]; current; current = current.next){
-				onNextEventCycle(current.exe, val, beforeValue)
-			}
-		},
+		}
 	})
 
 	return descriptor
 }
 
-function migrateChildPropertyListeners(beforeValue, afterValue){
-	var beforeKeys = Object.getOwnPropertyNames(beforeValue)
-	forEach(beforeKeys, function(beforeKey){
-		var beforeDescriptor = Object.getOwnPropertyDescriptor(beforeValue, beforeKey)
-		var afterDescriptor =  Object.getOwnPropertyDescriptor(afterValue, beforeKey)
-		var beforeIsInternal = isInternalDescriptor(beforeDescriptor)
-		var afterIsInternal = isInternalDescriptor(afterDescriptor)
-
-		if (beforeIsInternal && !afterIsInternal){
-			var referencedValue = afterValue[beforeKey]
-			if (typeof referencedValue === "undefined"){
-				if (isArray(beforeValue) && isArray(afterValue)){
-					return // if replacing an array with another array, we dont want any of the sub array properties to carry over to ones that dont have stuff so we return here to prevent that
-				}
-				referencedValue = {}
+function deleteChildrenRecursive(value){
+	if (isObject(value)){
+		if (isArray(value) && hasProp(value, "len")){
+			value.len = undefined
+		}
+		forEach(Object.keys(value), function(name){
+			var descriptor = Object.getOwnPropertyDescriptor(value, name)
+			if (isInternalDescriptor(descriptor)){
+				value[name] = undefined
 			}
-			delete afterValue[beforeKey]
-			var newAfterDescriptor = createWatchableProp(afterValue, beforeKey, referencedValue)
-
-			beforeDescriptor.set(undefined, newAfterDescriptor)
-
-			migrateChildPropertyListeners(beforeValue[beforeKey], afterValue[beforeKey])
-		}
-		else if (beforeIsInternal && afterIsInternal){
-			console.log("both are internal")
-			beforeDescriptor.set(undefined, afterDescriptor)
-
-			migrateChildPropertyListeners(beforeValue[beforeKey], afterValue[beforeKey])
-		}
-	})
+		})
+	}
 }
-
 
 var replacementFunctions = {}
 forEach(Object.getOwnPropertyNames(Array.prototype), function(prop){
@@ -404,6 +357,68 @@ function overrideArrayFunctions(arr){
 		var fn = replacementFunctions[prop]
 		define(arr, prop, fn)
 	})
+}
+
+
+function LinkedList(){
+	var context = this
+	context.first = null
+	context.last = null
+	context.length = 0
+}
+LinkedList.prototype = {
+	push: function(payload){
+		var context = this
+		var item = new LinkedItem(payload, context)
+		item.prev = context.last
+		context.last && (context.last.next = item)
+		context.last = item
+		!context.first && (context.first = item)
+		context.length++
+		return item
+	},
+	each: function(callback){
+		var current = this.first
+		while(current){
+			callback(current)
+			current = current.next
+		}
+	},
+	find: function(callback){
+		var current = this.first
+		var index = 0
+		var found = null
+		while(current && !found){
+			var hasFound = callback(current, index)
+			index++
+			hasFound && (found = current)
+			current = current.next
+		}
+		return found
+	}
+}
+
+function LinkedItem(payload, belongsTo){
+	var context = this
+	Object.assign(context, payload)
+	context.prev = null
+	context.next = null
+	context.drop = function(){
+		dropLinkedItem(context, belongsTo)
+	}
+}
+function dropLinkedItem(item, belongsTo){
+	var hasChanged = false
+	item.prev && item.prev.next === item && ((item.prev.next = item.next) + (hasChanged = true))
+	item.next && item.next.prev === item && ((item.next.prev = item.prev) + (hasChanged = true))
+
+	if (!hasChanged && !(belongsTo.length === 1 && belongsTo.first === item && belongsTo.last === item)){
+		return
+	}
+	belongsTo.first === item && (belongsTo.first = item.next)
+	belongsTo.last === item && (belongsTo.last = item.prev)
+	belongsTo.length--
+
 }
 
 // src/proxymity-ui.js
@@ -490,9 +505,7 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 	var watchTarget = inCommand + ".len"
 	var indexProp = safeEval.call(startComment, indexCommand)
 
-	onDestroyCallbacks.push(watch.call(endComment, data, watchTarget, onSourceDataChange))
-	var userList = safeEval.call(endComment, "data." + inCommand, {data: data})
-	onSourceDataChange(userList.length)
+	subscribeToDataLocation()
 
 	return function(){
 		forEach(cloneGroups, function(group){
@@ -572,6 +585,15 @@ function manageRepeater(startComment, endComment, repeatBody, componentElements,
 				}
 			})
 		}
+	}
+
+	var lastWatchDestroyCallback
+	function subscribeToDataLocation(){
+		if (lastWatchDestroyCallback){
+			var spliceIndex = onDestroyCallbacks.indexOf(lastWatchDestroyCallback)
+			onDestroyCallbacks.splice(spliceIndex, 1)
+		}
+		onDestroyCallbacks.push(lastWatchDestroyCallback = watch.call(endComment, data, watchTarget, onSourceDataChange, subscribeToDataLocation))
 	}
 }
 
@@ -717,10 +739,16 @@ function continiousSyntaxRender(textSource, node, propName){
 					renderString(textSource, clusters)
 				}
 				forEach(chunk.watching, function(prop){
-					// console.log(node[propName], prop)
-					onDestroyCallbacks.push(watch.call(node, node[propName], prop.trim(), updateChunkVal))
+					var lastWatchDestroyCallback
+					function resubscribe(){
+						if (lastWatchDestroyCallback){
+							var spliceIndex = onDestroyCallbacks.indexOf(lastWatchDestroyCallback)
+							onDestroyCallbacks.splice(spliceIndex)
+						}
+						onDestroyCallbacks.push(lastWatchDestroyCallback = watch.call(node, node[propName], prop.trim(), updateChunkVal, resubscribe))
+					}
+					resubscribe()
 				})
-				updateChunkVal()
 			}
 		}
 	})
