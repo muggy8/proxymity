@@ -24,13 +24,7 @@ function watch(source, path, onchange, ondelete = function(){}){
 		}
 		location = location + (location ? " -> " + key : key)
 
-		try{
-			var descriptor = Object.getOwnPropertyDescriptor(source, key)
-		}
-		catch(uwu){
-			console.log(location, source, path, pathsStrings)
-			throw uwu
-		}
+		var descriptor = Object.getOwnPropertyDescriptor(source, key)
 
 		// if the property doesn't exist we can create it here
 		if (typeof descriptor === "undefined"){
@@ -83,7 +77,6 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 			// the getter function serves double duty. since the getter function is declared here, it has access to the scope of the parent function and also leaves no major residue or attack surface for people to get into the internals of this library, it's unlikely that someone is able to gain access to many of the secrets of the internals of the library at run time through this function. However because this function can be called normally outside of just using assignments, we are able to have this function serve double duty as the entry point to add callbacks to the watch method as well as being the getter under normal query and assignment operations.
 
 			if (onChangeCallack && onDeleteCallback){
-				console.log("add cb on", obj, prop)
 				var link = callbackSet.find(function(item){
 					return item.set === onChangeCallack && item.del === onDeleteCallback
 				})
@@ -101,7 +94,6 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 		},
 		set: function(newValue){
 			if (typeof newValue === "undefined"){
-				console.log("del", obj, prop)
 				// attempting to delete this prop we should call the del callback of all watchers attached to this item
 				delete obj[prop]
 
@@ -115,7 +107,6 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 			else{
 				// updated the stuff lets call all the set callbacks
 				if (newValue !== value){
-					console.log("set", obj, prop)
 					callbackSet.each(function(chainLink){
 						onNextEventCycle(chainLink.set, newValue, value)
 					})
@@ -137,10 +128,8 @@ function deleteChildrenRecursive(value){
 		if (isArray(value) && hasProp(value, "len")){
 			value.len = undefined
 		}
-		console.log("deleteChildrenRecursive", value, Object.keys(value))
 		forEach(Object.keys(value), function(name){
 			var descriptor = Object.getOwnPropertyDescriptor(value, name)
-			console.log("deleting", name, isInternalDescriptor(descriptor))
 			if (isInternalDescriptor(descriptor)){
 				value[name] = undefined
 			}
