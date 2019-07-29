@@ -1,6 +1,7 @@
 # Proxymity Documentations
 Welcome to the Proxymity Documentations where you will find out how to use the vary small set yet powerful of features within proxymity to assist in building your app. This page we will guide you through the design and thought process that went into creating this library. If you are looking for the the API Documentations for any of the public API for any of proxymity's main features, feel free to check out any of the following pages
 - [Upgrading to 2.x.x](upgrade.md)
+- [Quickstart](../readme.md#quickstart)
 - [Proxymity global function](proxymity.md)
 - [Proxymity templates API](template-api.md)
 - [Proxymity render cycle](render-cycle.md)
@@ -18,6 +19,7 @@ To accomplish the goal of making everything simple and small, Proxymity attempts
 - rely on native js as much as possible
 - expose as small of a public api as possible
 - has no other dependencies
+- only use new es6 features that can be polyfilled
 
 ## Short comings
 Because of the design philosophy driven goals, this results in proxymity having some shortcomings that you must be aware of when using it.

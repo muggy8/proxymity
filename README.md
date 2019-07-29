@@ -1,9 +1,8 @@
 # About
-Proxymity is a 2 way data binding library with the aim to keep everything as simple and close to vanilla javascript and html as possible. Because it's a library and not a framework, you are in control the whole way through.
+Proxymity is a 1 way data binding library with the aim to keep everything as simple and close to vanilla javascript and html as possible. Because it's a library and not a framework, you are in control the whole way through.
 
-## Basic Usage
+## Quickstart
 
-[Edit on Plunker](https://plnkr.co/edit/eBmp81IgHzK9eGAP0ghT?p=preview)
 
 #### script.js
 ```javascript
@@ -32,13 +31,13 @@ controller.fibonacci = function(n){
 		</style>
 	</head>
 
-	<body class="{:void this :}">
+	<body class="{: void this :}">
 		<h1>Welcome {:this.controller.user.name:}|{user.name}|</h1>
 		<div>
-			name: <input type="text" name="user.name">
+			name: <input type="text" onkeyup="this.controller.user.name = this.value" data-value="{:this.controller.user.name:}|{user.name}|">
 		</div>
 		<div>
-			age: <input type="number" name="user.age">
+			age: <input type="number" onkeyup="this.controller.user.age = this.valueAsNumber" data-value="{:this.controller.user.age:}|{user.age}|">
 		</div>
 		<p>
 			The Fibonacci number associated with your age is {:this.controller.fibonacci(parseInt(this.controller.user.age)):}|{user.age}|
@@ -67,23 +66,23 @@ The script tag is pretty self explanatory, you may be wondering why we have a se
 
 ### Body
 ```html
-<body class="{:void this :}">
+<body class="{: void this :}">
 	...
 </body>
 ```
 
-The body element is the first instance of when we see how we render out data from our controller to the view. the syntax for this is {: code :} and in this case the code that we are running is "void this " which runs in the global scope with `this` being a reference of the current element that the code is attached to. This means that you can call any method/variable that you'd normally be able to call from the global scope
+The body element is the first instance of when we see how we render out data from our controller to the view. the syntax for this is {: code :} and in this case the code that we are running is " void this " which runs in the global scope with `this` being a reference of the current element that the code is attached to. This means that you can call any method/variable that you'd normally be able to call from the global scope
 
-When the code gets executed the whole part will get replaced but until then, as far as the html parser is concerned, the body element has a class of "{:void", "this", and ":}" meaning we can take advantage of it
+When the code gets executed the whole part will get replaced but until then, as far as the html parser is concerned, the body element has a class of "{:", "void", "this", and ":}" meaning we can take advantage of it
 
 ### Body Continued
 ```html
 <h1>Welcome {:this.controller.user.name:}|{user.name}|</h1>
 <div>
-	name: <input type="text" name="user.name">
+	name: <input type="text" onkeyup="this.controller.user.name = this.value" data-value="{:this.controller.user.name:}|{user.name}|">
 </div>
 <div>
-	age: <input type="number" name="user.age">
+	age: <input type="number" onkeyup="this.controller.user.age = this.valueAsNumber" data-value="{:this.controller.user.age:}|{user.age}|">
 </div>
 <p>
 	The Fibonacci number associated with your age is {:this.controller.fibonacci(parseInt(this.controller.user.age)):}|{user.age}|
@@ -92,7 +91,7 @@ When the code gets executed the whole part will get replaced but until then, as 
 
 Here we see the data binding in action. The name of each input element on the input is also used to denote where on the controller object the item should look for. Because it can only be connected to the controller object, we do not need to define `this.controller` on it.
 
-You may also be noticing that the binding syntax is slightly different that there's 2 chunks. the first chunk that's wrapped inside `{: ... :}`. This chunk is the chunk that you execute. The next chunk is the chunk that is wrapped inside `|{ ... }|` which is the chunk that watches a specific path for changes. This path always starts at the root so you do not need to include `this.controller` in it. It specifies that the code within `{: ... :}` should be updated when a change to `|{ ... }|` happens.
+You may also be noticing that the binding syntax is slightly different that there's 2 chunks. the first chunk that's wrapped inside `{: ... :}`. This chunk is the chunk that you execute. The next chunk is the chunk that is wrapped inside `|{ ... }|` which is the chunk that watches a specific path for changes. This path always starts at the root so you do not need to include `this.controller` in it. It specifies that the code within `{: ... :}` should be reran when a change to `|{ ... }|` happens.
 
 However none of this actually works unless the body gets initialized.
 
