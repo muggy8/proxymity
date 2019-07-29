@@ -7,7 +7,7 @@
 
 The proxymity() function (all lower case) is the only export and only publicly accessible property that proxymity.min.js provides. The function returns an array of HTML elements. This list of elements is also the list that Proxymity will use to keep track of any repeating elements if there are any on the current level. You can have as many root element within the template as you want.
 
-## proxymity.watch(dataSource, pathToDataPointFromDataSource, onChangeCallback)
+## proxymity.watch(dataSource, pathToDataPointFromDataSource, onChangeCallback, onDeleteCallback)
 - dataSource (required): this is any JavaScript object.
 - pathToDataPointFromDataSource (required): a string in data access notation that denotes where the watched prop is
 - onChangeCallback (required): a function that can accept up to 2 parameters
@@ -15,8 +15,10 @@ The proxymity() function (all lower case) is the only export and only publicly a
 	- param 2: the previous value (before the change)
 
 - returns: unwatch function
+- onDeleteCallback (optional): a function that is called when the value is deleted. Use this to rebind the value on delete if you wish for watch bindings to presist through key deletion, default: function(){}
+	- this function call does not pass params
 
-The watch function can operate on any javascript object. the only special case is when watching for the length of an array. instead of watching for the `length` property, instead watch for the `len` property. This function replaces all properties of the object down the chain with getters and setters as such if any property along the way cannot be replaced, the operation will fail. Please read [Watching Data](watch.md) for a detailed explnanation
+The watch function can operate on any javascript object. You have to be worry that properties that are themselves getters and setters will be overwritten and properties that cannot be deleted will also prevent the watch method from working on them. this is the case with the `length` property of an array and various values of built in objects and classes in javascript.
 
 ```JavaScript
 var foo = {
@@ -44,6 +46,8 @@ foo.bar = function(){
 } // bar function got changed
 
 ```
+
+do be aware that the watch method is immediately invoked upon beginning it's call. as it does not have a pervious state. the previous state is instead set to null. because proxymity internally will re-watch any prop on deletion, if you delete a prop that has a proxymity initiated watcher on it, it will fire again with a null as the pervious state prop of the onchange callback.
 
 ## proxymity.on.asyncend
 - a Promise that resolves when the next render tick ends
@@ -86,7 +90,7 @@ var view = proxymity(document.querySelector("#lunch"), {
 })
 ```
 
-asyncend will resolve once the choice for the select is resolved but a rednerend will resolve when the property for chosen is updated since the `data-script` of the containing div will trigger another re-render after the curren render process is finished
+asyncend will resolve once the choice for the select is resolved but a rednerend will resolve when the property for chosen is updated since the `data-script` of the containing div will trigger another re-render after the current render process is finished
 
 ## proxymity.random.number([lowerLimit,] upperLimit)
 - upperLimit (required): an integer that specifies the upper limit inclusive
