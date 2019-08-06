@@ -38,7 +38,8 @@ function randomInt(start, stop){
 	return random + actualStart
 }
 var allowedCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
-function generateId(length = 16){
+function generateId(length){
+	length = length || 16
 	var id = allowedCharacters[randomInt(51)]
 	for(var i = 1; i < length; i++){
 		id += allowedCharacters[randomInt(62)]
@@ -69,7 +70,8 @@ function evalScriptConcatinator(targetLocation){
 	return ""
 }
 
-function splitPath(str = ""){
+function splitPath(str){
+	str = str || ""
 	var startSubstringIndex = 0
 	var segments = []
 	var openBrace = "["
@@ -78,7 +80,8 @@ function splitPath(str = ""){
 	function torwSyntaxError(){
 		throw new Error("Potential Syntax Error within code: \n" + str)
 	}
-	function addSegment(currentIndex, quoted = true){
+	function addSegment(currentIndex, quoted){
+		typeof quoted === "undefined" && (quoted = true)
 		var segment = str.substring(startSubstringIndex, currentIndex)
 		if (!segment){
 			return startSubstringIndex = currentIndex + 1

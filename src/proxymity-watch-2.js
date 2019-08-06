@@ -2,7 +2,8 @@ function hasProp(obj, prop){
 	return Object.prototype.hasOwnProperty.call(obj, prop)
 }
 
-function watch(source, path, onchange, ondelete = function(){}){
+function watch(source, path, onchange, ondelete){
+	ondelete = ondelete || function(){}
 	var context = this || {}
 	var pathsToEval = splitPath(path)
 	var pathsStrings = []
@@ -64,7 +65,9 @@ function isInternalDescriptor(descriptor){
 	return descriptor && descriptor.get && descriptor.get.length === 2 && descriptor.set && descriptor.set.length === 1
 }
 
-function createWatchableProp(obj, prop, value = {}, config = {}){
+function createWatchableProp(obj, prop, value, config){
+	value = value || {}
+	config = config || {}
 	var callbackSet = new LinkedList()
 	var descriptor
 	overrideArrayFunctions(value)
