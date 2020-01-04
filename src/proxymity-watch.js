@@ -175,7 +175,6 @@ function migrateChildPropertyListeners(beforeValue, afterValue){
 			migrateChildPropertyListeners(beforeValue[beforeKey], afterValue[beforeKey])
 		}
 		else if (beforeIsInternal && afterIsInternal){
-			console.log("both are internal")
 			beforeDescriptor.set(undefined, afterDescriptor)
 
 			migrateChildPropertyListeners(beforeValue[beforeKey], afterValue[beforeKey])

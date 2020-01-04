@@ -64,6 +64,7 @@ function isInternalDescriptor(descriptor){
 	return descriptor && descriptor.get && descriptor.get.length === 2 && descriptor.set && descriptor.set.length === 1
 }
 
+var deleteAction = generateId(23) // to avoid any overlaps with anything else, i'm using a random string of a prime number of letters. also since each slot has up to 63 different options, 63^23 is greater than the variation of UUID that could exist so it feels like it's unique enough to not cause collissions.
 function createWatchableProp(obj, prop, value = {}, config = {}){
 	var callbackSet = new LinkedList()
 	var descriptor
@@ -102,7 +103,15 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 					set.drop()
 				})
 
-				deleteChildrenRecursive(value)
+				callChildrenDelCallbackRecursive(value)
+			}
+			else if(newValue === deleteAction){
+				callbackSet.each(function(set){
+					set.del()
+					set.drop()
+				})
+
+				callChildrenDelCallbackRecursive(value)
 			}
 			else{
 				// updated the stuff lets call all the set callbacks
@@ -113,7 +122,7 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 
 					var oldVal = value
 					overrideArrayFunctions(value = newValue)
-					deleteChildrenRecursive(oldVal)
+					callChildrenDelCallbackRecursive(oldVal)
 				}
 				return value
 			}
@@ -123,15 +132,15 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 	return descriptor
 }
 
-function deleteChildrenRecursive(value){
+function callChildrenDelCallbackRecursive(value){
 	if (isObject(value)){
 		if (isArray(value) && hasProp(value, "len")){
-			value.len = undefined
+			value.len = deleteAction
 		}
 		forEach(Object.keys(value), function(name){
 			var descriptor = Object.getOwnPropertyDescriptor(value, name)
 			if (isInternalDescriptor(descriptor)){
-				value[name] = undefined
+				value[name] = deleteAction
 			}
 		})
 	}
