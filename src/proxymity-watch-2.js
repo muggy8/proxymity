@@ -2,7 +2,8 @@ function hasProp(obj, prop){
 	return Object.prototype.hasOwnProperty.call(obj, prop)
 }
 
-function watch(source, path, onchange, ondelete = function(){}){
+function watch(source, path, onchange, ondelete){
+	ondelete = ondelete || function(){}
 	var context = this || {}
 	var pathsToEval = splitPath(path)
 	var pathsStrings = []
@@ -65,7 +66,9 @@ function isInternalDescriptor(descriptor){
 }
 
 var deleteAction = generateId(23) // to avoid any overlaps with anything else, i'm using a random string of a prime number of letters. also since each slot has up to 63 different options, 63^23 is greater than the variation of UUID that could exist so it feels like it's unique enough to not cause collissions.
-function createWatchableProp(obj, prop, value = {}, config = {}){
+function createWatchableProp(obj, prop, value, config){
+	value = value || {}
+	config = config || {}
 	var callbackSet = new LinkedList()
 	var descriptor
 	overrideArrayFunctions(value)

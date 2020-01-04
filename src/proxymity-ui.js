@@ -185,6 +185,23 @@ function attachNodeDataProp(node, data, propName){
 		get: function(){
 			return data
 		},
+		set: function(newData){
+			var oldKeys = Object.keys(data)
+			var newKeys = Object.keys(newData)
+			forEach(oldKeys, function(oldKey){
+				if (newKeys.indexOf(oldKey) === -1){
+					if (isInternalDescriptor(Object.getOwnPropertyDescriptor(data, oldKey))){
+						data[oldKey] = undefined
+					}
+					else{
+						delete data[oldKey]
+					}
+				}
+			})
+			forEach(newKeys, function(newKey){
+				data[newKey] = newData[newKey]
+			})
+		}
 	})
 }
 
@@ -230,7 +247,7 @@ function transformNode(node, data, propName, initNodeCallback){
 
 // This is the function that adds the additional properties to the output
 function addOutputApi(transformedList, unlinkCallbackList, data, propName){
-	define(transformedList, propName, data)
+	attachNodeDataProp(transformedList, data, propName)
 	define(transformedList, "appendTo", appendTo)
 	define(transformedList, "detach", detach)
 	define(transformedList, "unlink", function(){

@@ -61,7 +61,9 @@ function isInternalDescriptor(descriptor){
 	return descriptor && descriptor.get && descriptor.get.length && descriptor.set && descriptor.set.length > 1
 }
 
-function createWatchableProp(obj, prop, value = {}, config = {}){
+function createWatchableProp(obj, prop, value, config){
+	value = value || {}
+	config = config || {}
 	var callbacks = []
 	var descriptor
 	overrideArrayFunctions(value)
