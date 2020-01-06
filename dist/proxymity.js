@@ -41,7 +41,8 @@ function randomInt(start, stop){
 	return random + actualStart
 }
 var allowedCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
-function generateId(length = 16){
+function generateId(length){
+	length = length || 16
 	var id = allowedCharacters[randomInt(51)]
 	for(var i = 1; i < length; i++){
 		id += allowedCharacters[randomInt(62)]
@@ -72,7 +73,8 @@ function evalScriptConcatinator(targetLocation){
 	return ""
 }
 
-function splitPath(str = ""){
+function splitPath(str){
+	str = str || ""
 	var startSubstringIndex = 0
 	var segments = []
 	var openBrace = "["
@@ -81,7 +83,8 @@ function splitPath(str = ""){
 	function torwSyntaxError(){
 		throw new Error("Potential Syntax Error within code: \n" + str)
 	}
-	function addSegment(currentIndex, quoted = true){
+	function addSegment(currentIndex, quoted){
+		typeof quoted === "undefined" && (quoted = true)
 		var segment = str.substring(startSubstringIndex, currentIndex)
 		if (!segment){
 			return startSubstringIndex = currentIndex + 1
@@ -200,7 +203,8 @@ function hasProp(obj, prop){
 	return Object.prototype.hasOwnProperty.call(obj, prop)
 }
 
-function watch(source, path, onchange, ondelete = function(){}){
+function watch(source, path, onchange, ondelete){
+	ondelete = ondelete || function(){}
 	var context = this || {}
 	var pathsToEval = splitPath(path)
 	var pathsStrings = []
@@ -262,7 +266,10 @@ function isInternalDescriptor(descriptor){
 	return descriptor && descriptor.get && descriptor.get.length === 2 && descriptor.set && descriptor.set.length === 1
 }
 
-function createWatchableProp(obj, prop, value = {}, config = {}){
+var deleteAction = generateId(23) // to avoid any overlaps with anything else, i'm using a random string of a prime number of letters. also since each slot has up to 63 different options, 63^23 is greater than the variation of UUID that could exist so it feels like it's unique enough to not cause collissions.
+function createWatchableProp(obj, prop, value, config){
+	value = value || {}
+	config = config || {}
 	var callbackSet = new LinkedList()
 	var descriptor
 	overrideArrayFunctions(value)
@@ -291,16 +298,25 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 			return value
 		},
 		set: function(newValue){
+			var context = this
 			if (typeof newValue === "undefined"){
 				// attempting to delete this prop we should call the del callback of all watchers attached to this item
 				delete obj[prop]
 
 				callbackSet.each(function(set){
-					set.del()
 					set.drop()
+					Function.prototype.call.call(set.del, context) // call the del function which is user given using the origial call method of the function prototype and using the the object that we're deleting from as the "this" property. this prevents the user from passing anything that would alter the behaviour of the library and also denys them access to anything internal to the library
 				})
 
-				deleteChildrenRecursive(value)
+				callChildrenDelCallbackRecursive(value)
+			}
+			else if(newValue === deleteAction){
+				callbackSet.each(function(set){
+					set.drop()
+					Function.prototype.call.call(set.del, context)
+				})
+
+				callChildrenDelCallbackRecursive(value)
 			}
 			else{
 				// updated the stuff lets call all the set callbacks
@@ -311,7 +327,7 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 
 					var oldVal = value
 					overrideArrayFunctions(value = newValue)
-					deleteChildrenRecursive(oldVal)
+					callChildrenDelCallbackRecursive(oldVal)
 				}
 				return value
 			}
@@ -321,15 +337,15 @@ function createWatchableProp(obj, prop, value = {}, config = {}){
 	return descriptor
 }
 
-function deleteChildrenRecursive(value){
+function callChildrenDelCallbackRecursive(value){
 	if (isObject(value)){
 		if (isArray(value) && hasProp(value, "len")){
-			value.len = undefined
+			value.len = deleteAction
 		}
 		forEach(Object.keys(value), function(name){
 			var descriptor = Object.getOwnPropertyDescriptor(value, name)
 			if (isInternalDescriptor(descriptor)){
-				value[name] = undefined
+				value[name] = deleteAction
 			}
 		})
 	}
@@ -609,6 +625,23 @@ function attachNodeDataProp(node, data, propName){
 		get: function(){
 			return data
 		},
+		set: function(newData){
+			var oldKeys = Object.keys(data)
+			var newKeys = Object.keys(newData)
+			forEach(oldKeys, function(oldKey){
+				if (newKeys.indexOf(oldKey) === -1){
+					if (isInternalDescriptor(Object.getOwnPropertyDescriptor(data, oldKey))){
+						data[oldKey] = undefined
+					}
+					else{
+						delete data[oldKey]
+					}
+				}
+			})
+			forEach(newKeys, function(newKey){
+				data[newKey] = newData[newKey]
+			})
+		}
 	})
 }
 
@@ -654,7 +687,7 @@ function transformNode(node, data, propName, initNodeCallback){
 
 // This is the function that adds the additional properties to the output
 function addOutputApi(transformedList, unlinkCallbackList, data, propName){
-	define(transformedList, propName, data)
+	attachNodeDataProp(transformedList, data, propName)
 	define(transformedList, "appendTo", appendTo)
 	define(transformedList, "detach", detach)
 	define(transformedList, "unlink", function(){
@@ -791,7 +824,9 @@ function renderString(textSource, clusters){
 	// ^INSERT^
 	// ya i'm not a huge fan of pre-compiling but this lets me test indivual parts since this library is very modular and this is the easiest way to just insert it without having to pull in rediculous amounts of dev dependencies that i dont particularly want to learn so ya why not xP
 
-	var publicUse = function(view, initialData = {}, modelProperty = "app"){
+	var publicUse = function(view, initialData, modelProperty){
+		initialData = initialData || {}
+		modelProperty = modelProperty || "app"
 		return proxyUI(view, initialData, modelProperty)
 	}
 
@@ -826,7 +861,8 @@ function renderString(textSource, clusters){
 
 	define(publicUse.random, "string", generateId)
 	return publicUse
-})(function(s, sv, t = false){
+})(function(s, sv, t){
+	typeof t === "undefined" && (t = false)
 	try {
 		if (sv){ // dont always use sv cuz it's expensive D:
 			with(sv){
