@@ -97,21 +97,22 @@ function createWatchableProp(obj, prop, value, config){
 			return value
 		},
 		set: function(newValue){
+			var context = this
 			if (typeof newValue === "undefined"){
 				// attempting to delete this prop we should call the del callback of all watchers attached to this item
 				delete obj[prop]
 
 				callbackSet.each(function(set){
-					set.del()
 					set.drop()
+					Function.prototype.call.call(set.del, context) // call the del function which is user given using the origial call method of the function prototype and using the the object that we're deleting from as the "this" property. this prevents the user from passing anything that would alter the behaviour of the library and also denys them access to anything internal to the library
 				})
 
 				callChildrenDelCallbackRecursive(value)
 			}
 			else if(newValue === deleteAction){
 				callbackSet.each(function(set){
-					set.del()
 					set.drop()
+					Function.prototype.call.call(set.del, context)
 				})
 
 				callChildrenDelCallbackRecursive(value)
