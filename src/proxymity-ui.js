@@ -259,16 +259,24 @@ function addOutputApi(transformedList, unlinkCallbackList, data, propName){
 }
 
 	// these are the methods that are used by the addOutputApi method to the array object.
-	function appendTo(selectorOrElement){
+	function appendTo(selectorOrElement, beforeThis){
 		// if a selector is provided querySelect the element and append to it
 		if (isString(selectorOrElement)){
-			return appendTo.call(this, document.querySelector(selectorOrElement))
+			return appendTo.call(this, document.querySelector(selectorOrElement, beforeThis))
 		}
 
 		var target = selectorOrElement
-		forEach(this, function(node){
-			target.appendChild(node)
-		})
+		if (!beforeThis){
+			forEach(this, function(node){
+				target.appendChild(node)
+			})
+		}
+		else{
+			forEach(this, function(node){
+				target.insertBefore(node, beforeThis)
+			})
+		}
+
 		return this
 	}
 
@@ -360,23 +368,30 @@ function continiousSyntaxRender(textSource, node, propName){
 }
 
 function renderString(textSource, clusters){
-	var propValue = ""
-	forEach(clusters, function(chunk){
-		if (chunk.val === undefined){
-			return
-		}
-		propValue += chunk.val
-	})
-
-	textSource.textContent = propValue
-
-	if (textSource instanceof Attr){
+	var propValue = clusters[0].val
+	if (clusters.length === 1 && textSource instanceof Attr){
 		var ownerElement = textSource.ownerElement
 		if (textSource.name.slice(0, 5) !== "data-"){
-			return
+			return textSource.textContent = propValue
 		}
 		var attributeName = textSource.name.slice(5)
 
 		attributeName in ownerElement && (ownerElement[attributeName] = propValue)
+
+	}
+	else if (clusters.length === 1 && textSource instanceof Text && propValue && propValue.appendTo == appendTo){
+		propValue.appendTo(textSource.parentNode, textSource)
+		textSource.textContent = ""
+	}
+	else{
+		propValue = ""
+		forEach(clusters, function(chunk){
+			if (chunk.val === undefined){
+				return
+			}
+			propValue += chunk.val
+		})
+
+		textSource.textContent = propValue
 	}
 }
