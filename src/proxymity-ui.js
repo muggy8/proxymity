@@ -323,6 +323,26 @@ function continiousSyntaxRender(textSource, node, propName){
 		return chunk.text || chunk.code
 	})
 
+	var assumeItsAllCode = true
+	forEach(clusters, function(chunk){
+		if (!assumeItsAllCode){
+			return
+		}
+		if (chunk.code){
+			return
+		}
+		if (!chunk.code && !chunk.text.trim()){
+			return
+		}
+		assumeItsAllCode = false
+	})
+
+	if (assumeItsAllCode){
+		clusters = clusters.filter(function(chunk){
+			return chunk.code
+		})
+	}
+
 	// render the code that doesn't have watchers
 	var onDestroyCallbacks = []
 	forEach(clusters, function(chunk){
@@ -368,8 +388,19 @@ function continiousSyntaxRender(textSource, node, propName){
 }
 
 function renderString(textSource, clusters){
-	var propValue = clusters[0].val
+	// console.log(textSource, clusters)
+	var clusterIsAllSubComponents = true
+	forEach(clusters, function(cluster){
+		if (!cluster.code){
+			clusterIsAllSubComponents = false
+		}
+		if (!cluster.val || cluster.val.appendTo !== appendTo){
+			clusterIsAllSubComponents = false
+		}
+	})
+	var propValue
 	if (clusters.length === 1 && textSource instanceof Attr){
+		propValue = clusters[0].val
 		var ownerElement = textSource.ownerElement
 		if (textSource.name.slice(0, 5) !== "data-"){
 			return textSource.textContent = propValue
@@ -379,8 +410,11 @@ function renderString(textSource, clusters){
 		attributeName in ownerElement && (ownerElement[attributeName] = propValue)
 
 	}
-	else if (clusters.length === 1 && textSource instanceof Text && propValue && propValue.appendTo == appendTo){
-		propValue.appendTo(textSource.parentNode, textSource)
+	else if (clusterIsAllSubComponents){
+		forEach(clusters, function(cluster){
+			cluster.val.appendTo(textSource.parentNode, textSource)
+		})
+
 		textSource.textContent = ""
 	}
 	else{

@@ -39,6 +39,28 @@
 				user.bio
 			}|</pre>
 
+			<h2>Component test</h2>
+
+			<div>
+				<label onclick="this.app.selectedComponent = this.app.components[0]">
+					UwU
+					<input type="radio" name="UwU"/>
+				</label>
+				<label onclick="this.app.selectedComponent = this.app.components[1]">
+					OwO
+					<input type="radio" name="UwU"/>
+				</label>
+				<label onclick="this.app.selectedComponent = this.app.components[2]">
+					O3O
+					<input type="radio" name="UwU"/>
+				</label>
+			</div>
+
+
+
+
+			{:this.app.selectedComponent:}|{selectedComponent}|
+
 		</div>
 		<script>
 			// gonna stub this in here
@@ -63,7 +85,13 @@
 			var components = proxymity(document.querySelector("#view"), {
 					user: {
 						name: "Muggy8"
-					}
+					},
+					components: [
+						proxymity("<div>UwU</div>"),
+						proxymity("<div>OwO</div>"),
+						proxymity("<div>O3O</div>"),
+					],
+					selectedComponent: undefined
 				}
 			)
 
