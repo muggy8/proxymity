@@ -699,16 +699,24 @@ function addOutputApi(transformedList, unlinkCallbackList, data, propName){
 }
 
 	// these are the methods that are used by the addOutputApi method to the array object.
-	function appendTo(selectorOrElement){
+	function appendTo(selectorOrElement, beforeThis){
 		// if a selector is provided querySelect the element and append to it
 		if (isString(selectorOrElement)){
-			return appendTo.call(this, document.querySelector(selectorOrElement))
+			return appendTo.call(this, document.querySelector(selectorOrElement, beforeThis))
 		}
 
 		var target = selectorOrElement
-		forEach(this, function(node){
-			target.appendChild(node)
-		})
+		if (!beforeThis){
+			forEach(this, function(node){
+				target.appendChild(node)
+			})
+		}
+		else{
+			forEach(this, function(node){
+				target.insertBefore(node, beforeThis)
+			})
+		}
+
 		return this
 	}
 
@@ -755,6 +763,26 @@ function continiousSyntaxRender(textSource, node, propName){
 		return chunk.text || chunk.code
 	})
 
+	var assumeItsAllCode = true
+	forEach(clusters, function(chunk){
+		if (!assumeItsAllCode){
+			return
+		}
+		if (chunk.code){
+			return
+		}
+		if (!chunk.code && !chunk.text.trim()){
+			return
+		}
+		assumeItsAllCode = false
+	})
+
+	if (assumeItsAllCode){
+		clusters = clusters.filter(function(chunk){
+			return chunk.code
+		})
+	}
+
 	// render the code that doesn't have watchers
 	var onDestroyCallbacks = []
 	forEach(clusters, function(chunk){
@@ -800,24 +828,45 @@ function continiousSyntaxRender(textSource, node, propName){
 }
 
 function renderString(textSource, clusters){
-	var propValue = ""
-	forEach(clusters, function(chunk){
-		if (chunk.val === undefined){
-			return
+	// console.log(textSource, clusters)
+	var clusterIsAllSubComponents = true
+	forEach(clusters, function(cluster){
+		if (!cluster.code){
+			clusterIsAllSubComponents = false
 		}
-		propValue += chunk.val
+		if (!cluster.val || cluster.val.appendTo !== appendTo){
+			clusterIsAllSubComponents = false
+		}
 	})
-
-	textSource.textContent = propValue
-
-	if (textSource instanceof Attr){
+	var propValue
+	if (clusters.length === 1 && textSource instanceof Attr){
+		propValue = clusters[0].val
 		var ownerElement = textSource.ownerElement
 		if (textSource.name.slice(0, 5) !== "data-"){
-			return
+			return textSource.textContent = propValue
 		}
 		var attributeName = textSource.name.slice(5)
 
 		attributeName in ownerElement && (ownerElement[attributeName] = propValue)
+
+	}
+	else if (clusterIsAllSubComponents){
+		forEach(clusters, function(cluster){
+			cluster.val.appendTo(textSource.parentNode, textSource)
+		})
+
+		textSource.textContent = ""
+	}
+	else{
+		propValue = ""
+		forEach(clusters, function(chunk){
+			if (chunk.val === undefined){
+				return
+			}
+			propValue += chunk.val
+		})
+
+		textSource.textContent = propValue
 	}
 }
 
