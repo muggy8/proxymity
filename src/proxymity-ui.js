@@ -262,7 +262,11 @@ function addOutputApi(transformedList, unlinkCallbackList, data, propName){
 	function appendTo(selectorOrElement, beforeThis){
 		// if a selector is provided querySelect the element and append to it
 		if (isString(selectorOrElement)){
-			return appendTo.call(this, document.querySelector(selectorOrElement, beforeThis))
+			return appendTo.call(this, document.querySelector(selectorOrElement), beforeThis)
+		}
+		// if a selector is provided querySelect the element and append to it
+		if (isString(selectorOrElement)){
+			return appendTo.call(this, selectorOrElement, selectorOrElement.querySelector(beforeThis))
 		}
 
 		var target = selectorOrElement
