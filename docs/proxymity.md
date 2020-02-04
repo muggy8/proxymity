@@ -108,12 +108,13 @@ proxymity.random.number(5, 15) // random number between 5 - 15 inclusive
 
 This function returns a string containing `a-z`, `A-Z`, `0-9`, and `_` that is of the declared length. The first character is always a character of `a-z` or `A-Z` to ensure that the string that is generated is safe as accessible string for property names in case you need to use them when `eval` and maybe using `with` (please dont...)
 
-## elementsList.appendTo(selectorOrElement)
+## elementsList.appendTo(selectorOrElement[, insertBeforeElementOrSelector])
 - selectorOrElement (required): string that can be passed to document.queryselector or a DOM element
+- insertBeforeElementOrSelector: string that can be passed to document.queryselector or a DOM element
 
 - returns: elementsList
 
-The appendTo function will append the current element list to whatever element that is selected or whatever element is passed to it in case it needs to be done prior to inserting the item into the DOM
+The appendTo function will append the current element list to whatever element that is selected or whatever element is passed to it in case it needs to be done prior to inserting the item into the DOM. if the insertBeforeElementOrSelector is specified, the insertion will happen before the that node.
 
 ## elementsList.detach()
 - returns: elementsList

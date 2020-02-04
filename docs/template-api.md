@@ -6,6 +6,8 @@ anywhere within any element's attribute, the text of any text node, or inside a 
 
 The code that is captured within the brackets are ran once when initializing the element. If you want the code to be executed in response to the update of another variable within the sourceData object then you can attach a `|{` variable `}|` directly behind the end of the code block (without space). The variable to watched is processed using the same process to attach a name property to the correct location within the model meaning that you do not use this[sourceDataName] prior to the property name to access it. If you want it re respond to any of multiple variable changes, you can add additional variable to watch for with additional `{` and `}`'s separated by a comma. Finally, to keep track of changes to the array's length please just watch the array's `len` property.
 eg
+
+
 ```
 Welcome back {: (this.app.user.title.toString() || "") + " " + this.app.user.name.toString() :}|{user.name},{user.title}|
 ```
@@ -15,7 +17,7 @@ Please note: because proxymity runs regular javascript within the `{::}` blocks,
 ## key: indexName ... in: array
 - indexName: a string to be added to all elements of the enclosed Template
 - array: a javascript array object with a length property.
-If you have an array of items, you can use a `key in` repeater to replicate the enclosed template for each item of the array. Do note that it must be an array. The `key in` repeater is 2 comments that enclose a set of HTML elements and begins with a comment that starts with `key:` and ends with a comment that begins with `in:`. you are not able to stack repeaters within repeaters so if you want nested loops, you'll need to put the inner loops into an element that is within the outer loop. 
+If you have an array of items, you can use a `key in` repeater to replicate the enclosed template for each item of the array. Do note that it must be an array. The `key in` repeater is 2 comments that enclose a set of HTML elements and begins with a comment that starts with `key:` and ends with a comment that begins with `in:`. you are not able to stack repeaters within repeaters so if you want nested loops, you'll need to put the inner loops into an element that is within the outer loop.
 
 ```HTML
 <!-- key: "itemIndex" -->
@@ -27,6 +29,7 @@ If you have an array of items, you can use a `key in` repeater to replicate the 
 	</div>
 </div>
 <!-- in: player.units -->
+
 ```
 
 ## input data binding
@@ -37,3 +40,8 @@ eg:
 ```HTML
 <input type="text" data-value="{:this.app.name:}|{name}|" onchange="this.app.name = this.value"/>
 ```
+
+If there's a singular code block that is in the data-* property. the data literal of that thing is going to be used instead of the string value. this allows you to dynamically set onclick functions or set dates for date inputs.
+
+## Components
+Inside proxymity, there isn't an official implementation for components. however when a text or comment element outputs a elementsList object, that object will be appeneded to the document above the text instead of being rendere3d. this allow you to store components into your controller object.
