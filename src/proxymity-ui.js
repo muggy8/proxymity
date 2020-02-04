@@ -410,7 +410,7 @@ function renderString(textSource, clusters){
 		attributeName in ownerElement && (ownerElement[attributeName] = propValue)
 
 	}
-	else if (clusterIsAllSubComponents){
+	else if (clusterIsAllSubComponents && (textSource instanceof Text || textSource instanceof Comment)){
 		forEach(clusters, function(cluster){
 			cluster.val.appendTo(textSource.parentNode, textSource)
 		})
