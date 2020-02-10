@@ -268,7 +268,7 @@ function isInternalDescriptor(descriptor){
 
 var deleteAction = generateId(23) // to avoid any overlaps with anything else, i'm using a random string of a prime number of letters. also since each slot has up to 63 different options, 63^23 is greater than the variation of UUID that could exist so it feels like it's unique enough to not cause collissions.
 function createWatchableProp(obj, prop, value, config){
-	value = value || {}
+	value = typeof value === "undefined" ? {} : value
 	config = config || {}
 	var callbackSet = new LinkedList()
 	var descriptor
