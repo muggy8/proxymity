@@ -5,6 +5,7 @@ Welcome to the Proxymity Documentations where you will find out how to use the v
 - [Proxymity global function](proxymity.md)
 - [Proxymity templates API](template-api.md)
 - [Proxymity render cycle](render-cycle.md)
+- [Proxymity components](components.md)
 
 ## Version 2.x.x
 Starting from version 2 and up, the basis of Proxymity has been altered and the native Proxy api is no longer used. Performance should also be improved. However a large amount of breaking changes are introduced and the library is no longer 2 way data binding as the amount of code to make that happen is just not worth it anymore. Please read [Upgrading to 2.x.x](upgrade.md).
