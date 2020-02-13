@@ -268,7 +268,7 @@ function isInternalDescriptor(descriptor){
 
 var deleteAction = generateId(23) // to avoid any overlaps with anything else, i'm using a random string of a prime number of letters. also since each slot has up to 63 different options, 63^23 is greater than the variation of UUID that could exist so it feels like it's unique enough to not cause collissions.
 function createWatchableProp(obj, prop, value, config){
-	value = typeof value === "undefined" ? {} : value
+	value = arguments.length > 2 ? value : {}
 	config = config || {}
 	var callbackSet = new LinkedList()
 	var descriptor
@@ -800,6 +800,7 @@ function continiousSyntaxRender(textSource, node, propName){
 			else{
 				// observer the property that is to be watched
 				function updateChunkVal(){
+					chunk.val && chunk.val.detach && chunk.val.detach()
 					chunk.val = safeEval.call(node, chunk.text)
 					renderString(textSource, clusters)
 				}
@@ -838,7 +839,7 @@ function renderString(textSource, clusters){
 		if (!cluster.code){
 			clusterIsAllSubComponents = false
 		}
-		if (!cluster.val || cluster.val.appendTo !== appendTo){
+		if (!cluster.val || cluster.val.appendTo !== appendTo || cluster.val.detach !== detach){
 			clusterIsAllSubComponents = false
 		}
 	})
