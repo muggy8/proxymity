@@ -123,10 +123,13 @@ Proxymity takes a different approach to both sides where it does not use a pre c
 ## How??
 Proxymity tries to be as small and as out of the way as possible letting you be as close to the native JavaScript and HTML. Earlier iterations accomplished this by using the [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) API in JavaScript which is where this library gets it's name. however, as of version 2.0.0, this is no longer the case.
 
-the magic happens in the templating language of the library where you define what the action is and what that specific segment of template should react to if anything and using this info, Proxymity's able to reconstruct the paths to watch as watchable and then watch for changes on those paths. 
+the magic happens in the templating language of the library where you define what the action is and what that specific segment of template should react to if anything and using this info, Proxymity's able to reconstruct the paths to watch as watchable and then watch for changes on those paths.
 
 ## docs
 [Docs are work in progress but here you go :)](docs)
 
 ## License
 MIT = free for all yay :D?
+
+## Get it on NPM
+```npm i proxymity```
