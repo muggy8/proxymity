@@ -360,6 +360,7 @@ function continiousSyntaxRender(textSource, node, propName){
 			else{
 				// observer the property that is to be watched
 				function updateChunkVal(){
+					chunk.val && chunk.val.detach && chunk.val.detach()
 					chunk.val = safeEval.call(node, chunk.text)
 					renderString(textSource, clusters)
 				}
@@ -398,7 +399,7 @@ function renderString(textSource, clusters){
 		if (!cluster.code){
 			clusterIsAllSubComponents = false
 		}
-		if (!cluster.val || cluster.val.appendTo !== appendTo){
+		if (!cluster.val || cluster.val.appendTo !== appendTo || cluster.val.detach !== detach){
 			clusterIsAllSubComponents = false
 		}
 	})
