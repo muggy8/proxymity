@@ -212,45 +212,10 @@ function watch(source, path, onchange, ondelete){
 		pathsStrings.push(safeEval.call(context, pathString))
 	})
 
-
 	// now we have the path from the source to the target prop figured out. all we have to do now is to follow the path and replace any non-internal descriptors with internal descriptor and if it doesn't exist, initialize it as {}. once we get to the final descriptor we can add the watch props onto it and just wait for it to change
 
-	var propertyDescriptor // the thing we try to find and attach our listeners to
-	var location = "" // for debugging
-	forEach(pathsStrings, function(key){
-		if (key === "length" && isArray(source)){
-			key = "len"
-		}
-		if (key === "len"){
-			overrideArrayFunctions(source)
-		}
-		location = location + (location ? " -> " + key : key)
 
-		var descriptor = Object.getOwnPropertyDescriptor(source, key)
-
-		// if the property doesn't exist we can create it here
-		if (typeof descriptor === "undefined"){
-			console.warn(location + " not defined in data source and is initiated as {}. \n\tOriginal: " + path)
-			propertyDescriptor = createWatchableProp(source, key)
-		}
-
-		// our non-standard descriptors are the special since they are also ment to be accessed via this method and we can pass in parameters that are normally not
-		else if (isInternalDescriptor(descriptor)){
-			propertyDescriptor = descriptor
-		}
-
-		// the final case is that it exists already and we need to transfer it to a getter and a setter
-		else if (descriptor){
-			var value = source[key]
-			delete source[key]
-			propertyDescriptor = createWatchableProp(source, key, value)
-		}
-
-		source = source[key]
-
-	})
-
-	return propertyDescriptor.get(safeOnchange, safeOndelete)
+	return traverseAndSubscribe("", source, pathsStrings, safeOnchange, safeOndelete)
 
 	function safeOnchange(){
 		var args = Array.prototype.slice.call(arguments)
@@ -260,6 +225,83 @@ function watch(source, path, onchange, ondelete){
 		var args = Array.prototype.slice.call(arguments)
 		return ondelete.apply(context, args)
 	}
+}
+
+function traverseAndSubscribe(location, source, path, onchange, ondelete){
+	var key = path[0]
+
+	if (key === "length" && isArray(source)){
+		key = "len"
+	}
+	if (key === "len"){
+		overrideArrayFunctions(source)
+	}
+
+	// in the case that we encounter the special watch everything symbol for an array, we split the call to watch into a watch for everything in that array
+	if (key === "*" && isArray(source)){
+		overrideArrayFunctions(source)
+		var destroyCallbackMap = {}
+		var replacementPath = createNewChildPath(path)
+		replacementPath.unshift(0)
+		var splitAndSubscribe = function(){
+			var keys = Object.keys(source)
+			forEach(keys, function(key){
+				if (destroyCallbackMap[key]){
+					return
+				}
+				replacementPath[0] = key
+				destroyCallbackMap[key] = traverseAndSubscribe(location, source, replacementPath, onchange, ondelete)
+			})
+		}
+		destroyCallbackMap.length = traverseAndSubscribe(location, source, ["length"], splitAndSubscribe, function(){})
+
+		return function(){
+			forEach(Object.keys(destroyCallbackMap), function(key){
+				destroyCallbackMap[key]()
+				delete destroyCallbackMap[key]
+			})
+		}
+	}
+
+	location = location + (location ? " -> " + key : key)
+
+	var descriptor = Object.getOwnPropertyDescriptor(source, key)
+	var propertyDescriptor
+
+	// if the property doesn't exist we can create it here
+	if (typeof descriptor === "undefined"){
+		console.warn(location + " not defined in data source and is initiated as {}. \n\tOriginal: " + path)
+		propertyDescriptor = createWatchableProp(source, key)
+	}
+
+	// our non-standard descriptors are the special since they are also ment to be accessed via this method and we can pass in parameters that are normally not
+	else if (isInternalDescriptor(descriptor)){
+		propertyDescriptor = descriptor
+	}
+
+	// the final case is that it exists already and we need to transfer it to a getter and a setter
+	else if (descriptor){
+		var value = source[key]
+		delete source[key]
+		propertyDescriptor = createWatchableProp(source, key, value)
+	}
+
+	// ok we have things set up now, all we hace to do is check if we need to keep going deeper or set up the watch
+	if (path.length > 1){
+		var newPath = createNewChildPath(path)
+		return traverseAndSubscribe(location, source[key], newPath, onchange, ondelete)
+	}
+	else{
+		return propertyDescriptor.get(onchange, ondelete)
+	}
+}
+
+function createNewChildPath(path){
+	var newPath = []
+	forEach(path, function(key, index){
+		index && newPath.push(key)
+	})
+	return newPath
 }
 
 function isInternalDescriptor(descriptor){
