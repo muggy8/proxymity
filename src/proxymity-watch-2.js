@@ -52,7 +52,7 @@ function traverseAndSubscribe(location, source, path, onchange, ondelete){
 				destroyCallbackMap[key] = traverseAndSubscribe(location, source, replacementPath, onchange, ondelete)
 			})
 		}
-		destroyCallbackMap.length = traverseAndSubscribe(location, source, ["length"], splitAndSubscribe, function(){})
+		destroyCallbackMap.length = traverseAndSubscribe(location, source, ["length"], splitAndSubscribe, ondelete)
 
 		return function(){
 			forEach(Object.keys(destroyCallbackMap), function(key){
