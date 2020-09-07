@@ -132,7 +132,10 @@ function createWatchableProp(obj, prop, value, config){
 					del: onDeleteCallback
 				}))
 
-				onChangeCallack(value, null)
+				//~ onChangeCallack(value, null)
+				callbackSet.each(function(chainLink){
+					onNextEventCycle(chainLink.set, value, null)
+				})
 
 				return link.drop
 			}
