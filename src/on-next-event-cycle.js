@@ -38,6 +38,7 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 		queue = []
 
 		forEach(workingQueue, function(item){
+			// somtimes, descriptors might get passed to the next methods that will be called, if that's the case then we want to turn the descriptors into their value before passing the args to the callback.
 			if (typeof isInternalDescriptor !== "undefined"){
 				item.args = item.args.map(function(prop){
 					if (isInternalDescriptor(prop)){
