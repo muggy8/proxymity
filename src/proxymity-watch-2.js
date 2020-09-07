@@ -112,6 +112,11 @@ function createWatchableProp(obj, prop, value, config){
 	value = arguments.length > 2 ? value : {}
 	config = config || {}
 	var callbackSet = new LinkedList()
+	var executeCallbackSet = function(arg1, arg2){
+		callbackSet.each(function(chainLink){
+			chainLink.set(arg1, arg2)
+		})
+	}
 	var descriptor
 	overrideArrayFunctions(value)
 
@@ -132,10 +137,7 @@ function createWatchableProp(obj, prop, value, config){
 					del: onDeleteCallback
 				}))
 
-				//~ onChangeCallack(value, null)
-				callbackSet.each(function(chainLink){
-					onNextEventCycle(chainLink.set, value, null)
-				})
+				onNextEventCycle(executeCallbackSet, value, null)
 
 				return link.drop
 			}
@@ -165,9 +167,7 @@ function createWatchableProp(obj, prop, value, config){
 			else{
 				// updated the stuff lets call all the set callbacks
 				if (newValue !== value){
-					callbackSet.each(function(chainLink){
-						onNextEventCycle(chainLink.set, newValue, value)
-					})
+					onNextEventCycle(executeCallbackSet, newValue, value)
 
 					var oldVal = value
 					overrideArrayFunctions(value = newValue)
