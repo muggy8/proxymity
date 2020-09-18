@@ -171,13 +171,16 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 		}
 	}
 
-	var lastWatchDestroyCallback
+	var lastWatchDestroyCallback, watchSource
 	function subscribeToDataLocation(){
 		if (lastWatchDestroyCallback){
 			var spliceIndex = onDestroyCallbacks.indexOf(lastWatchDestroyCallback)
 			onDestroyCallbacks.splice(spliceIndex, 1)
 		}
 		onDestroyCallbacks.push(lastWatchDestroyCallback = watch.call(endComment, data, watchTarget, onSourceDataChange, subscribeToDataLocation))
+
+		// we get the watch source after because the watch method will create paths that didn't exist yet are being watched.
+		watchSource = safeEval.call(endComment, inCommand, data)
 	}
 }
 
