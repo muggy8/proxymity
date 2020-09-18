@@ -22,7 +22,7 @@ function proxyUI(template, data, propName){
 
 function transformList(listToTransform, data, propName, initNodeCallback){
 	var withinForeach = false, unlinkCallback = [], initTasks = []
-	var startComment, endComment, repeatBody = []
+	var startComment, endComment, keyComment, repeatBody = []
 
 	for(var i = listToTransform.length - 1; i > -1; i--){
 		var keepable = true
@@ -37,15 +37,19 @@ function transformList(listToTransform, data, propName, initNodeCallback){
 		}
 		if (item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("key:") === 0){
 			keepable = true
+			keyComment = item
+		}
+		if (item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("foreach:") === 0){
+			keepable = true
 			withinForeach = false
 			startComment = item
 
-			var initRepeater = (function(startComment, endComment, repeatBody){
-				unlinkCallback.push(manageRepeater(startComment, endComment, repeatBody, listToTransform, data, propName, initNodeCallback))
-			}).bind(null, startComment, endComment, repeatBody)
+			var initRepeater = (function(startComment, endComment, keyComment, repeatBody){
+				unlinkCallback.push(manageRepeater(startComment, endComment, keyComment, repeatBody, listToTransform, data, propName, initNodeCallback))
+			}).bind(null, startComment, endComment, keyComment, repeatBody)
 			initTasks.splice(initTasks.length - 1, 0, initRepeater)
 
-			startComment = endComment = undefined
+			startComment = endComment = keyComment = undefined
 			repeatBody = []
 		}
 
@@ -73,13 +77,17 @@ function transformList(listToTransform, data, propName, initNodeCallback){
 	return unlinkCallback
 }
 
-function manageRepeater(startComment, endComment, repeatBody, componentElements, data, propName, initNodeCallback){
+function manageRepeater(startComment, endComment, keyComment, repeatBody, componentElements, data, propName, initNodeCallback){
 	var onDestroyCallbacks = []
 	var cloneGroups = []
-	var indexCommand = startComment.textContent.trim().slice(4)
+	var indexCommand = startComment.textContent.trim().slice(8).trim()
 	var inCommand = endComment.textContent.trim().slice(3).trim()
 	var watchTarget = inCommand + ".len"
 	var indexProp = safeEval.call(startComment, indexCommand)
+	if (keyComment){
+		var keyCommand = startComment.textContent.trim().slice(4).trim()
+		//~ watchTarget = inCommand + ".*." + keyCommand
+	}
 
 	subscribeToDataLocation()
 
