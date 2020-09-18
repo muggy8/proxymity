@@ -1,5 +1,6 @@
 <html>
 	<head>
+		<meta charset="UTF-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 		<script src="proxymity-util.js"></script>
 		<script src="on-next-event-cycle.js"></script>
@@ -27,10 +28,10 @@
 			}
 
 			var test = proxyUI(`
-				<!-- key: "outside" -->
+				<!-- foreach: "outside" -->
 					<div>
 						Outside [{:this.outside:}]:
-						<!-- key: "inside" -->
+						<!-- foreach: "inside" -->
 							<div>
 								Inside {:this.inside:}: {:this.app.arr[this.outside][this.inside]:}|{arr[this.outside][this.inside]}|
 							</div>
