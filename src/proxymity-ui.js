@@ -221,8 +221,8 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 				cloneGroupsMap[cloneGroupKey].unlink()
 				cloneGroupsMap[cloneGroupKey].drop()
 
-				var startDeletingFromIndex = componentElements.indexOf(cloneGroupsMap[cloneGroupKey][0])
-				startDeletingFromIndex > -1 && componentElements.splice(startDeletingFromIndex, cloneGroupsMap[cloneGroupKey].length)
+				// we need to manage the clone groups and drop it from the master list when it gets deleted
+				dropCloneGroupFromComponentElements(cloneGroupsMap[cloneGroupKey])
 
 				delete cloneGroupsMap[cloneGroupKey]
 			}
@@ -239,17 +239,21 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 			var currentCloneGroup = cloneGroupsMap[dataPointKey]
 			//~ console.log({itemAfterPreviousGroup, previousCloneGroup, lastItemOfPRevious: previousCloneGroup[previousCloneGroup.length - 1]})
 
-			// this is all for updating the DOM. but since it's possiable for the manipulation to happen to this element when it's not attached to the DOM, we should consider that scenario too.
-			if (itemAfterPreviousGroup && itemAfterPreviousGroup.parentElement && itemAfterPreviousGroup[indexProp] !== i){
-				currentCloneGroup.appendTo(itemAfterPreviousGroup.parentElement, itemAfterPreviousGroup)
-			}
+			// if the next item is a wrong item we need to move the right group to the right place. since we already updated the key and the index in the previous loop thingy we can skip that here.
+			if (itemAfterPreviousGroup[indexProp] !== i){
+				// this is all for updating the DOM. but since it's possiable for the manipulation to happen to this element when it's not attached to the DOM, we should consider that scenario too.
+				if (itemAfterPreviousGroup && itemAfterPreviousGroup.parentElement){
+					currentCloneGroup.appendTo(itemAfterPreviousGroup.parentElement, itemAfterPreviousGroup)
+				}
 
-			// to make sure our list is updated, we need to add it into the main body array
-			var addIndex = componentElements.indexOf(lastItemOfPreviousGroup) + 1
-			var applyArray = currentCloneGroup.slice()
-			applyArray.unshift(0)
-			applyArray.unshift(addIndex)
-			Array.prototype.splice.apply(componentElements, applyArray)
+				// to make sure our list is updated, we need to add it into the main body array. since the items in an array isn't as automatic as the DOM, we need to drop it from our list first then add it back in the right position assuming we need to
+				dropCloneGroupFromComponentElements(currentCloneGroup)
+				var addIndex = componentElements.indexOf(lastItemOfPreviousGroup) + 1
+				var applyArray = currentCloneGroup.slice()
+				applyArray.unshift(0)
+				applyArray.unshift(addIndex)
+				Array.prototype.splice.apply(componentElements, applyArray)
+			}
 
 			// prep for the next loop
 			previousCloneGroup = currentCloneGroup
@@ -300,6 +304,10 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 		}
 	}
 
+	function dropCloneGroupFromComponentElements(cloneGroup){
+		var spliceIndex = componentElements.indexOf(cloneGroup[0])
+		spliceIndex > -1 && componentElements.splice(spliceIndex, cloneGroup.length)
+	}
 }
 
 function cloneNodes(nodes){
