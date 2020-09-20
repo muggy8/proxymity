@@ -106,78 +106,6 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 		})
 	}
 
-	/*
-	function onSourceDataChange(updatedLength){
-		if (cloneGroups.length < updatedLength){
-			var numberToCreate = updatedLength - cloneGroups.length
-			if (!initNodeCallback){
-				initNodeCallback = function(node, data, propName){
-					return function(){}
-				}
-			}
-
-			for(var i = 0; i < numberToCreate; i++){
-				var newGroupItem = cloneNodes(repeatBody)
-				var destroyListeners = []
-
-				var attachIndex = (function(index, node, data, propName){
-					// call the pervious init callback with the same props
-					var undoInheritedInit = initNodeCallback(node, data, propName)
-
-					// add the index key
-					Object.defineProperty(node, indexProp, {
-						configurable: true,
-						get: function(){
-							return index
-						},
-					})
-
-					return function(){
-						undoInheritedInit()
-						delete node[indexProp]
-					}
-				}).bind(null, cloneGroups.length)
-
-				// link the new clones with the data prop
-				forEach(transformList(newGroupItem, data, propName, attachIndex), function(callback){
-					destroyListeners.push(callback)
-				})
-
-				// add the output api for our convenience
-				addOutputApi(newGroupItem, destroyListeners, data, propName)
-
-				// keep the cone group in or groups list cuz this makes it easy to add and remove entire groups of stuff
-				cloneGroups.push(newGroupItem)
-
-				// if the end node is a child of another node, append it
-				if (endComment.parentNode){
-					forEach(newGroupItem, function(node) {
-						endComment.parentNode.insertBefore(node, endComment)
-					})
-				}
-
-				// update the entire group's overall data list so the original data group can use their attach and detach methods effectively
-				var spliceLocation = componentElements.indexOf(endComment) - 1
-				var applyArray = newGroupItem.slice()
-				applyArray.unshift(0)
-				applyArray.unshift(spliceLocation)
-				Array.prototype.splice.apply(componentElements, applyArray)
-			}
-		}
-		else if (cloneGroups.length > updatedLength){
-			var tobeRemoved = cloneGroups.splice(updatedLength)
-			forEach(tobeRemoved, function(group){
-				group.unlink()
-				group.detach()
-				for(var i = componentElements.length - 1; i > -1; i--){
-					if (group.indexOf(componentElements[i]) !== -1){
-						componentElements.splice(i, 1)
-					}
-				}
-			})
-		}
-	}
-	*/
 	var lastWatchDestroyCallback, watchSource
 	function subscribeToDataLocation(){
 		if (lastWatchDestroyCallback){
@@ -218,8 +146,9 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 		// before we start reordering, lets delete stuff that got dumped. this might make it easier
 		forEach(Object.keys(cloneGroupsMap), function(cloneGroupKey){
 			if (!cloneGroupsMapTouched[cloneGroupKey]){
+				console.log(cloneGroupsMap[cloneGroupKey])
+				cloneGroupsMap[cloneGroupKey].detach()
 				cloneGroupsMap[cloneGroupKey].unlink()
-				cloneGroupsMap[cloneGroupKey].drop()
 
 				// we need to manage the clone groups and drop it from the master list when it gets deleted
 				dropCloneGroupFromComponentElements(cloneGroupsMap[cloneGroupKey])
@@ -271,7 +200,7 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 
 		var unlinkCurrentInstance = function(){
 			forEach(destroyThisInstanceCallback, function(callback){
-				callback()
+				callback !== unlinkCurrentInstance && callback()
 			})
 
 			// since the deleter function calls unlink first, we can just do this.
