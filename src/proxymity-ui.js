@@ -108,19 +108,20 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 
 	var lastWatchDestroyCallback, watchSource
 	function subscribeToDataLocation(){
+		console.log("resubscribe")
 		if (lastWatchDestroyCallback){
 			var spliceIndex = onDestroyCallbacks.indexOf(lastWatchDestroyCallback)
 			onDestroyCallbacks.splice(spliceIndex, 1)
 		}
 		onDestroyCallbacks.push(lastWatchDestroyCallback = watch.call(endComment, data, watchTarget, onSourceDataChange, subscribeToDataLocation))
-
-		// we get the watch source after because the watch method will create paths that didn't exist yet are being watched.
-		watchSource = safeEval.call(endComment, inCommand, data)
+		onSourceDataChange()
 	}
 
-	function onSourceDataChange(newLength){
+	function onSourceDataChange(){
+		console.log("source changed", {endComment, inCommand, data})
+		watchSource = safeEval.call(endComment, inCommand, data)
+
 		// we want to find the original and mark it as touched. we want to reposition whatever we want to reposition to avoid creating stuff and instead we can reuse stuff instead. if stuff got deleted or added, we can add it into the list.
-		console.log(componentElements)
 		var cloneGroupsMapTouched = {}
 		forEach(watchSource, function(sourceDataPoint, dataPointIndex){
 
@@ -164,7 +165,8 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 			var previousDataPoint = (i - 1 >= 0) && watchSource[i - 1]
 			var dataPointKey = keyCommand ? safeEval.call(endComment, keyCommand, currentDataPoint) : i // kinda sucks to have to reuse code like this but ah well :/
 			var lastItemOfPreviousGroup = previousCloneGroup[previousCloneGroup.length - 1]
-			var itemAfterPreviousGroup = lastItemOfPreviousGroup.nextSibling
+			var indexOfLastItemOfPreviousGroup = componentElements.indexOf(lastItemOfPreviousGroup)
+			var itemAfterPreviousGroup = componentElements[indexOfLastItemOfPreviousGroup + 1]
 			var currentCloneGroup = cloneGroupsMap[dataPointKey]
 			//~ console.log({itemAfterPreviousGroup, previousCloneGroup, lastItemOfPRevious: previousCloneGroup[previousCloneGroup.length - 1]})
 

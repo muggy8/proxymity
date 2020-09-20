@@ -137,7 +137,7 @@ function createWatchableProp(obj, prop, value, config){
 					del: onDeleteCallback
 				}))
 
-				onNextEventCycle(executeCallbackSet, value, null)
+				onNextEventCycle(executeCallbackSet, value)
 
 				return link.drop
 			}
@@ -174,7 +174,7 @@ function createWatchableProp(obj, prop, value, config){
 
 					var oldVal = value
 					overrideArrayFunctions(value = newValue)
-					callChildrenDelCallbackRecursive(oldVal)
+					onNextEventCycle(callChildrenDelCallbackRecursive, oldVal)
 				}
 				return value
 			}
