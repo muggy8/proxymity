@@ -84,8 +84,10 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 	var inCommand = endComment.textContent.trim().slice(3).trim()
 	var watchTarget = inCommand + ".len"
 	var indexProp = safeEval.call(startComment, indexCommand)
+	var insertAfterElement = startComment
 	if (keyComment){
 		var keyCommand = keyComment.textContent.trim().slice(4).trim()
+		insertAfterElement = keyComment
 	}
 	if (!initNodeCallback){
 		initNodeCallback = function(node, data, propName){
@@ -190,6 +192,7 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 
 	function onSourceDataChange(newLength){
 		// we want to find the original and mark it as touched. we want to reposition whatever we want to reposition to avoid creating stuff and instead we can reuse stuff instead. if stuff got deleted or added, we can add it into the list.
+		console.log(componentElements)
 		var cloneGroupsMapTouched = {}
 		forEach(watchSource, function(sourceDataPoint, dataPointIndex){
 
@@ -217,17 +220,39 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 			if (!cloneGroupsMapTouched[cloneGroupKey]){
 				cloneGroupsMap[cloneGroupKey].unlink()
 				cloneGroupsMap[cloneGroupKey].drop()
+
+				var startDeletingFromIndex = componentElements.indexOf(cloneGroupsMap[cloneGroupKey][0])
+				startDeletingFromIndex > -1 && componentElements.splice(startDeletingFromIndex, cloneGroupsMap[cloneGroupKey].length)
+
 				delete cloneGroupsMap[cloneGroupKey]
 			}
 		})
 
 		// at this point, we have deleted everything that shouldn't be there, we should now be able to go through and move things to the right place.
 
-		for(var i = 0; i < watchSource.lengthl; i++){
+		for(var i = 0, previousCloneGroup = [insertAfterElement]; i < watchSource.length; i++){
 			var currentDataPoint = watchSource[i]
 			var previousDataPoint = (i - 1 >= 0) && watchSource[i - 1]
+			var dataPointKey = keyCommand ? safeEval.call(endComment, keyCommand, currentDataPoint) : i // kinda sucks to have to reuse code like this but ah well :/
+			var lastItemOfPreviousGroup = previousCloneGroup[previousCloneGroup.length - 1]
+			var itemAfterPreviousGroup = lastItemOfPreviousGroup.nextSibling
+			var currentCloneGroup = cloneGroupsMap[dataPointKey]
+			//~ console.log({itemAfterPreviousGroup, previousCloneGroup, lastItemOfPRevious: previousCloneGroup[previousCloneGroup.length - 1]})
 
-			// todo
+			// this is all for updating the DOM. but since it's possiable for the manipulation to happen to this element when it's not attached to the DOM, we should consider that scenario too.
+			if (itemAfterPreviousGroup && itemAfterPreviousGroup.parentElement && itemAfterPreviousGroup[indexProp] !== i){
+				currentCloneGroup.appendTo(itemAfterPreviousGroup.parentElement, itemAfterPreviousGroup)
+			}
+
+			// to make sure our list is updated, we need to add it into the main body array
+			var addIndex = componentElements.indexOf(lastItemOfPreviousGroup) + 1
+			var applyArray = currentCloneGroup.slice()
+			applyArray.unshift(0)
+			applyArray.unshift(addIndex)
+			Array.prototype.splice.apply(componentElements, applyArray)
+
+			// prep for the next loop
+			previousCloneGroup = currentCloneGroup
 		}
 	}
 
@@ -245,10 +270,8 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 				callback()
 			})
 
-			// there's 2 ways for the unlink function to be called, one way is for the destry function to be called because the whole thing is getting destroyed, the other options is for the item to be destroyed because it was cut out of the data modle. this is why we want to destroy the callback in the destry callback list when we are destroying the instance. the reason we do it on the next event cycle is because the deletion order is sensitive so we do it this way to be safe
-			onNextEventCycle(function(){
-				destroyListeners.splice(destroyListeners.indexOf(unlinkCurrentInstance), 1)
-			})
+			// since the deleter function calls unlink first, we can just do this.
+			destroyListeners.splice(destroyListeners.indexOf(unlinkCurrentInstance), 1)
 		}
 
 		// we add it to both because it will remove itself from the callback list, which means no matter how the removal is initiated, it will get removed.

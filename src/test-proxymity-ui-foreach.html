@@ -27,7 +27,7 @@
 				}
 			}
 
-			var test = proxyUI(`
+			var oldTest = proxyUI(`
 				<!-- foreach: "outside" -->
 					<div>
 						Outside [{:this.outside:}]:
@@ -38,13 +38,30 @@
 						<!-- in: arr[this.outside] -->
 					</div>
 				<!-- in: arr -->
-				sum: {:this.app.arr.flat().join(", "):}|{arr.*.*}|
+				sum: {:this.app.arr.reduce((sum, sublist)=>{
+					Array.prototype.push.apply(sum, sublist)
+					return sum
+				}, []).join(", "):}|{arr.*.*}|
 				`, {arr: [
 					["a", "b", "c"],
 					["x", "y", "z"]
 				]}, "app")
+			// oldTest.appendTo(document.body)
+			// console.log(oldTest)
+
+			var test = proxyUI(`
+			<!-- foreach: "index" -->
+				<!-- key: id -->
+				<div>{:this.app.list[this.index].id:}</div>
+			<!-- in: list -->`, {
+				list: [
+					{id: "a"},
+					{id: "b"},
+					{id: "c"},
+				],
+			}, "app")
+
 			test.appendTo(document.body)
-			// console.log(testTemp)
 		</script>
 	</body>
 </html>
