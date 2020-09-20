@@ -79,27 +79,32 @@ function transformList(listToTransform, data, propName, initNodeCallback){
 
 function manageRepeater(startComment, endComment, keyComment, repeatBody, componentElements, data, propName, initNodeCallback){
 	var onDestroyCallbacks = []
-	var cloneGroups = []
+	var cloneGroupsMap = {}
 	var indexCommand = startComment.textContent.trim().slice(8).trim()
 	var inCommand = endComment.textContent.trim().slice(3).trim()
 	var watchTarget = inCommand + ".len"
 	var indexProp = safeEval.call(startComment, indexCommand)
 	if (keyComment){
-		var keyCommand = startComment.textContent.trim().slice(4).trim()
-		//~ watchTarget = inCommand + ".*." + keyCommand
+		var keyCommand = keyComment.textContent.trim().slice(4).trim()
+	}
+	if (!initNodeCallback){
+		initNodeCallback = function(node, data, propName){
+			return function(){}
+		}
 	}
 
 	subscribeToDataLocation()
 
 	return function(){
-		forEach(cloneGroups, function(group){
-			group.unlink()
+		forEach(Object.keys(cloneGroupsMap), function(key){
+			cloneGroupsMap[key].unlink()
 		})
 		forEach(onDestroyCallbacks, function(callback){
 			callback()
 		})
 	}
 
+	/*
 	function onSourceDataChange(updatedLength){
 		if (cloneGroups.length < updatedLength){
 			var numberToCreate = updatedLength - cloneGroups.length
@@ -170,7 +175,7 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 			})
 		}
 	}
-
+	*/
 	var lastWatchDestroyCallback, watchSource
 	function subscribeToDataLocation(){
 		if (lastWatchDestroyCallback){
@@ -182,6 +187,95 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 		// we get the watch source after because the watch method will create paths that didn't exist yet are being watched.
 		watchSource = safeEval.call(endComment, inCommand, data)
 	}
+
+	function onSourceDataChange(newLength){
+		// we want to find the original and mark it as touched. we want to reposition whatever we want to reposition to avoid creating stuff and instead we can reuse stuff instead. if stuff got deleted or added, we can add it into the list.
+		var cloneGroupsMapTouched = {}
+		forEach(watchSource, function(sourceDataPoint, dataPointIndex){
+
+			var dataPointKey = dataPointIndex
+			if (keyCommand){
+				dataPointKey = safeEval.call(endComment, keyCommand, sourceDataPoint) // try to get the key of the item using from the sourceDataPoint. we use safeEval here because the key might be nested.
+				if (typeof dataPointKey !== "string" && typeof dataPointKey !== "number"){
+					throw new Error("Keys can only be Strings or Numbers but got " + typeof dataPointKey + " while trying to read " + keyCommand + " from " + inCommand + "[" + dataPointIndex + "]")
+				}
+			}
+
+			var cloneInstance = cloneGroupsMap[dataPointKey] = cloneGroupsMap[dataPointKey] || createClone(onDestroyCallbacks, dataPointKey)
+			cloneInstance.key = dataPointKey
+
+			if (cloneGroupsMapTouched[dataPointKey]){
+				throw new Error("Keys must be unique but found duplicate key at: " + inCommand + "[" + dataPointIndex + "]")
+			}
+			cloneGroupsMapTouched[dataPointKey] = cloneInstance
+
+		})
+
+		// before we start reordering, lets delete stuff that got dumped. this might make it easier
+		forEach(Object.keys(cloneGroupsMap), function(cloneGroupKey){
+			if (!cloneGroupsMapTouched[cloneGroupKey]){
+				cloneGroupsMap[cloneGroupKey].unlink()
+				cloneGroupsMap[cloneGroupKey].drop()
+				delete cloneGroupsMap[cloneGroupKey]
+			}
+		})
+
+		// at this point, we have deleted everything that shouldn't be there, we should now be able to go through and move things to the right place.
+
+		for(var i = 0; i < watchSource.lengthl; i++){
+			var currentDataPoint = watchSource[i]
+			var previousDataPoint = (i - 1 >= 0) && watchSource[i - 1]
+
+			// todo
+		}
+	}
+
+	function createClone(destroyListeners, key){
+		var newGroupItem = cloneNodes(repeatBody)
+
+		// link the new clones with the data prop
+		var destroyThisInstanceCallback = []
+		forEach(transformList(newGroupItem, data, propName, attachIndexesToNode), function(callback){
+			destroyThisInstanceCallback.push(callback)
+		})
+
+		var unlinkCurrentInstance = function(){
+			forEach(destroyThisInstanceCallback, function(callback){
+				callback()
+			})
+
+			// there's 2 ways for the unlink function to be called, one way is for the destry function to be called because the whole thing is getting destroyed, the other options is for the item to be destroyed because it was cut out of the data modle. this is why we want to destroy the callback in the destry callback list when we are destroying the instance. the reason we do it on the next event cycle is because the deletion order is sensitive so we do it this way to be safe
+			onNextEventCycle(function(){
+				destroyListeners.splice(destroyListeners.indexOf(unlinkCurrentInstance), 1)
+			})
+		}
+
+		// we add it to both because it will remove itself from the callback list, which means no matter how the removal is initiated, it will get removed.
+		destroyListeners.push(unlinkCurrentInstance)
+		destroyThisInstanceCallback.push(unlinkCurrentInstance)
+
+		// add the output api for our convenience
+		addOutputApi(newGroupItem, destroyThisInstanceCallback, data, propName)
+		return newGroupItem
+
+		function attachIndexesToNode(node, data, propName){
+			var undoInheritedInit = initNodeCallback(node, data, propName)
+			newGroupItem.key = key
+
+			Object.defineProperty(node, indexProp, {
+				configurable: true,
+				get: function(){
+					return newGroupItem.key
+				}
+			})
+
+			return function(){
+				undoInheritedInit()
+				delete node[indexProp]
+			}
+		}
+	}
+
 }
 
 function cloneNodes(nodes){
