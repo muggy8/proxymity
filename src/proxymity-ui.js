@@ -201,8 +201,9 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 				}
 			}
 
-			var cloneInstance = cloneGroupsMap[dataPointKey] = cloneGroupsMap[dataPointKey] || createClone(onDestroyCallbacks, dataPointKey)
+			var cloneInstance = cloneGroupsMap[dataPointKey] = cloneGroupsMap[dataPointKey] || createClone(onDestroyCallbacks, dataPointIndex)
 			cloneInstance.key = dataPointKey
+			cloneInstance.index = dataPointIndex
 
 			if (cloneGroupsMapTouched[dataPointKey]){
 				throw new Error("Keys must be unique but found duplicate key at: " + inCommand + "[" + dataPointIndex + "]")
@@ -230,7 +231,7 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 		}
 	}
 
-	function createClone(destroyListeners, key){
+	function createClone(destroyListeners, cloneIndex){
 		var newGroupItem = cloneNodes(repeatBody)
 
 		// link the new clones with the data prop
@@ -260,12 +261,12 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 
 		function attachIndexesToNode(node, data, propName){
 			var undoInheritedInit = initNodeCallback(node, data, propName)
-			newGroupItem.key = key
+			newGroupItem.index = cloneIndex
 
 			Object.defineProperty(node, indexProp, {
 				configurable: true,
 				get: function(){
-					return newGroupItem.key
+					return newGroupItem.index
 				}
 			})
 
