@@ -309,7 +309,7 @@ function isInternalDescriptor(descriptor){
 	return descriptor && descriptor.get && descriptor.get.length === 2 && descriptor.set && descriptor.set.length === 1
 }
 
-var deleteAction = generateId(23) // to avoid any overlaps with anything else, i'm using a random string of a prime number of letters. also since each slot has up to 63 different options, 63^23 is greater than the variation of UUID that could exist so it feels like it's unique enough to not cause collissions.
+var deleteAction = generateId(23), forceUpdateAction = generateId(23)// to avoid any overlaps with anything else, i'm using a random string of a prime number of letters. also since each slot has up to 63 different options, 63^23 is greater than the variation of UUID that could exist so it feels like it's unique enough to not cause collissions.
 function createWatchableProp(obj, prop, value, config){
 	value = arguments.length > 2 ? value : {}
 	config = config || {}
@@ -339,7 +339,7 @@ function createWatchableProp(obj, prop, value, config){
 					del: onDeleteCallback
 				}))
 
-				onNextEventCycle(executeCallbackSet, value, null)
+				onNextEventCycle(executeCallbackSet, value)
 
 				return link.drop
 			}
@@ -357,6 +357,9 @@ function createWatchableProp(obj, prop, value, config){
 				})
 
 				callChildrenDelCallbackRecursive(value)
+			}
+			if (newValue === forceUpdateAction){
+				onNextEventCycle(executeCallbackSet, value, value)
 			}
 			else if(newValue === deleteAction){
 				callbackSet.each(function(set){
@@ -407,11 +410,12 @@ forEach(Object.getOwnPropertyNames(Array.prototype), function(prop){
 		var args = Array.prototype.slice.call(arguments)
 		var res = wrappedFunction.apply(this, args)
 		this.len = this.length
+		this.len = forceUpdateAction
 		return res
 	}
 })
 function overrideArrayFunctions(arr){
-	if (!arr || !isArray(arr) || hasProp(arr, 'len')){
+	if (!arr || !isArray(arr) || hasProp(arr, "len")){
 		return
 	}
 	createWatchableProp(arr, "len", arr.length, {enumerable: false})
@@ -508,7 +512,7 @@ function proxyUI(template, data, propName){
 
 function transformList(listToTransform, data, propName, initNodeCallback){
 	var withinForeach = false, unlinkCallback = [], initTasks = []
-	var startComment, endComment, repeatBody = []
+	var startComment, endComment, keyComment, repeatBody = []
 
 	for(var i = listToTransform.length - 1; i > -1; i--){
 		var keepable = true
@@ -523,15 +527,19 @@ function transformList(listToTransform, data, propName, initNodeCallback){
 		}
 		if (item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("key:") === 0){
 			keepable = true
+			keyComment = item
+		}
+		if (item instanceof Comment && item.textContent.trim().toLowerCase().indexOf("foreach:") === 0){
+			keepable = true
 			withinForeach = false
 			startComment = item
 
-			var initRepeater = (function(startComment, endComment, repeatBody){
-				unlinkCallback.push(manageRepeater(startComment, endComment, repeatBody, listToTransform, data, propName, initNodeCallback))
-			}).bind(null, startComment, endComment, repeatBody)
+			var initRepeater = (function(startComment, endComment, keyComment, repeatBody){
+				unlinkCallback.push(manageRepeater(startComment, endComment, keyComment, repeatBody, listToTransform, data, propName, initNodeCallback))
+			}).bind(null, startComment, endComment, keyComment, repeatBody)
 			initTasks.splice(initTasks.length - 1, 0, initRepeater)
 
-			startComment = endComment = undefined
+			startComment = endComment = keyComment = undefined
 			repeatBody = []
 		}
 
@@ -559,103 +567,167 @@ function transformList(listToTransform, data, propName, initNodeCallback){
 	return unlinkCallback
 }
 
-function manageRepeater(startComment, endComment, repeatBody, componentElements, data, propName, initNodeCallback){
+function manageRepeater(startComment, endComment, keyComment, repeatBody, componentElements, data, propName, initNodeCallback){
 	var onDestroyCallbacks = []
-	var cloneGroups = []
-	var indexCommand = startComment.textContent.trim().slice(4)
+	var cloneGroupsMap = {}
+	var indexCommand = startComment.textContent.trim().slice(8).trim()
 	var inCommand = endComment.textContent.trim().slice(3).trim()
 	var watchTarget = inCommand + ".len"
 	var indexProp = safeEval.call(startComment, indexCommand)
+	var insertAfterElement = startComment
+	if (keyComment){
+		var keyCommand = keyComment.textContent.trim().slice(4).trim()
+		insertAfterElement = keyComment
+	}
+	if (!initNodeCallback){
+		initNodeCallback = function(node, data, propName){
+			return function(){}
+		}
+	}
 
 	subscribeToDataLocation()
 
 	return function(){
-		forEach(cloneGroups, function(group){
-			group.unlink()
+		forEach(Object.keys(cloneGroupsMap), function(key){
+			cloneGroupsMap[key].unlink()
 		})
 		forEach(onDestroyCallbacks, function(callback){
 			callback()
 		})
 	}
 
-	function onSourceDataChange(updatedLength){
-		if (cloneGroups.length < updatedLength){
-			var numberToCreate = updatedLength - cloneGroups.length
-			if (!initNodeCallback){
-				initNodeCallback = function(node, data, propName){
-					return function(){}
-				}
-			}
-
-			for(var i = 0; i < numberToCreate; i++){
-				var newGroupItem = cloneNodes(repeatBody)
-				var destroyListeners = []
-
-				var attachIndex = (function(index, node, data, propName){
-					// call the pervious init callback with the same props
-					var undoInheritedInit = initNodeCallback(node, data, propName)
-
-					// add the index key
-					Object.defineProperty(node, indexProp, {
-						configurable: true,
-						get: function(){
-							return index
-						},
-					})
-
-					return function(){
-						undoInheritedInit()
-						delete node[indexProp]
-					}
-				}).bind(null, cloneGroups.length)
-
-				// link the new clones with the data prop
-				forEach(transformList(newGroupItem, data, propName, attachIndex), function(callback){
-					destroyListeners.push(callback)
-				})
-
-				// add the output api for our convenience
-				addOutputApi(newGroupItem, destroyListeners, data, propName)
-
-				// keep the cone group in or groups list cuz this makes it easy to add and remove entire groups of stuff
-				cloneGroups.push(newGroupItem)
-
-				// if the end node is a child of another node, append it
-				if (endComment.parentNode){
-					forEach(newGroupItem, function(node) {
-						endComment.parentNode.insertBefore(node, endComment)
-					})
-				}
-
-				// update the entire group's overall data list so the original data group can use their attach and detach methods effectively
-				var spliceLocation = componentElements.indexOf(endComment) - 1
-				var applyArray = newGroupItem.slice()
-				applyArray.unshift(0)
-				applyArray.unshift(spliceLocation)
-				Array.prototype.splice.apply(componentElements, applyArray)
-			}
-		}
-		else if (cloneGroups.length > updatedLength){
-			var tobeRemoved = cloneGroups.splice(updatedLength)
-			forEach(tobeRemoved, function(group){
-				group.unlink()
-				group.detach()
-				for(var i = componentElements.length - 1; i > -1; i--){
-					if (group.indexOf(componentElements[i]) !== -1){
-						componentElements.splice(i, 1)
-					}
-				}
-			})
-		}
-	}
-
-	var lastWatchDestroyCallback
+	var lastWatchDestroyCallback, watchSource
 	function subscribeToDataLocation(){
 		if (lastWatchDestroyCallback){
 			var spliceIndex = onDestroyCallbacks.indexOf(lastWatchDestroyCallback)
 			onDestroyCallbacks.splice(spliceIndex, 1)
 		}
 		onDestroyCallbacks.push(lastWatchDestroyCallback = watch.call(endComment, data, watchTarget, onSourceDataChange, subscribeToDataLocation))
+
+		watchSource = safeEval.call(endComment, inCommand, data) // because the watch method will create non existant paths, we can use that to create non-existant paths and then we can get it and know that it wont error
+
+		onSourceDataChange() // we do this here somewhat redundantly because the subscribe method will call this on the next tick but we dont want that, we want to update it now because the if the list got replaced, we want the deletion of the UI elements to happen before the UI elementes gets a change to resubscribe to none-existant paths.
+	}
+
+	function onSourceDataChange(){
+
+		// we want to find the original and mark it as touched. we want to reposition whatever we want to reposition to avoid creating stuff and instead we can reuse stuff instead. if stuff got deleted or added, we can add it into the list.
+		var cloneGroupsMapTouched = {}
+		forEach(watchSource, function(sourceDataPoint, dataPointIndex){
+
+			var dataPointKey = dataPointIndex
+			if (keyCommand){
+				dataPointKey = safeEval.call(endComment, keyCommand, sourceDataPoint) // try to get the key of the item using from the sourceDataPoint. we use safeEval here because the key might be nested.
+				if (typeof dataPointKey !== "string" && typeof dataPointKey !== "number"){
+					throw new Error("Keys can only be Strings or Numbers but got " + typeof dataPointKey + " while trying to read " + keyCommand + " from " + inCommand + "[" + dataPointIndex + "]")
+				}
+			}
+
+			var cloneInstance = cloneGroupsMap[dataPointKey] = cloneGroupsMap[dataPointKey] || createClone(onDestroyCallbacks, dataPointIndex)
+			cloneInstance.key = dataPointKey
+			cloneInstance.index = dataPointIndex
+
+			if (cloneGroupsMapTouched[dataPointKey]){
+				throw new Error("Keys must be unique but found duplicate key at: " + inCommand + "[" + dataPointIndex + "]")
+			}
+			cloneGroupsMapTouched[dataPointKey] = cloneInstance
+
+		})
+
+		// before we start reordering, lets delete stuff that got dumped. this might make it easier
+		forEach(Object.keys(cloneGroupsMap), function(cloneGroupKey){
+			if (!cloneGroupsMapTouched[cloneGroupKey]){
+				console.log(cloneGroupsMap[cloneGroupKey])
+				cloneGroupsMap[cloneGroupKey].detach()
+				cloneGroupsMap[cloneGroupKey].unlink()
+
+				// we need to manage the clone groups and drop it from the master list when it gets deleted
+				dropCloneGroupFromComponentElements(cloneGroupsMap[cloneGroupKey])
+
+				delete cloneGroupsMap[cloneGroupKey]
+			}
+		})
+
+		// at this point, we have deleted everything that shouldn't be there, we should now be able to go through and move things to the right place.
+
+		for(var i = 0, previousCloneGroup = [insertAfterElement]; i < watchSource.length; i++){
+			var currentDataPoint = watchSource[i]
+			var previousDataPoint = (i - 1 >= 0) && watchSource[i - 1]
+			var dataPointKey = keyCommand ? safeEval.call(endComment, keyCommand, currentDataPoint) : i // kinda sucks to have to reuse code like this but ah well :/
+			var lastItemOfPreviousGroup = previousCloneGroup[previousCloneGroup.length - 1]
+			var indexOfLastItemOfPreviousGroup = componentElements.indexOf(lastItemOfPreviousGroup)
+			var itemAfterPreviousGroup = componentElements[indexOfLastItemOfPreviousGroup + 1]
+			var currentCloneGroup = cloneGroupsMap[dataPointKey]
+			//~ console.log({itemAfterPreviousGroup, previousCloneGroup, lastItemOfPRevious: previousCloneGroup[previousCloneGroup.length - 1]})
+
+			// if the next item is a wrong item we need to move the right group to the right place. since we already updated the key and the index in the previous loop thingy we can skip that here.
+			if (itemAfterPreviousGroup[indexProp] !== i){
+				// this is all for updating the DOM. but since it's possiable for the manipulation to happen to this element when it's not attached to the DOM, we should consider that scenario too.
+				if (itemAfterPreviousGroup && itemAfterPreviousGroup.parentElement){
+					currentCloneGroup.appendTo(itemAfterPreviousGroup.parentElement, itemAfterPreviousGroup)
+				}
+
+				// to make sure our list is updated, we need to add it into the main body array. since the items in an array isn't as automatic as the DOM, we need to drop it from our list first then add it back in the right position assuming we need to
+				dropCloneGroupFromComponentElements(currentCloneGroup)
+				var addIndex = componentElements.indexOf(lastItemOfPreviousGroup) + 1
+				var applyArray = currentCloneGroup.slice()
+				applyArray.unshift(0)
+				applyArray.unshift(addIndex)
+				Array.prototype.splice.apply(componentElements, applyArray)
+			}
+
+			// prep for the next loop
+			previousCloneGroup = currentCloneGroup
+		}
+	}
+
+	function createClone(destroyListeners, cloneIndex){
+		var newGroupItem = cloneNodes(repeatBody)
+
+		// link the new clones with the data prop
+		var destroyThisInstanceCallback = []
+		forEach(transformList(newGroupItem, data, propName, attachIndexesToNode), function(callback){
+			destroyThisInstanceCallback.push(callback)
+		})
+
+		var unlinkCurrentInstance = function(){
+			forEach(destroyThisInstanceCallback, function(callback){
+				callback !== unlinkCurrentInstance && callback()
+			})
+
+			// since the deleter function calls unlink first, we can just do this.
+			destroyListeners.splice(destroyListeners.indexOf(unlinkCurrentInstance), 1)
+		}
+
+		// we add it to both because it will remove itself from the callback list, which means no matter how the removal is initiated, it will get removed.
+		destroyListeners.push(unlinkCurrentInstance)
+		destroyThisInstanceCallback.push(unlinkCurrentInstance)
+
+		// add the output api for our convenience
+		addOutputApi(newGroupItem, destroyThisInstanceCallback, data, propName)
+		return newGroupItem
+
+		function attachIndexesToNode(node, data, propName){
+			var undoInheritedInit = initNodeCallback(node, data, propName)
+			newGroupItem.index = cloneIndex
+
+			Object.defineProperty(node, indexProp, {
+				configurable: true,
+				get: function(){
+					return newGroupItem.index
+				}
+			})
+
+			return function(){
+				undoInheritedInit()
+				delete node[indexProp]
+			}
+		}
+	}
+
+	function dropCloneGroupFromComponentElements(cloneGroup){
+		var spliceIndex = componentElements.indexOf(cloneGroup[0])
+		spliceIndex > -1 && componentElements.splice(spliceIndex, cloneGroup.length)
 	}
 }
 
