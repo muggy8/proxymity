@@ -21,13 +21,13 @@ your total is {: this.app.items.reduce((sum, item)=>sum + item.cost, 0) :}|{item
 
 Please note: because proxymity runs regular javascript within the `{::}` blocks, you should be careful to not output any user entered content directly within the execution block as that would allow for XXS of your web site (eg: via some sort of tempting engine)
 
-## key: indexName ... in: array
+## foreach: indexName ... in: array
 - indexName: a string to be added to all elements of the enclosed Template
 - array: a javascript array object with a length property.
-If you have an array of items, you can use a `key in` repeater to replicate the enclosed template for each item of the array. Do note that it must be an array. The `key in` repeater is 2 comments that enclose a set of HTML elements and begins with a comment that starts with `key:` and ends with a comment that begins with `in:`. you are not able to stack repeaters within repeaters so if you want nested loops, you'll need to put the inner loops into an element that is within the outer loop.
+If you have an array of items, you can use a `foreach in` repeater to replicate the enclosed template for each item of the array. Do note that it must be an array. The `foreach in` repeater is 2 comments that enclose a set of HTML elements and begins with a comment that starts with `foreach:` and ends with a comment that begins with `in:`. you are not able to stack repeaters within repeaters so if you want nested loops, you'll need to put the inner loops into an element that is within the outer loop.
 
 ```HTML
-<!-- key: "itemIndex" -->
+<!-- foreach: "itemIndex" -->
 <div>
 	<img src="{:this.app.player.units[this.itemIndex].avatar:}">
 	<div>
@@ -38,6 +38,21 @@ If you have an array of items, you can use a `key in` repeater to replicate the 
 <!-- in: player.units -->
 
 ```
+
+If for some cases, you'd want the repeater to be more efficent in these cases, you can use the `key:` comment to specify a key to the item in the repeater. This is useful for cases where some sort of state about particular items are managed outside Proxymity or there are a large number of items and updating them all is inefficent. In these cases, by providing a comment that starts with `key:` after the comment that starts with `foreach:` will allow you to specify a prop in item.
+
+```HTML
+<!-- foreach: "itemIndex" -->
+<!-- key: id -->
+<div>
+	<img src="{:this.app.player.units[this.itemIndex].avatar:}">
+	<div>
+		This unit's id is: '{:this.app.player.units[this.itemIndex].id:}
+		<input type="text" data-value="{:this.app.player.units[this.itemIndex].name:}|{player.units[this.itemIndex].name}|" onchange="this.app.player.units[this.itemIndex].name = this.value">
+		<input type="text" data-value="{:this.app.player.units[this.itemIndex].health:}|{player.units[this.itemIndex].health}|" onchange="this.app.player.units[this.itemIndex].health = this.value">
+	</div>
+</div>
+<!-- in: player.units -->
 
 ## input data binding
 As of version 2.0.0 the data binding of inputs are no longer automatic. instead it is done manually sorta. any `data-` property will have that property's value checked against the element's javascript properties and if it exists, then it will place that stirng value also into the element's property.
