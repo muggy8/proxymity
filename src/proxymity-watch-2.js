@@ -107,7 +107,7 @@ function isInternalDescriptor(descriptor){
 	return descriptor && descriptor.get && descriptor.get.length === 2 && descriptor.set && descriptor.set.length === 1
 }
 
-var deleteAction = generateId(23) // to avoid any overlaps with anything else, i'm using a random string of a prime number of letters. also since each slot has up to 63 different options, 63^23 is greater than the variation of UUID that could exist so it feels like it's unique enough to not cause collissions.
+var deleteAction = generateId(23), forceUpdateAction = generateId(23)// to avoid any overlaps with anything else, i'm using a random string of a prime number of letters. also since each slot has up to 63 different options, 63^23 is greater than the variation of UUID that could exist so it feels like it's unique enough to not cause collissions.
 function createWatchableProp(obj, prop, value, config){
 	value = arguments.length > 2 ? value : {}
 	config = config || {}
@@ -137,7 +137,7 @@ function createWatchableProp(obj, prop, value, config){
 					del: onDeleteCallback
 				}))
 
-				onNextEventCycle(executeCallbackSet, value, null)
+				onNextEventCycle(executeCallbackSet, value)
 
 				return link.drop
 			}
@@ -155,6 +155,9 @@ function createWatchableProp(obj, prop, value, config){
 				})
 
 				callChildrenDelCallbackRecursive(value)
+			}
+			if (newValue === forceUpdateAction){
+				onNextEventCycle(executeCallbackSet, value, value)
 			}
 			else if(newValue === deleteAction){
 				callbackSet.each(function(set){
@@ -205,11 +208,12 @@ forEach(Object.getOwnPropertyNames(Array.prototype), function(prop){
 		var args = Array.prototype.slice.call(arguments)
 		var res = wrappedFunction.apply(this, args)
 		this.len = this.length
+		this.len = forceUpdateAction
 		return res
 	}
 })
 function overrideArrayFunctions(arr){
-	if (!arr || !isArray(arr) || hasProp(arr, 'len')){
+	if (!arr || !isArray(arr) || hasProp(arr, "len")){
 		return
 	}
 	createWatchableProp(arr, "len", arr.length, {enumerable: false})
