@@ -637,7 +637,6 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 		// before we start reordering, lets delete stuff that got dumped. this might make it easier
 		forEach(Object.keys(cloneGroupsMap), function(cloneGroupKey){
 			if (!cloneGroupsMapTouched[cloneGroupKey]){
-				console.log(cloneGroupsMap[cloneGroupKey])
 				cloneGroupsMap[cloneGroupKey].detach()
 				cloneGroupsMap[cloneGroupKey].unlink()
 
