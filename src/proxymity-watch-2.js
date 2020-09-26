@@ -174,7 +174,7 @@ function createWatchableProp(obj, prop, value, config){
 
 					var oldVal = value
 					overrideArrayFunctions(value = newValue)
-					onNextEventCycle(callChildrenDelCallbackRecursive, oldVal)
+					callChildrenDelCallbackRecursive(oldVal)
 				}
 				return value
 			}

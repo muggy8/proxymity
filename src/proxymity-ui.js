@@ -108,18 +108,18 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 
 	var lastWatchDestroyCallback, watchSource
 	function subscribeToDataLocation(){
-		console.log("resubscribe")
 		if (lastWatchDestroyCallback){
 			var spliceIndex = onDestroyCallbacks.indexOf(lastWatchDestroyCallback)
 			onDestroyCallbacks.splice(spliceIndex, 1)
 		}
 		onDestroyCallbacks.push(lastWatchDestroyCallback = watch.call(endComment, data, watchTarget, onSourceDataChange, subscribeToDataLocation))
-		onSourceDataChange()
+
+		watchSource = safeEval.call(endComment, inCommand, data) // because the watch method will create non existant paths, we can use that to create non-existant paths and then we can get it and know that it wont error
+
+		onSourceDataChange() // we do this here somewhat redundantly because the subscribe method will call this on the next tick but we dont want that, we want to update it now because the if the list got replaced, we want the deletion of the UI elements to happen before the UI elementes gets a change to resubscribe to none-existant paths.
 	}
 
 	function onSourceDataChange(){
-		console.log("source changed", {endComment, inCommand, data})
-		watchSource = safeEval.call(endComment, inCommand, data)
 
 		// we want to find the original and mark it as touched. we want to reposition whatever we want to reposition to avoid creating stuff and instead we can reuse stuff instead. if stuff got deleted or added, we can add it into the list.
 		var cloneGroupsMapTouched = {}
