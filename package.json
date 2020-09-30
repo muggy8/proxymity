@@ -1,6 +1,6 @@
 {
   "name": "proxymity",
-  "version": "2.0.0-rc7",
+  "version": "2.0.0-rc8",
   "description": "Proxymity is a 2 way binding library that can be used to renderer ad manage complex views.",
   "main": "dist/proxymity.min.js",
   "directories": {
