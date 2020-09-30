@@ -51,7 +51,7 @@
 
 			var test = proxyUI(`
 			<!-- foreach: "index" -->
-				<!-- key: id -->
+				<!-- key: item=>item.id -->
 				<div>{:this.app.list[this.index].id:}</div>
 			<!-- in: list -->`, {
 				list: [

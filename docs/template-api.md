@@ -39,7 +39,23 @@ If you have an array of items, you can use a `foreach in` repeater to replicate 
 
 ```
 
-If for some cases, you'd want the repeater to be more efficent in these cases, you can use the `key:` comment to specify a key to the item in the repeater. This is useful for cases where some sort of state about particular items are managed outside Proxymity or there are a large number of items and updating them all is inefficent. In these cases, by providing a comment that starts with `key:` after the comment that starts with `foreach:` will allow you to specify a prop in item.
+If for some cases, you'd want the repeater to be more efficent in these cases, you can use the `key:` comment to specify a key to the item in the repeater. This is useful for cases where some sort of state about particular items are managed outside Proxymity or there are a large number of items and updating them all is inefficent. In these cases, provide a comment that starts with `key:` immediately after the comment that starts with `foreach:`. The `key:` comment should contains a callback function that returns the key assocated with an item in the list when provided the item. This callback has the exact same method singnature as a callback function for a `Array.prototype.forEach` callback.
+
+```HTML
+<!-- foreach: "itemIndex" -->
+<!-- key: function(item, index, whole){ return item.id } -->
+<div>
+	<img src="{:this.app.player.units[this.itemIndex].avatar:}">
+	<div>
+		This unit's id is: '{:this.app.player.units[this.itemIndex].id:}
+		<input type="text" data-value="{:this.app.player.units[this.itemIndex].name:}|{player.units[this.itemIndex].name}|" onchange="this.app.player.units[this.itemIndex].name = this.value">
+		<input type="text" data-value="{:this.app.player.units[this.itemIndex].health:}|{player.units[this.itemIndex].health}|" onchange="this.app.player.units[this.itemIndex].health = this.value">
+	</div>
+</div>
+<!-- in: player.units -->
+```
+
+if typing out the function is too much of a handful and you are not able to use arrow functions, you may use the shortcut by specifying a property path from the item. However, by doing this, you are unable to access the index or the whole array should you need access to that, it's better to use the callback instead.
 
 ```HTML
 <!-- foreach: "itemIndex" -->
@@ -53,6 +69,7 @@ If for some cases, you'd want the repeater to be more efficent in these cases, y
 	</div>
 </div>
 <!-- in: player.units -->
+```
 
 ## input data binding
 As of version 2.0.0 the data binding of inputs are no longer automatic. instead it is done manually sorta. any `data-` property will have that property's value checked against the element's javascript properties and if it exists, then it will place that stirng value also into the element's property.

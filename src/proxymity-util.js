@@ -6,6 +6,10 @@ function forEach(arrayLike, callback){
 	return arrayLike && isNumber(arrayLike.length) && Array.prototype.forEach.call(arrayLike, callback)
 }
 
+function isFunction(val){
+	return typeof val === "function"
+}
+
 function isString(val){
 	return typeof val === "string"
 }
