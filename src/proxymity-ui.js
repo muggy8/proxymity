@@ -128,7 +128,11 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 			var dataPointKey = dataPointIndex
 			if (keyCommand){
 				dataPointKey = safeEval.call(endComment, keyCommand, sourceDataPoint) // try to get the key of the item using from the sourceDataPoint. we use safeEval here because the key might be nested.
-				if (typeof dataPointKey !== "string" && typeof dataPointKey !== "number"){
+				if (typeof dataPointKey === "function"){
+					dataPointKey = dataPointKey(sourceDataPoint, dataPointIndex, whole)
+				}
+
+				if (!isString(dataPointKey) && !isNumber(dataPointKey)){
 					throw new Error("Keys can only be Strings or Numbers but got " + typeof dataPointKey + " while trying to read " + keyCommand + " from " + inCommand + "[" + dataPointIndex + "]")
 				}
 			}
