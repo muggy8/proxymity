@@ -9,6 +9,10 @@ function forEach(arrayLike, callback){
 	return arrayLike && isNumber(arrayLike.length) && Array.prototype.forEach.call(arrayLike, callback)
 }
 
+function isFunction(val){
+	return typeof val === "function"
+}
+
 function isString(val){
 	return typeof val === "string"
 }
@@ -613,12 +617,16 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 
 		// we want to find the original and mark it as touched. we want to reposition whatever we want to reposition to avoid creating stuff and instead we can reuse stuff instead. if stuff got deleted or added, we can add it into the list.
 		var cloneGroupsMapTouched = {}
-		forEach(watchSource, function(sourceDataPoint, dataPointIndex){
+		forEach(watchSource, function(sourceDataPoint, dataPointIndex, whole){
 
 			var dataPointKey = dataPointIndex
 			if (keyCommand){
 				dataPointKey = safeEval.call(endComment, keyCommand, sourceDataPoint) // try to get the key of the item using from the sourceDataPoint. we use safeEval here because the key might be nested.
-				if (typeof dataPointKey !== "string" && typeof dataPointKey !== "number"){
+				if (isFunction(dataPointKey)){
+					dataPointKey = dataPointKey(sourceDataPoint, dataPointIndex, whole)
+				}
+
+				if (!isString(dataPointKey) && !isNumber(dataPointKey)){
 					throw new Error("Keys can only be Strings or Numbers but got " + typeof dataPointKey + " while trying to read " + keyCommand + " from " + inCommand + "[" + dataPointIndex + "]")
 				}
 			}
@@ -653,6 +661,7 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 			var currentDataPoint = watchSource[i]
 			var previousDataPoint = (i - 1 >= 0) && watchSource[i - 1]
 			var dataPointKey = keyCommand ? safeEval.call(endComment, keyCommand, currentDataPoint) : i // kinda sucks to have to reuse code like this but ah well :/
+			dataPointKey = isFunction(dataPointKey) ? dataPointKey(currentDataPoint, i, watchSource) : dataPointKey
 			var lastItemOfPreviousGroup = previousCloneGroup[previousCloneGroup.length - 1]
 			var indexOfLastItemOfPreviousGroup = componentElements.indexOf(lastItemOfPreviousGroup)
 			var itemAfterPreviousGroup = componentElements[indexOfLastItemOfPreviousGroup + 1]
