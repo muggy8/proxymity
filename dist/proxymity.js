@@ -580,7 +580,7 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 	var indexProp = safeEval.call(startComment, indexCommand)
 	var insertAfterElement = startComment
 	if (keyComment){
-		var keyCommand = keyComment.textContent.trim().slice(4).trim()
+		var keyCommand = "(" + keyComment.textContent.trim().slice(4).trim() + ")"
 		insertAfterElement = keyComment
 	}
 	if (!initNodeCallback){
@@ -627,7 +627,7 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 				}
 
 				if (!isString(dataPointKey) && !isNumber(dataPointKey)){
-					throw new Error("Keys can only be Strings or Numbers but got " + typeof dataPointKey + " while trying to read " + keyCommand + " from " + inCommand + "[" + dataPointIndex + "]")
+					throw new Error("Keys can only be Strings or Numbers but got " + typeof dataPointKey + " while using " + keyCommand + " to obtain a key from " + inCommand + "[" + dataPointIndex + "]")
 				}
 			}
 
