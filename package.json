@@ -15,8 +15,9 @@
     "url": "git+https://github.com/muggy8/proxymity.git"
   },
   "keywords": [
-    "Data_Bindiig",
-    "UI"
+    "Data_Binding",
+    "UI",
+	"framework",
   ],
   "author": "Muggy Ate",
   "license": "MIT",
