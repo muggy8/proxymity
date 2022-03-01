@@ -1031,6 +1031,7 @@ function renderString(textSource, clusters){
 			// cluster.val.appendTo(textSource.parentNode, textSource)
 			if (cluster.val && cluster.val.appendTo && cluster.val.detach && cluster.val.length){
 				var replacement = arrayFrom(cluster.val)
+				cluster.domNode = document.createComment(cluster.domNode.textContent)
 				replacement.push(cluster.domNode)
 				cluster.domNode.replaceWith.apply(cluster.domNode, replacement)
 			}
