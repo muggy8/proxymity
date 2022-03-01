@@ -469,7 +469,6 @@ function continiousSyntaxRender(textSource, node, propName){
 		}
 		replaceTextNode()
 		onAttach(function(){
-			console.log(textSource, clusters)
 			if (textSource.parentNode){
 				replaceTextNode()
 				renderString(textSource, clusters)
