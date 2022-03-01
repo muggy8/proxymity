@@ -342,6 +342,9 @@ function addOutputApi(transformedList, unlinkCallbackList, data, propName, onAtt
 
 	// these are the methods that are used by the addOutputApi method to the array object.
 	function appendTo(selectorOrElement, beforeThis){
+		if (!selectorOrElement){
+			return
+		}
 		// if a selector is provided querySelect the element and append to it
 		if (isString(selectorOrElement)){
 			return appendTo.call(this, document.querySelector(selectorOrElement), beforeThis)
@@ -466,8 +469,11 @@ function continiousSyntaxRender(textSource, node, propName){
 		}
 		replaceTextNode()
 		onAttach(function(){
-			replaceTextNode()
-			renderString(textSource, clusters)
+			console.log(textSource, clusters)
+			if (textSource.parentNode){
+				replaceTextNode()
+				renderString(textSource, clusters)
+			}
 		})
 	}
 
@@ -537,14 +543,18 @@ function renderString(textSource, clusters){
 			// cluster.val.appendTo(textSource.parentNode, textSource)
 			if (cluster.val && cluster.val.appendTo && cluster.val.detach && cluster.val.length){
 				var replacement = arrayFrom(cluster.val)
-				cluster.domNode = document.createComment(cluster.domNode.textContent)
-				replacement.push(cluster.domNode)
+				var domNodeReplacement = document.createComment(cluster.domNode.textContent)
+				replacement.push(domNodeReplacement)
 				cluster.domNode.replaceWith.apply(cluster.domNode, replacement)
+				cluster.domNode = domNodeReplacement
+				cluster.val.appendTo()
 			}
 			else{
 				cluster.domNode.textContent = cluster.val
 			}
 		})
+
+		// console.log(textSource, clusters)
 	}
 	else{ // the only other possiable condition is that the value is a attribute but it's got other text mixed in
 		forEach(clusters, function(cluster){

@@ -26,6 +26,10 @@
 					}
 				}
 			}
+			var otherTest = proxyUI("this is a {:this.app.what:}|{what}| from {:this.app.where:}|{where}|.", {
+				what: "car",
+				where: "tesla"
+			}, "app")
 
 			var testTemp = proxyUI(`
 				<div class='foo-{:this.app.foo:}|{foo}|'>
@@ -37,14 +41,11 @@
 					<option value="2">2</option>
 					<option value="3">3</option>
 				</select>
-				<input data-value="{:this.app.foo:}|{foo}|" onkeyup='this.app.foo = this.valueAsNumber' onchange='this.app.foo = this.valueAsNumber' type='number'/>`, {foo: 15, bar: "1"}, "app")
+				<input data-value="{:this.app.foo:}|{foo}|" onkeyup='this.app.foo = this.valueAsNumber' onchange='this.app.foo = this.valueAsNumber' type='number'/>
+				<div>{:this.app.otherTest:}|{otherTest}|</div>
+				`, {foo: 15, bar: "1", otherTest}, "app")
 			testTemp.appendTo(document.body)
 
-			var otherTest = proxyUI("this is a {:this.app.what:}|{what}| from {:this.app.where:}|{where}|.", {
-				what: "car",
-				where: "tesla"
-			}, "app")
-			otherTest.appendTo(document.body)
 		</script>
 	</body>
 </html>
