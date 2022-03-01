@@ -911,6 +911,20 @@ function continiousSyntaxRender(textSource, node, propName){
 		return chunk.text || chunk.code
 	})
 
+	// for effecency's sake and for the sake of less bugs, if there's no code in the text source we should return
+	var assumeNoCode = true
+	forEach(clusters, function(chunk){
+		if (!assumeNoCode){
+			return
+		}
+		if (chunk.code){
+			assumeNoCode = false
+		}
+	})
+	if (assumeNoCode){
+		return
+	}
+
 	// we want to filter it down to only the code chunk if it's a code only comment because that's how we know what to replace the attribute value with in the future if that's the case.
 	var assumeItsAllCode = true
 	forEach(clusters, function(chunk){
@@ -933,11 +947,14 @@ function continiousSyntaxRender(textSource, node, propName){
 	}
 
 	// now, if the whole thing is a dom text element, we replace it with a bunch of chunks so we can later replace the chunks
-	if (textSource instanceof Text || textSource instanceof Comment){
+	var domNodeInstantiator
+	textSource instanceof Text && (domNodeInstantiator = document.createTextNode)
+	textSource instanceof Comment && (domNodeInstantiator = document.createComment)
+	if (domNodeInstantiator){
 		var replaceTextNode = function(){
 			var commentList = []
 			forEach(clusters, function(chunk){
-				commentList.push(chunk.domNode = document.createComment(chunk.text))
+				commentList.push(chunk.domNode = domNodeInstantiator.call(document, chunk.text))
 			})
 			textSource.replaceWith.apply(textSource, commentList)
 		}
@@ -1017,9 +1034,7 @@ function renderString(textSource, clusters){
 				cluster.domNode.replaceWith.apply(cluster.domNode, replacement)
 			}
 			else{
-				var textNode = document.createTextNode(cluster.val)
-				cluster.domNode.replaceWith(textNode)
-				cluster.domNode = textNode
+				cluster.domNode.textContent = cluster.val
 			}
 		})
 	}
