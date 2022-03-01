@@ -9,14 +9,16 @@ function proxyUI(template, data, propName){
 	if (template instanceof NodeList || (isArray(template) && template.reduce(function(current, node){
 		return current && node instanceof Node
 	}, true))){
+		attachStack.push([])
 		var templateList = arrayFrom(template)
 		var unlinkCallback = transformList(templateList, data, propName)
-		return addOutputApi(templateList, unlinkCallback, data, propName)
+		return addOutputApi(templateList, unlinkCallback, data, propName, attachStack.pop())
 	}
 
 	if (template instanceof Node){
+		attachStack.push([])
 		var unlinkCallback = transformNode(template, data, propName)
-		return addOutputApi([template], unlinkCallback, data, propName)
+		return addOutputApi([template], unlinkCallback, data, propName, attachStack.pop())
 	}
 }
 
@@ -196,6 +198,7 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 	}
 
 	function createClone(destroyListeners, cloneIndex){
+		attachStack.push([])
 		var newGroupItem = cloneNodes(repeatBody)
 
 		// link the new clones with the data prop
@@ -218,7 +221,7 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 		destroyThisInstanceCallback.push(unlinkCurrentInstance)
 
 		// add the output api for our convenience
-		addOutputApi(newGroupItem, destroyThisInstanceCallback, data, propName)
+		addOutputApi(newGroupItem, destroyThisInstanceCallback, data, propName, attachStack.pop())
 		return newGroupItem
 
 		function attachIndexesToNode(node, data, propName){
@@ -318,14 +321,21 @@ function transformNode(node, data, propName, initNodeCallback){
 // ok here we have all the other support functions that does stuff important but the main 3 is above
 
 // This is the function that adds the additional properties to the output
-function addOutputApi(transformedList, unlinkCallbackList, data, propName){
+function addOutputApi(transformedList, unlinkCallbackList, data, propName, onAttachCallbacks){
 	attachNodeDataProp(transformedList, data, propName)
-	define(transformedList, "appendTo", appendTo)
+	define(transformedList, "appendTo", function(a, b){
+		appendTo.call(this, a, b)
+		// this is where we call the on attach callbacks that we so maticiously set up.
+		forEach(onAttachCallbacks, function(callback){
+			callback()
+		})
+	})
 	define(transformedList, "detach", detach)
 	define(transformedList, "unlink", function(){
 		for(var i = 0; i < unlinkCallbackList.length; i++){
 			unlinkCallbackList[i]()
 		}
+		delete onAttachCallbacks
 	})
 	return transformedList
 }
@@ -365,6 +375,14 @@ function addOutputApi(transformedList, unlinkCallbackList, data, propName){
 		return this
 	}
 
+	// there are some internal events we want to keep from outside tampering. this allows us to set up our own that is scoped here so it's private
+	var attachStack = []
+	function onAttach(callback){
+		if (attachStack.length){
+			attachStack[attachStack.length - 1].push(callback)
+		}
+	}
+
 // this function is responsible for rendering our handlebars and watching the paths that needs to be watched
 function continiousSyntaxRender(textSource, node, propName){
 	var text = textSource.textContent
@@ -399,6 +417,7 @@ function continiousSyntaxRender(textSource, node, propName){
 		return chunk.text || chunk.code
 	})
 
+	// we want to filter it down to only the code chunk if it's a code only comment because that's how we know what to replace the attribute value with in the future if that's the case.
 	var assumeItsAllCode = true
 	forEach(clusters, function(chunk){
 		if (!assumeItsAllCode){
@@ -419,7 +438,23 @@ function continiousSyntaxRender(textSource, node, propName){
 		})
 	}
 
-	// render the code that doesn't have watchers
+	// now, if the whole thing is a dom text element, we replace it with a bunch of chunks so we can later replace the chunks
+	if (textSource instanceof Text || textSource instanceof Comment){
+		var replaceTextNode = function(){
+			var commentList = []
+			forEach(clusters, function(chunk){
+				commentList.push(chunk.domNode = document.createComment(chunk.text))
+			})
+			textSource.replaceWith.apply(textSource, commentList)
+		}
+		replaceTextNode()
+		onAttach(function(){
+			replaceTextNode()
+			renderString(textSource, clusters)
+		})
+	}
+
+	// updat the output here and watch the parts that need update update the chunk vals there too.
 	var onDestroyCallbacks = []
 	forEach(clusters, function(chunk){
 		if (!chunk.code){
@@ -451,6 +486,7 @@ function continiousSyntaxRender(textSource, node, propName){
 		}
 	})
 
+	// by now, we have all the values of the text here and now all we have to do is updat the UI with the values
 	renderString(textSource, clusters)
 
 	if (onDestroyCallbacks.length){
@@ -464,20 +500,11 @@ function continiousSyntaxRender(textSource, node, propName){
 	// console.log(clusters)
 }
 
+// this function is only responsible for updating the DOM to match what the clusters say they should be.
 function renderString(textSource, clusters){
 	// console.log(textSource, clusters)
-	var clusterIsAllSubComponents = true
-	forEach(clusters, function(cluster){
-		if (!cluster.code){
-			clusterIsAllSubComponents = false
-		}
-		if (!cluster.val || cluster.val.appendTo !== appendTo || cluster.val.detach !== detach){
-			clusterIsAllSubComponents = false
-		}
-	})
-	var propValue
 	if (clusters.length === 1 && textSource instanceof Attr){
-		propValue = clusters[0].val
+		var propValue = clusters[0].val
 		var ownerElement = textSource.ownerElement
 		if (textSource.name.slice(0, 5) !== "data-"){
 			return textSource.textContent = propValue
@@ -487,22 +514,19 @@ function renderString(textSource, clusters){
 		attributeName in ownerElement && (ownerElement[attributeName] = propValue)
 
 	}
-	else if (clusterIsAllSubComponents && (textSource instanceof Text || textSource instanceof Comment)){
+	else if (textSource instanceof Text || textSource instanceof Comment){
 		forEach(clusters, function(cluster){
-			cluster.val.appendTo(textSource.parentNode, textSource)
-		})
-
-		textSource.textContent = ""
-	}
-	else{
-		propValue = ""
-		forEach(clusters, function(chunk){
-			if (chunk.val === undefined){
-				return
+			// cluster.val.appendTo(textSource.parentNode, textSource)
+			if (cluster.val && cluster.val.appendTo && cluster.val.detach && cluster.val.length){
+				var replacement = arrayFrom(cluster.val)
+				replacement.push(cluster.domNode)
+				cluster.domNode.replaceWith.apply(cluster.domNode, replacement)
 			}
-			propValue += chunk.val
+			else{
+				var textNode = document.createTextNode(cluster.val)
+				cluster.domNode.replaceWith(textNode)
+				cluster.domNode = textNode
+			}
 		})
-
-		textSource.textContent = propValue
 	}
 }

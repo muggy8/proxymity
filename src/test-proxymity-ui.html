@@ -39,7 +39,12 @@
 				</select>
 				<input data-value="{:this.app.foo:}|{foo}|" onkeyup='this.app.foo = this.valueAsNumber' onchange='this.app.foo = this.valueAsNumber' type='number'/>`, {foo: 15, bar: "1"}, "app")
 			testTemp.appendTo(document.body)
-			// console.log(testTemp)
+
+			var otherTest = proxyUI("this is a {:this.app.what:}|{what}| from {:this.app.where:}|{where}|.", {
+				what: "car",
+				where: "tesla"
+			}, "app")
+			otherTest.appendTo(document.body)
 		</script>
 	</body>
 </html>
