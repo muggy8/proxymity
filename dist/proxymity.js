@@ -677,24 +677,6 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 
 	var previousOrdering
 	function onSourceDataChange(newVal, oldVal){
-		if (newVal === oldVal){
-			if (newVal < 2 && oldVal != undefined){
-				return
-			}
-			else if (previousOrdering){
-				var assumeNoChange = true
-				forEach(watchSource, function(item, index){
-					if (previousOrdering[index] !== item){
-						assumeNoChange = false
-					}
-				})
-				if (assumeNoChange){
-					return
-				}
-			}
-			previousOrdering = arrayFrom(watchSource)
-		}
-
 		// we want to find the original and mark it as touched. we want to reposition whatever we want to reposition to avoid creating stuff and instead we can reuse stuff instead. if stuff got deleted or added, we can add it into the list.
 		var cloneGroupsMapTouched = {}
 		forEach(watchSource, function(sourceDataPoint, dataPointIndex, whole){
