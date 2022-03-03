@@ -1,6 +1,6 @@
 {
   "name": "proxymity",
-  "version": "2.0.0-rc13",
+  "version": "2.0.0-rc14",
   "description": "Proxymity is a 1 way binding library that can be used to render and renderer complex views with fast updates.",
   "main": "dist/proxymity.min.js",
   "directories": {

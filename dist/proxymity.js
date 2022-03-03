@@ -205,6 +205,7 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 
 		if (continiousOnNextEventUpdateCount > 10){
 			console.warn("UI has been updated for 10 or more update loops. You might have a bug in your code that updated or watched to a already watched property. Execution of UI updates has automatically halted.")
+			continiousOnNextEventUpdateCount = 0
 			return
 		}
 
