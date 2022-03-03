@@ -2,11 +2,13 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 	var nextEvent = generateId(randomInt(32, 48))
 	var emitted = false
 	var queue = []
+	var continiousOnNextEventUpdateCount = 0
 	function onNextEventCycle(fn){
 		var args = Array.prototype.slice.call(arguments, 1)
 		if (!emitted){
 			window.postMessage(nextEvent, '*');
 			emitted = true
+			continiousOnNextEventUpdateCount++
 		}
 
 		if (
@@ -37,6 +39,11 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 		emitted = false
 		queue = []
 
+		if (continiousOnNextEventUpdateCount > 10){
+			console.warn("UI has been updated for 10 or more update loops. You might have a bug in your code that updated or watched to a already watched property. Execution of UI updates has automatically halted.")
+			return
+		}
+
 		forEach(workingQueue, function(item){
 			// somtimes, descriptors might get passed to the next methods that will be called, if that's the case then we want to turn the descriptors into their value before passing the args to the callback.
 			if (typeof isInternalDescriptor !== "undefined"){
@@ -60,6 +67,10 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 			onNextEventCycle.renderEnd()
 			delete onNextEventCycle.renderEnd
 			delete onNextEventCycle.renderEndPromise
+		}
+
+		if (!queue.length){
+			continiousOnNextEventUpdateCount = 0
 		}
 	})
 

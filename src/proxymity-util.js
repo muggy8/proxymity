@@ -130,3 +130,31 @@ function splitPath(str){
 	}
 	return segments
 }
+
+function isSameProxymityOutput(proxymity1, proxymity2){
+	if (proxymity1 instanceof Element && proxymity2 instanceof Element){
+		return proxymity1.isEqualNode(proxymity2)
+	}
+
+	if (!isArray(proxymity1) || !isArray(proxymity2)){
+		return false
+	}
+
+	if (proxymity1.length !== proxymity2.length){
+		return false
+	}
+
+	for(var i = 0; i < proxymity1.length; i++){
+		if (!(proxymity1[i] instanceof Element)){
+			return false
+		}
+		if (proxymity1[i].isEqualNode(proxymity2[i])){
+			continue
+		}
+		if (proxymity1[i] !== proxymity2[i]){
+			return false
+		}
+	}
+
+	return true
+}

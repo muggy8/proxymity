@@ -116,6 +116,7 @@ function createWatchableProp(obj, prop, value, config){
 		callbackSet.each(function(chainLink){
 			chainLink.set(arg1, arg2)
 		})
+
 	}
 	var descriptor
 	overrideArrayFunctions(value)
@@ -144,6 +145,8 @@ function createWatchableProp(obj, prop, value, config){
 			return value
 		},
 		set: function(newValue){
+			// console.error(newValue, obj, prop)
+			
 			var context = this
 			if (typeof newValue === "undefined"){
 				// attempting to delete this prop we should call the del callback of all watchers attached to this item
@@ -157,9 +160,11 @@ function createWatchableProp(obj, prop, value, config){
 				callChildrenDelCallbackRecursive(value)
 			}
 			if (newValue === forceUpdateAction){
-				onNextEventCycle(executeCallbackSet, value, value)
+				// console.log("forceUpdateAction")
+				onNextEventCycle(executeCallbackSet, value, value, {obj, prop})
 			}
 			else if(newValue === deleteAction){
+				// console.log("deleteAction")
 				callbackSet.each(function(set){
 					set.drop()
 					Function.prototype.call.call(set.del, context)
@@ -170,7 +175,8 @@ function createWatchableProp(obj, prop, value, config){
 			else{
 				// updated the stuff lets call all the set callbacks
 				if (newValue !== value){
-					onNextEventCycle(executeCallbackSet, newValue, value)
+
+					onNextEventCycle(executeCallbackSet, newValue, value, {obj, prop})
 
 					var oldVal = value
 					overrideArrayFunctions(value = newValue)

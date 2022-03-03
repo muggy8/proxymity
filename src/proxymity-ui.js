@@ -9,16 +9,16 @@ function proxyUI(template, data, propName){
 	if (template instanceof NodeList || (isArray(template) && template.reduce(function(current, node){
 		return current && node instanceof Node
 	}, true))){
-		attachStack.push([])
+		pushEventStack()
 		var templateList = arrayFrom(template)
 		var unlinkCallback = transformList(templateList, data, propName)
-		return addOutputApi(templateList, unlinkCallback, data, propName, attachStack.pop())
+		return addOutputApi(templateList, unlinkCallback, data, propName)
 	}
 
 	if (template instanceof Node){
-		attachStack.push([])
+		pushEventStack()
 		var unlinkCallback = transformNode(template, data, propName)
-		return addOutputApi([template], unlinkCallback, data, propName, attachStack.pop())
+		return addOutputApi([template], unlinkCallback, data, propName)
 	}
 }
 
@@ -121,7 +121,25 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 		onSourceDataChange() // we do this here somewhat redundantly because the subscribe method will call this on the next tick but we dont want that, we want to update it now because the if the list got replaced, we want the deletion of the UI elements to happen before the UI elementes gets a change to resubscribe to none-existant paths.
 	}
 
-	function onSourceDataChange(){
+	var previousOrdering
+	function onSourceDataChange(newVal, oldVal){
+		if (newVal === oldVal){
+			if (newVal < 2 && oldVal != undefined){
+				return
+			}
+			else if (previousOrdering){
+				var assumeNoChange = true
+				forEach(watchSource, function(item, index){
+					if (previousOrdering[index] !== item){
+						assumeNoChange = false
+					}
+				})
+				if (assumeNoChange){
+					return
+				}
+			}
+			previousOrdering = arrayFrom(watchSource)
+		}
 
 		// we want to find the original and mark it as touched. we want to reposition whatever we want to reposition to avoid creating stuff and instead we can reuse stuff instead. if stuff got deleted or added, we can add it into the list.
 		var cloneGroupsMapTouched = {}
@@ -221,7 +239,7 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 		destroyThisInstanceCallback.push(unlinkCurrentInstance)
 
 		// add the output api for our convenience
-		addOutputApi(newGroupItem, destroyThisInstanceCallback, data, propName, attachStack.pop())
+		addOutputApi(newGroupItem, destroyThisInstanceCallback, data, propName)
 		return newGroupItem
 
 		function attachIndexesToNode(node, data, propName){
@@ -321,16 +339,23 @@ function transformNode(node, data, propName, initNodeCallback){
 // ok here we have all the other support functions that does stuff important but the main 3 is above
 
 // This is the function that adds the additional properties to the output
-function addOutputApi(transformedList, unlinkCallbackList, data, propName, onAttachCallbacks){
+function addOutputApi(transformedList, unlinkCallbackList, data, propName){
+	var attachDetachEvents = popEventStack()
 	attachNodeDataProp(transformedList, data, propName)
 	define(transformedList, "appendTo", function(a, b){
 		appendTo.call(this, a, b)
 		// this is where we call the on attach callbacks that we so maticiously set up.
-		forEach(onAttachCallbacks, function(callback){
+		forEach(attachDetachEvents[0], function(callback){
 			callback()
 		})
 	})
-	define(transformedList, "detach", detach)
+	define(transformedList, "detach", function(){
+		detach.call(this)
+
+		forEach(attachDetachEvents[1], function(callback){
+			callback()
+		})
+	})
 	define(transformedList, "unlink", function(){
 		for(var i = 0; i < unlinkCallbackList.length; i++){
 			unlinkCallbackList[i]()
@@ -379,10 +404,27 @@ function addOutputApi(transformedList, unlinkCallbackList, data, propName, onAtt
 	}
 
 	// there are some internal events we want to keep from outside tampering. this allows us to set up our own that is scoped here so it's private
+	function pushEventStack(){
+		attachStack.push([])
+		detachStack.push([])
+	}
+	function popEventStack(){
+		return [
+			attachStack.pop(),
+			detachStack.pop(),
+		]
+	}
 	var attachStack = []
 	function onAttach(callback){
 		if (attachStack.length){
 			attachStack[attachStack.length - 1].push(callback)
+		}
+	}
+
+	var detachStack = []
+	function onDetach(callback){
+		if (detachStack.length){
+			detachStack[detachStack.length - 1].push(callback)
 		}
 	}
 
@@ -474,6 +516,11 @@ function continiousSyntaxRender(textSource, node, propName){
 				renderString(textSource, clusters)
 			}
 		})
+		onDetach(function(){
+			forEach(clusters, function(chunk){
+				chunk.domNode.parentNode && chunk.domNode.parentNode.removeChild(chunk.domNode)
+			})
+		})
 	}
 
 	// updat the output here and watch the parts that need update update the chunk vals there too.
@@ -488,13 +535,20 @@ function continiousSyntaxRender(textSource, node, propName){
 			}
 			else{
 				// observer the property that is to be watched
-				function updateChunkVal(){
+				function updateChunkVal(newval, oldval){
+					var newCalculatedVal = safeEval.call(node, chunk.text)
+					if (newCalculatedVal === chunk.val || isSameProxymityOutput(newCalculatedVal, chunk.val)){
+						return
+					}
+
+					// console.log(newval, oldval, chunk)
 					chunk.val && chunk.val.detach && chunk.val.detach()
-					chunk.val = safeEval.call(node, chunk.text)
+					chunk.val = newCalculatedVal
 					renderString(textSource, clusters)
 				}
 				forEach(chunk.watching, function(prop){
 					var lastWatchDestroyCallback
+					var previousWatchedValue
 					function resubscribe(){
 						if (lastWatchDestroyCallback){
 							var spliceIndex = onDestroyCallbacks.indexOf(lastWatchDestroyCallback)
