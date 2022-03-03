@@ -131,7 +131,7 @@ function splitPath(str){
 	return segments
 }
 
-function isSameProxymityOutput(proxymity1, proxymity2){
+function listIsSamy(proxymity1, proxymity2){
 	if (proxymity1 instanceof Element && proxymity2 instanceof Element){
 		return proxymity1.isEqualNode(proxymity2)
 	}

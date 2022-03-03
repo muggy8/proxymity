@@ -215,7 +215,11 @@ forEach(Object.getOwnPropertyNames(Array.prototype), function(prop){
 	}
 	replacementFunctions[prop] = function(){
 		var args = Array.prototype.slice.call(arguments)
+		var listPreUpdate = arrayFrom(this)
 		var res = wrappedFunction.apply(this, args)
+		if (listIsSamy(listPreUpdate, this)){
+			return res
+		}
 		this.len = this.length
 		this.len = forceUpdateAction
 		return res

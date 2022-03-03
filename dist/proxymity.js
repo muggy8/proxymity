@@ -134,7 +134,7 @@ function splitPath(str){
 	return segments
 }
 
-function isSameProxymityOutput(proxymity1, proxymity2){
+function listIsSamy(proxymity1, proxymity2){
 	if (proxymity1 instanceof Element && proxymity2 instanceof Element){
 		return proxymity1.isEqualNode(proxymity2)
 	}
@@ -161,6 +161,7 @@ function isSameProxymityOutput(proxymity1, proxymity2){
 
 	return true
 }
+
 // src/on-next-event-cycle.js
 var onNextEventCycle = (function(){ // we are doing this here because this function leaves a TON of artifacts that only it uses
 	var nextEvent = generateId(randomInt(32, 48))
@@ -467,7 +468,11 @@ forEach(Object.getOwnPropertyNames(Array.prototype), function(prop){
 	}
 	replacementFunctions[prop] = function(){
 		var args = Array.prototype.slice.call(arguments)
+		var listPreUpdate = arrayFrom(this)
 		var res = wrappedFunction.apply(this, args)
+		if (listIsSamy(listPreUpdate, this)){
+			return res
+		}
 		this.len = this.length
 		this.len = forceUpdateAction
 		return res
@@ -1090,7 +1095,7 @@ function continiousSyntaxRender(textSource, node, propName){
 					continiousSyntaxRender.currentTaskSource = text
 					var newCalculatedVal = safeEval.call(node, chunk.text)
 					continiousSyntaxRender.currentTaskSource = undefined
-					if (newCalculatedVal === chunk.val || isSameProxymityOutput(newCalculatedVal, chunk.val)){
+					if (newCalculatedVal === chunk.val || listIsSamy(newCalculatedVal, chunk.val)){
 						return
 					}
 

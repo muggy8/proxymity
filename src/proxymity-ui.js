@@ -541,7 +541,7 @@ function continiousSyntaxRender(textSource, node, propName){
 					continiousSyntaxRender.currentTaskSource = text
 					var newCalculatedVal = safeEval.call(node, chunk.text)
 					continiousSyntaxRender.currentTaskSource = undefined
-					if (newCalculatedVal === chunk.val || isSameProxymityOutput(newCalculatedVal, chunk.val)){
+					if (newCalculatedVal === chunk.val || listIsSamy(newCalculatedVal, chunk.val)){
 						return
 					}
 
