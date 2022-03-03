@@ -148,10 +148,7 @@ function listIsSamy(proxymity1, proxymity2){
 	}
 
 	for(var i = 0; i < proxymity1.length; i++){
-		if (!(proxymity1[i] instanceof Element)){
-			return false
-		}
-		if (proxymity1[i].isEqualNode(proxymity2[i])){
+		if (proxymity1[i] instanceof Element && proxymity2[i] instanceof Element &&proxymity1[i].isEqualNode(proxymity2[i])){
 			continue
 		}
 		if (proxymity1[i] !== proxymity2[i]){

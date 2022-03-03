@@ -53,12 +53,26 @@
 			<!-- foreach: "index" -->
 				<!-- key: function(item){return item.id} -->
 				<div>{:this.app.list[this.index].id:}</div>
-			<!-- in: list -->`, {
+				<div>
+				{: this.app.component() :}
+				</div>
+			<!-- in: list -->
+			
+			<div class="owo {:this.app.list.reduce((sum, item)=>sum+item.id, '').length > 4 ? 'uwu' : '' :}">;w;</div>
+			`, {
 				list: [
 					{id: "a"},
 					{id: "b"},
 					{id: "c"},
 				],
+				component: function(){
+					return proxyUI(
+						`<div class="owo {:this.app.list.reduce((sum, item)=>sum+item.id, '').length > 4 ? 'uwu' : '' :}">;w;</div>`,
+						this,
+						"app"
+					)
+					//
+				}
 			}, "app")
 
 			test.appendTo(document.body)
