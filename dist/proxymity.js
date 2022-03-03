@@ -167,6 +167,7 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 	var emitted = false
 	var queue = []
 	var continiousOnNextEventUpdateCount = 0
+	var userScriptsThatTriggerActivityOnNextEventCycle = {}
 	function onNextEventCycle(fn){
 		var args = Array.prototype.slice.call(arguments, 1)
 		if (!emitted){
@@ -204,8 +205,9 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 		queue = []
 
 		if (continiousOnNextEventUpdateCount > 10){
-			console.warn("UI has been updated for 10 or more update loops. You might have a bug in your code that updated or watched to a already watched property. Execution of UI updates has automatically halted.")
+			console.warn("UI has been updated continiously for 10 or more update cycles and has thus been halted. You might have updated or watched a property that is already being watched during an render loop. The following user scripts are likely the cause of the continious updates", JSON.stringify(Object.keys(userScriptsThatTriggerActivityOnNextEventCycle), null, "\t"))
 			continiousOnNextEventUpdateCount = 0
+			userScriptsThatTriggerActivityOnNextEventCycle = {}
 			return
 		}
 
@@ -236,8 +238,13 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 
 		if (!queue.length){
 			continiousOnNextEventUpdateCount = 0
+			userScriptsThatTriggerActivityOnNextEventCycle = {}
 		}
 	})
+
+	onNextEventCycle.registerCaller = function(callingString){
+		userScriptsThatTriggerActivityOnNextEventCycle[callingString] = true
+	}
 
 	return onNextEventCycle
 })()
@@ -384,6 +391,7 @@ function createWatchableProp(obj, prop, value, config){
 				}))
 
 				onNextEventCycle(executeCallbackSet, value)
+				continiousSyntaxRender.currentTaskSource && onNextEventCycle.registerCaller(continiousSyntaxRender.currentTaskSource)
 
 				return link.drop
 			}
@@ -391,7 +399,7 @@ function createWatchableProp(obj, prop, value, config){
 		},
 		set: function(newValue){
 			// console.error(newValue, obj, prop)
-			
+
 			var context = this
 			if (typeof newValue === "undefined"){
 				// attempting to delete this prop we should call the del callback of all watchers attached to this item
@@ -407,6 +415,7 @@ function createWatchableProp(obj, prop, value, config){
 			if (newValue === forceUpdateAction){
 				// console.log("forceUpdateAction")
 				onNextEventCycle(executeCallbackSet, value, value, {obj, prop})
+				continiousSyntaxRender.currentTaskSource && onNextEventCycle.registerCaller(continiousSyntaxRender.currentTaskSource)
 			}
 			else if(newValue === deleteAction){
 				// console.log("deleteAction")
@@ -422,6 +431,7 @@ function createWatchableProp(obj, prop, value, config){
 				if (newValue !== value){
 
 					onNextEventCycle(executeCallbackSet, newValue, value, {obj, prop})
+					continiousSyntaxRender.currentTaskSource && onNextEventCycle.registerCaller(continiousSyntaxRender.currentTaskSource)
 
 					var oldVal = value
 					overrideArrayFunctions(value = newValue)
@@ -1070,12 +1080,16 @@ function continiousSyntaxRender(textSource, node, propName){
 		}
 		else{
 			if (!chunk.watching){
+				continiousSyntaxRender.currentTaskSource = text
 				chunk.val = safeEval.call(node, chunk.text)
+				continiousSyntaxRender.currentTaskSource = undefined
 			}
 			else{
 				// observer the property that is to be watched
 				function updateChunkVal(newval, oldval){
+					continiousSyntaxRender.currentTaskSource = text
 					var newCalculatedVal = safeEval.call(node, chunk.text)
+					continiousSyntaxRender.currentTaskSource = undefined
 					if (newCalculatedVal === chunk.val || isSameProxymityOutput(newCalculatedVal, chunk.val)){
 						return
 					}
@@ -1114,6 +1128,7 @@ function continiousSyntaxRender(textSource, node, propName){
 
 	// console.log(clusters)
 }
+continiousSyntaxRender.currentTaskSource = undefined
 
 // this function is only responsible for updating the DOM to match what the clusters say they should be.
 function renderString(textSource, clusters){
