@@ -139,6 +139,7 @@ function createWatchableProp(obj, prop, value, config){
 				}))
 
 				onNextEventCycle(executeCallbackSet, value)
+				continiousSyntaxRender.currentTaskSource && onNextEventCycle.registerCaller(continiousSyntaxRender.currentTaskSource)
 
 				return link.drop
 			}
@@ -146,7 +147,7 @@ function createWatchableProp(obj, prop, value, config){
 		},
 		set: function(newValue){
 			// console.error(newValue, obj, prop)
-			
+
 			var context = this
 			if (typeof newValue === "undefined"){
 				// attempting to delete this prop we should call the del callback of all watchers attached to this item
@@ -162,6 +163,7 @@ function createWatchableProp(obj, prop, value, config){
 			if (newValue === forceUpdateAction){
 				// console.log("forceUpdateAction")
 				onNextEventCycle(executeCallbackSet, value, value, {obj, prop})
+				continiousSyntaxRender.currentTaskSource && onNextEventCycle.registerCaller(continiousSyntaxRender.currentTaskSource)
 			}
 			else if(newValue === deleteAction){
 				// console.log("deleteAction")
@@ -177,6 +179,7 @@ function createWatchableProp(obj, prop, value, config){
 				if (newValue !== value){
 
 					onNextEventCycle(executeCallbackSet, newValue, value, {obj, prop})
+					continiousSyntaxRender.currentTaskSource && onNextEventCycle.registerCaller(continiousSyntaxRender.currentTaskSource)
 
 					var oldVal = value
 					overrideArrayFunctions(value = newValue)

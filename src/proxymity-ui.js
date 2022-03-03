@@ -531,12 +531,16 @@ function continiousSyntaxRender(textSource, node, propName){
 		}
 		else{
 			if (!chunk.watching){
+				continiousSyntaxRender.currentTaskSource = text
 				chunk.val = safeEval.call(node, chunk.text)
+				continiousSyntaxRender.currentTaskSource = undefined
 			}
 			else{
 				// observer the property that is to be watched
 				function updateChunkVal(newval, oldval){
+					continiousSyntaxRender.currentTaskSource = text
 					var newCalculatedVal = safeEval.call(node, chunk.text)
+					continiousSyntaxRender.currentTaskSource = undefined
 					if (newCalculatedVal === chunk.val || isSameProxymityOutput(newCalculatedVal, chunk.val)){
 						return
 					}
@@ -575,6 +579,7 @@ function continiousSyntaxRender(textSource, node, propName){
 
 	// console.log(clusters)
 }
+continiousSyntaxRender.currentTaskSource = undefined
 
 // this function is only responsible for updating the DOM to match what the clusters say they should be.
 function renderString(textSource, clusters){

@@ -3,6 +3,7 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 	var emitted = false
 	var queue = []
 	var continiousOnNextEventUpdateCount = 0
+	var userScriptsThatTriggerActivityOnNextEventCycle = {}
 	function onNextEventCycle(fn){
 		var args = Array.prototype.slice.call(arguments, 1)
 		if (!emitted){
@@ -40,8 +41,9 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 		queue = []
 
 		if (continiousOnNextEventUpdateCount > 10){
-			console.warn("UI has been updated for 10 or more update loops. You might have a bug in your code that updated or watched to a already watched property. Execution of UI updates has automatically halted.")
+			console.warn("UI has been updated continiously for 10 or more update cycles and has thus been halted. You might have updated or watched a property that is already being watched during an render loop. The following user scripts are likely the cause of the continious updates", JSON.stringify(Object.keys(userScriptsThatTriggerActivityOnNextEventCycle), null, "\t"))
 			continiousOnNextEventUpdateCount = 0
+			userScriptsThatTriggerActivityOnNextEventCycle = {}
 			return
 		}
 
@@ -72,8 +74,13 @@ var onNextEventCycle = (function(){ // we are doing this here because this funct
 
 		if (!queue.length){
 			continiousOnNextEventUpdateCount = 0
+			userScriptsThatTriggerActivityOnNextEventCycle = {}
 		}
 	})
+
+	onNextEventCycle.registerCaller = function(callingString){
+		userScriptsThatTriggerActivityOnNextEventCycle[callingString] = true
+	}
 
 	return onNextEventCycle
 })()
