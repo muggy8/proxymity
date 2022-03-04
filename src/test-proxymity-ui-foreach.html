@@ -31,11 +31,18 @@
 				<!-- foreach: "outside" -->
 					<div>
 						Outside [{:this.outside:}]:
-						<!-- foreach: "inside" -->
-							<div>
-								Inside {:this.inside:}: {:this.app.arr[this.outside][this.inside]:}|{arr[this.outside][this.inside]}|
-							</div>
-						<!-- in: arr[this.outside] -->
+						<select
+							onchange="this.app.vals[this.outside].val = this.value"
+							data-value="{:this.app.vals[this.outside].val:}|{vals[this.outside].val}|"
+						>
+							<!-- foreach: "inside" -->
+								<option
+									value="{:this.app.arr[this.outside][this.inside]:}"
+								>
+									Inside {:this.inside:}: {:this.app.arr[this.outside][this.inside]:}|{arr[this.outside][this.inside]}|
+								</option>
+							<!-- in: arr[this.outside] -->
+						</select>
 					</div>
 				<!-- in: arr -->
 				sum: {:this.app.arr.reduce((sum, sublist)=>{
@@ -44,7 +51,7 @@
 				}, []).join(", "):}|{arr.*.*}|
 				`, {arr: [
 					["a", "b", "c"],
-					["x", "y", "z"]
+					["x", "y", "z"],
 				]}, "app")
 			oldTest.appendTo(document.body)
 			// console.log(oldTest)
@@ -57,7 +64,7 @@
 				{: this.app.component() :}
 				</div>
 			<!-- in: list -->
-			
+
 			<div class="owo {:this.app.list.reduce((sum, item)=>sum+item.id, '').length > 4 ? 'uwu' : '' :}">;w;</div>
 			`, {
 				list: [
