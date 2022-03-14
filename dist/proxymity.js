@@ -749,7 +749,7 @@ function manageRepeater(startComment, endComment, keyComment, repeatBody, compon
 	}
 
 	function createClone(destroyListeners, cloneIndex){
-		attachStack.push([])
+		pushEventStack()
 		var newGroupItem = cloneNodes(repeatBody)
 
 		// link the new clones with the data prop
@@ -874,19 +874,24 @@ function transformNode(node, data, propName, initNodeCallback){
 // This is the function that adds the additional properties to the output
 function addOutputApi(transformedList, unlinkCallbackList, data, propName){
 	var attachDetachEvents = popEventStack()
+	var attachEvents = attachDetachEvents[0], 
+		detachEvents = attachDetachEvents[1], 
+		unlinkEvents = attachDetachEvents[2]
+
 	attachNodeDataProp(transformedList, data, propName)
 	define(transformedList, "appendTo", function(a, b){
 		appendTo.call(this, a, b)
-		// this is where we call the on attach callbacks that we so maticiously set up.
-		forEach(attachDetachEvents[0], function(callback){
-			callback()
+
+		console.log(attachDetachEvents)
+		attachEvents.each(function(callback){
+			callback.fn()
 		})
 	})
 	define(transformedList, "detach", function(){
 		detach.call(this)
 
-		forEach(attachDetachEvents[1], function(callback){
-			callback()
+		detachEvents.each(function(callback){
+			callback.fn()
 		})
 	})
 	define(transformedList, "unlink", function(){
@@ -894,7 +899,21 @@ function addOutputApi(transformedList, unlinkCallbackList, data, propName){
 			unlinkCallbackList[i]()
 		}
 		delete onAttachCallbacks
+
+		unlinkEvents.each(function(callback){
+			callback.fn()
+		})
 	})
+	define(transformedList, "on", {
+		attach: onEventFactory(attachEvents),
+		detach: onEventFactory(detachEvents),
+		unlink: onEventFactory(unlinkEvents),
+	})
+	function onEventFactory(eventsList){
+		return function(callback){
+			return addEventToLinkedList(eventsList, callback)
+		}
+	}
 	return transformedList
 }
 
@@ -938,27 +957,36 @@ function addOutputApi(transformedList, unlinkCallbackList, data, propName){
 
 	// there are some internal events we want to keep from outside tampering. this allows us to set up our own that is scoped here so it's private
 	function pushEventStack(){
-		attachStack.push([])
-		detachStack.push([])
+		attachStack.push(new LinkedList())
+		detachStack.push(new LinkedList())
+		unlinkStack.push(new LinkedList())
 	}
 	function popEventStack(){
 		return [
 			attachStack.pop(),
 			detachStack.pop(),
+			unlinkStack.pop(),
 		]
 	}
+	function addEventToLinkedList(list, callback){
+		// the eventsList is a linked list and the push method returns a link item. the drop method on the link item doesn't reference "this"
+		return list.push({fn: callback}).drop
+	}
+
+	// probably clean up below to reduce repeated code
 	var attachStack = []
 	function onAttach(callback){
-		if (attachStack.length){
-			attachStack[attachStack.length - 1].push(callback)
-		}
+		return attachStack.length && addEventToLinkedList( attachStack[attachStack.length - 1], callback)
 	}
 
 	var detachStack = []
 	function onDetach(callback){
-		if (detachStack.length){
-			detachStack[detachStack.length - 1].push(callback)
-		}
+		return detachStack.length && addEventToLinkedList( detachStack[detachStack.length - 1], callback)
+	}
+
+	var unlinkStack = []
+	function onUnlink(callback){
+		return unlinkStack.length && addEventToLinkedList( unlinkStack[unlinkStack.length - 1], callback)
 	}
 
 // this function is responsible for rendering our handlebars and watching the paths that needs to be watched
