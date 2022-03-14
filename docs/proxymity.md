@@ -128,3 +128,18 @@ The unlink method is used to detach the view template from the data object. This
 
 ## elementsList[nameOfDataProperty]
 the element property that you defined for the proxied data is also available under the elementsList as the same property that you defined. you are allowed to set values into this property however it doesn't result in a true replacement. instead, what happens is very similar to Object.assign where the data from one object is applied to another after all irrelevant data props are deleted. this is useful for initializing and updating sub components
+
+## elementList.when.append(callback)
+- returns: unwatch function
+
+The on append callback will be fired at the end of a list's append task whenever the append task is executed. the callback *WONT* be invoked unless the event that it subscribes to happens.
+
+## elementList.when.detach(callback)
+- returns: unwatch function
+
+The on detach callback will be fired at the end of a list's detach task whenever the detach task is executed. the callback *WONT* be invoked unless the event that it subscribes to happens.
+
+## elementList.when.unlink(callback)
+- returns: unwatch function
+
+The on unlink callback will be fired at the end of a list's unlink task whenever the unlink task is executed. the callback *WONT* be invoked unless the event that it subscribes to happens.

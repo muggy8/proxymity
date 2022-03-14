@@ -904,8 +904,8 @@ function addOutputApi(transformedList, unlinkCallbackList, data, propName){
 			callback.fn()
 		})
 	})
-	define(transformedList, "on", {
-		attach: onEventFactory(attachEvents),
+	define(transformedList, "when", {
+		append: onEventFactory(attachEvents),
 		detach: onEventFactory(detachEvents),
 		unlink: onEventFactory(unlinkEvents),
 	})
