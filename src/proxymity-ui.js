@@ -331,7 +331,6 @@ function addOutputApi(transformedList, unlinkCallbackList, data, propName){
 	define(transformedList, "appendTo", function(a, b){
 		appendTo.call(this, a, b)
 
-		console.log(attachDetachEvents)
 		attachEvents.each(function(callback){
 			callback.fn()
 		})
