@@ -511,6 +511,7 @@ function continiousSyntaxRender(textSource, node, propName){
 	textSource instanceof Text && (domNodeInstantiator = document.createTextNode)
 	textSource instanceof Comment && (domNodeInstantiator = document.createComment)
 	if (domNodeInstantiator){
+		var hasNoParentNodeWhenInitiated = !node.parentNode
 		var replaceTextNode = function(){
 			var commentList = []
 			forEach(clusters, function(chunk){
@@ -527,7 +528,7 @@ function continiousSyntaxRender(textSource, node, propName){
 		})
 		onDetach(function(){
 			forEach(clusters, function(chunk){
-				chunk.domNode.parentNode && chunk.domNode.parentNode.removeChild(chunk.domNode)
+				hasNoParentNodeWhenInitiated && chunk.domNode.parentNode && chunk.domNode.parentNode.removeChild(chunk.domNode)
 			})
 		})
 	}

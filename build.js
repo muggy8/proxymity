@@ -41,6 +41,7 @@ new Promise(function(accept, reject){
 }).then(function(scriptBodies){
 	var hostScript
 	scriptBodies.forEach(function(script, index){
+		// find the host script
 		if (script.contents.match(/\^INSERT\^/)){
 			hostScript = script
 			scriptBodies.splice(index, 1)
