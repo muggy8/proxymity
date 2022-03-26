@@ -364,7 +364,9 @@ function createWatchableProp(obj, prop, value, config){
 	var callbackSet = new LinkedList()
 	var executeCallbackSet = function(arg1, arg2){
 		callbackSet.each(function(chainLink){
-			chainLink.set(arg1, arg2)
+			// when the callbacks are executed, we only want to call the callback of items that are "fresh" for effencency's sake. if the link doesn't have a fresh update, we can safely ignore it.
+			chainLink.fresh && chainLink.set(arg1, arg2)
+			chainLink.fresh = false
 		})
 
 	}
@@ -385,11 +387,12 @@ function createWatchableProp(obj, prop, value, config){
 
 				!link && (link = callbackSet.push({
 					set: onChangeCallack,
-					del: onDeleteCallback
+					del: onDeleteCallback,
+					fresh: true,
 				}))
 
 				onNextEventCycle(executeCallbackSet, value)
-				continiousSyntaxRender.currentTaskSource && onNextEventCycle.registerCaller(continiousSyntaxRender.currentTaskSource)
+				continiousSyntaxRender.currentTaskSource && onNextEventCycle.registerCaller(continiousSyntaxRender.currentTaskSource) // assists in debugging when infinitely looping
 
 				return link.drop
 			}
@@ -413,7 +416,7 @@ function createWatchableProp(obj, prop, value, config){
 			if (newValue === forceUpdateAction){
 				// console.log("forceUpdateAction")
 				onNextEventCycle(executeCallbackSet, value, value, {obj, prop})
-				continiousSyntaxRender.currentTaskSource && onNextEventCycle.registerCaller(continiousSyntaxRender.currentTaskSource)
+				continiousSyntaxRender.currentTaskSource && onNextEventCycle.registerCaller(continiousSyntaxRender.currentTaskSource) // assists in debugging when infinitely looping
 			}
 			else if(newValue === deleteAction){
 				// console.log("deleteAction")
@@ -428,8 +431,11 @@ function createWatchableProp(obj, prop, value, config){
 				// updated the stuff lets call all the set callbacks
 				if (newValue !== value){
 
+					callbackSet.each(function(set){
+						set.fresh = true
+					})
 					onNextEventCycle(executeCallbackSet, newValue, value, {obj, prop})
-					continiousSyntaxRender.currentTaskSource && onNextEventCycle.registerCaller(continiousSyntaxRender.currentTaskSource)
+					continiousSyntaxRender.currentTaskSource && onNextEventCycle.registerCaller(continiousSyntaxRender.currentTaskSource) // assists in debugging when infinitely looping
 
 					var oldVal = value
 					overrideArrayFunctions(value = newValue)
