@@ -60,4 +60,9 @@ var proxymity = (function(safeEval){
 		}
 	}
 })
-typeof module !== "undefined" && (module.exports = proxymity)
+if (typeof export !== "undefined"){
+	export proxymity
+}
+else{
+	typeof module !== "undefined" && (module.exports = proxymity)
+}

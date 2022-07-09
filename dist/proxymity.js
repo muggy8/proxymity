@@ -1250,4 +1250,9 @@ function renderString(textSource, clusters){
 		}
 	}
 })
-typeof module !== "undefined" && (module.exports = proxymity)
+if (typeof export !== "undefined"){
+	export proxymity
+}
+else{
+	typeof module !== "undefined" && (module.exports = proxymity)
+}
