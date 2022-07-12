@@ -323,8 +323,8 @@ function transformNode(node, data, propName, initNodeCallback){
 // This is the function that adds the additional properties to the output
 function addOutputApi(transformedList, unlinkCallbackList, data, propName){
 	var attachDetachEvents = popEventStack()
-	var attachEvents = attachDetachEvents[0], 
-		detachEvents = attachDetachEvents[1], 
+	var attachEvents = attachDetachEvents[0],
+		detachEvents = attachDetachEvents[1],
 		unlinkEvents = attachDetachEvents[2]
 
 	attachNodeDataProp(transformedList, data, propName)
@@ -346,7 +346,6 @@ function addOutputApi(transformedList, unlinkCallbackList, data, propName){
 		for(var i = 0; i < unlinkCallbackList.length; i++){
 			unlinkCallbackList[i]()
 		}
-		delete onAttachCallbacks
 
 		unlinkEvents.each(function(callback){
 			callback.fn()
