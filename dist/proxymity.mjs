@@ -1258,4 +1258,4 @@ function renderString(textSource, clusters){
 //~ else{
 	//~ typeof module !== "undefined" && (module.exports = proxymity)
 //~ }
-;typeof module !== "undefined" && (module.exports = proxymity)
+;export default proxymity

@@ -1,6 +1,9 @@
 const fs = require("fs")
 const UglifyJS = require("uglify-es")
 
+const moduleStatement = `;typeof module !== "undefined" && (module.exports = proxymity)`
+const exportStatement = `;export default proxymity`
+
 new Promise(function(accept, reject){
 	fs.readFile("index.html", "utf8",  function(o3o, html){
 		if (o3o){
@@ -65,7 +68,11 @@ new Promise(function(accept, reject){
 		}
 	})
 
-	fs.writeFile("dist/proxymity.js", hostScript.contents, function(o3o){
+	fs.writeFile("dist/proxymity.js", hostScript.contents + moduleStatement, function(o3o){
+		o3o && console.log(o3o)
+	})
+
+	fs.writeFile("dist/proxymity.mjs", hostScript.contents + exportStatement, function(o3o){
 		o3o && console.log(o3o)
 	})
 
@@ -80,7 +87,10 @@ new Promise(function(accept, reject){
 
 		var code = code.replace(/\.onClone(.)/g, ".m$1")
 
-		fs.writeFile("dist/proxymity.min.js", code, function(o3o){
+		fs.writeFile("dist/proxymity.min.js", code + moduleStatement, function(o3o){
+			o3o && console.log(o3o)
+		})
+		fs.writeFile("dist/proxymity.min.mjs", code + exportStatement, function(o3o){
 			o3o && console.log(o3o)
 		})
 	}
